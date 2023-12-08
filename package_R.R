@@ -1,0 +1,11 @@
+library(geojsonio)
+library(plyr)
+library(dplyr)
+library(ggplot2) # 3.4.3
+library(sp)
+library(broom)
+library(sf)
+library(rnaturalearth)
+library(maps)
+library(rmapshaper)
+library(raster)
