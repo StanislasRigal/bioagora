@@ -26,9 +26,118 @@ pesticide_table <- pesticide_table[which(!(pesticide_table$COUNTRY %in% c("1-","
 
 pesticide_dose <- read.csv2("raw_data/pesticide/pesticide_fr/agence_eau/usage_pesticide.csv", header=TRUE)
 
-grep("BOSCALID",unique(pesticide_dose$sa),ignore.case=TRUE,value=TRUE)
+pesticide_name <- data.frame(Substances_common_names=unique(pesticide_table$Substances_common_names),Dose=NA, Unit=NA)
+pesticide_name$Substances_common_names2 <- pesticide_name$Substances_common_names
+pesticide_name$Substances_common_names[which(pesticide_name$Substances_common_names=="FOSETYL-AL")] <- "FOSETYL d'aluminium"
+pesticide_name$Substances_common_names[which(pesticide_name$Substances_common_names=="IMAZALIL (ENILCONAZOLE)")] <- "IMAZALIL"
+pesticide_name$Substances_common_names[which(pesticide_name$Substances_common_names=="BROMOXYNIL OCTANOATE AND/OR HEPTANOATE")] <- "BROMOXYNIL"
+pesticide_name$Substances_common_names[which(pesticide_name$Substances_common_names=="CLOPYRALID MONOETHANOLAMIN SALT")] <- "CLOPYRALID"
+pesticide_name$Substances_common_names[which(pesticide_name$Substances_common_names=="PROPOXYCARBAZONE-SODIUM")] <- "PROPOXYCARBAZONE"
 
-grep("BOSCALID",unique(pesticide_dose$sa),ignore.case=TRUE,value=TRUE)[min(length(grep("BOSCALID",unique(pesticide_dose$sa),ignore.case=TRUE,value=TRUE)))]
+for(i in 1:nrow(pesticide_name)){
+  if(!(i %in% c(25,39,44,49,63,64,70,71,91,97,125,129,130,131,132,134,137,143,150))){
+    pest_name_dose <- grep(pesticide_name$Substances_common_names[i],unique(pesticide_dose$sa),ignore.case=TRUE,value=TRUE)[which.min(nchar(grep(pesticide_name$Substances_common_names[i],unique(pesticide_dose$sa),ignore.case=TRUE,value=TRUE)))]
+    pest_dose <- pesticide_dose[which(pesticide_dose$sa==pest_name_dose),]
+    pest_dose$dose <- as.numeric(pest_dose$dose)
+    product_dose <- pest_dose$dose[grepl("ha",pest_dose$unite,ignore.case=TRUE)]
+    product_unit <- pest_dose$unite[grepl("ha",pest_dose$unite,ignore.case=TRUE)]
+    str_sa <- pest_dose$sa
+    sa_dose <- as.numeric(unlist(regmatches(str_sa,gregexpr("[-]{0,1}[[:digit:]]+\\.{0,1}[[:digit:]]*",str_sa))))[ grepl("ha",pest_dose$unite,ignore.case=TRUE)]
+    if(str_sub(str_sa[grepl("ha",pest_dose$unite,ignore.case=TRUE)], - 1, - 1)[1]=="%"){
+      nodu <- product_dose*sa_dose*0.01
+      nodu_unit <- pest_dose$unite[1]
+    }else{
+      sa_unit <- str_sub(str_sa[grepl("ha",pest_dose$unite,ignore.case=TRUE)], - 4, - 1)
+      sa_unit <- gsub(" ", "", sa_unit, fixed = TRUE)
+      nodu <- product_dose*sa_dose
+      nodu_unit <- paste0(sub("/.*", "", sa_unit),"/ha")
+    }
+    
+    if(all_same(nodu_unit)){
+      pesticide_name$Dose[i] <- mean(nodu, na.rm=TRUE)
+      pesticide_name$Unit[i] <- nodu_unit[1]
+    }else{
+      pesticide_name$Dose[i] <- mean(nodu, na.rm=TRUE)
+      pesticide_name$Unit[i] <- NA
+    }
+  }
+  if(i==25){ # https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/start/screen/active-substances/details/1109
+    pesticide_name$Dose[i] <- 0.300
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==39){ # https://www.fao.org/fileadmin/templates/agphome/documents/Pests_Pesticides/JMPR/Report2017/5.12_FENPROPIMORPH__188_.pdf
+    pesticide_name$Dose[i] <- 0.750
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==44){ # https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/start/screen/active-substances/details/75
+    pesticide_name$Dose[i] <- 0.250
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==49){ # https://www.fao.org/fileadmin/templates/agphome/documents/Pests_Pesticides/JMPR/Evaluation96/thiram.pdf
+    pesticide_name$Dose[i] <- 2.4
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==63){ # https://ephy.anses.fr/ppp/illoxan-ce
+    pesticide_name$Dose[i] <- 0.36*2.7
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==64){ # https://ephy.anses.fr/ppp/diquanet
+    pesticide_name$Dose[i] <- 0.2*2.7
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==70){ # https://ephy.anses.fr/substance/flurtamone
+    pesticide_name$Dose[i] <- 0.25*1
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==71){ # https://ephy.anses.fr/ppp/glufo
+    pesticide_name$Dose[i] <- 0.15*3.9
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==91){ # https://ephy.anses.fr/ppp/atlas
+    pesticide_name$Dose[i] <- 0.67*3
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==97){ # https://ephy.anses.fr/ppp/diuree
+    pesticide_name$Dose[i] <- 0.8*2.35
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==125){ # https://ephy.anses.fr/ppp/fentryn
+    pesticide_name$Dose[i] <- 0.003*7.3
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==129){ # https://ephy.anses.fr/ppp/dimetoxal
+    pesticide_name$Dose[i] <- 0.4*0.94
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==130){ # https://ephy.anses.fr/ppp/dicarzol-200
+    pesticide_name$Dose[i] <- 0.2*2.2
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==131){ # https://ephy.anses.fr/ppp/malathane
+    pesticide_name$Dose[i] <- 0.15*5
+    pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==132){ # https://ephy.anses.fr/ppp/mesurol-50
+    pesticide_name$Dose[i] <- 0.5*1.67
+      pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==134){ # https://ephy.anses.fr/ppp/dantop-50-wg
+    pesticide_name$Dose[i] <- 0.095*0.5
+      pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==137){ # https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/start/screen/active-substances/details/205
+    pesticide_name$Dose[i] <- 0.24
+      pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==143){ # https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/start/screen/active-substances/details/796
+    pesticide_name$Dose[i] <- 0.094
+      pesticide_name$Unit[i] <- "kg/ha"
+  }
+  if(i==150){ # https://ec.europa.eu/food/plant/pesticides/eu-pesticides-database/start/screen/active-substances/details/380
+    pesticide_name$Dose[i] <- 0.034
+      pesticide_name$Unit[i] <- "kg/ha"
+  }
+}
 
 
 pesticide_table <- as.data.table(pesticide_table %>% group_by(COUNTRY,NUTS3,Categories_of_products) %>% summarize(total=sum(KG_TOT)))
