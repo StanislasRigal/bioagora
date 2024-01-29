@@ -15,3 +15,5 @@ library(stringr)
 library(data.table)
 library(str2str)
 library(exactextractr)
+library(terra)
+

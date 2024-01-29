@@ -1,15 +1,28 @@
-# load land use tile for example from https://doi.org/10.7910/DVN/86M4PO and https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/86M4PO
+# Loading pressure data and preparing them for a unique grid
+
+# Land cover
+
+## Imperviousness
+
+impervious_2006 <- raster(x = "raw_data/Imperviousness/IMD_2006_100m_eu_03035_d03_Full/IMD_2006_100m_eu_03035_d03_full.tif")
+impervious_2018 <- raster(x = "raw_data/Imperviousness/IMD_2018_100m_eu_03035_v020/DATA/IMD_2018_100m_eu_03035_V2_0.tif")
+
+## Tree density
+
+treedensity_2012 <- raster(x = "raw_data/tree_cover/TCD_2012_100m_eu_03035_d04_Full/TCD_2012_100m_eu_03035_d04_full.tif")
+treedensity_2018 <- raster(x = "raw_data/tree_cover/TCD_2018_100m_eu_03035_v020/DATA/TCD_2018_100m_eu_03035_V2_0.tif")
+
+# Land use intensity
+
+## Example of land use intensity tile for example from https://doi.org/10.7910/DVN/86M4PO and https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/86M4PO
 
 ex_tile <- raster(x = "raw_data/landuse_intensity/Cropping_Intensity_30m_2016_2018_N50E000.tif")
 
-
-# european land system 
+## European land system intensity
 
 eu_land_system <- raster(x = "raw_data/land_system/EU_landSystem.tif")
 
-
-# protected areas 
-#UNEP-WCMC and IUCN (2024), Protected Planet: The World Database on Protected Areas (WDPA) and World Database on Other Effective Area-based Conservation Measures (WD-OECM) [Online], January 2024, Cambridge, UK: UNEP-WCMC and IUCN. Available at: www.protectedplanet.net.
+## Protected areas 
 
 protected_area_shp0 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_0/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
 protected_area_shp1 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_1/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
@@ -17,20 +30,57 @@ protected_area_shp2 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_2/", laye
 protected_area <- rbind(protected_area_shp0, protected_area_shp1)
 protected_area <- rbind(protected_area, protected_area_shp2)
 
-# land cover
+
+## Light pollution
+
+lightpollution_1992 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1992_calDMSP.tif")
+lightpollution_1993 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1993_calDMSP.tif")
+lightpollution_1994 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1994_calDMSP.tif")
+lightpollution_1995 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1995_calDMSP.tif")
+lightpollution_1996 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1996_calDMSP.tif")
+lightpollution_1997 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1997_calDMSP.tif")
+lightpollution_1998 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1998_calDMSP.tif")
+lightpollution_1999 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1999_calDMSP.tif")
+lightpollution_2000 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2000_calDMSP.tif")
+lightpollution_2001 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2001_calDMSP.tif")
+lightpollution_2002 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2002_calDMSP.tif")
+lightpollution_2003 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2003_calDMSP.tif")
+lightpollution_2004 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2004_calDMSP.tif")
+lightpollution_2005 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2005_calDMSP.tif")
+lightpollution_2006 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2006_calDMSP.tif")
+lightpollution_2007 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2007_calDMSP.tif")
+lightpollution_2008 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2008_calDMSP.tif")
+lightpollution_2009 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2009_calDMSP.tif")
+lightpollution_2010 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2010_calDMSP.tif")
+lightpollution_2011 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2011_calDMSP.tif")
+lightpollution_2012 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2012_calDMSP.tif")
+lightpollution_2013 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2013_calDMSP.tif")
+#lightpollution_2014 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2014_simVIIRS.tif")
+#lightpollution_2015 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2015_simVIIRS.tif")
+#lightpollution_2016 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2016_simVIIRS.tif")
+#lightpollution_2017 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2017_simVIIRS.tif")
+#lightpollution_2018 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2018_simVIIRS.tif")
+
+
+## Pesticides
+
+### Get NUTS3 surface and agricultural areas
+
+#### Load land cover layer
 
 clc_land_cover <- raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
 
-### download eurostat data of population counts by NUTS-3 region
+#### Example to download eurostat data of population counts by NUTS-3 region
 #euro_pop <- get_eurostat('demo_r_pjanaggr3', stringsAsFactors = FALSE) %>%  filter(sex == 'T', str_length(geo) == 5, age == 'TOTAL') # NUTS-3
 
-### download geospatial data for NUTS-3 regions
+#### Load geospatial data for NUTS-3 regions
 
 euro_nuts3_sf <- get_eurostat_geospatial(output_class = 'sf', 
                                          resolution ='60', nuts_level = "3") %>%
   st_transform(crs = 3035)
 
-### Get percentage of agricultural surface by nuts 3
+#### Get percentage of agricultural surface by NUTS3
+
 rsamp <- euro_nuts3_sf
 sfsamp <- st_as_sf(rsamp)
 vv <- exact_extract(clc_land_cover, sfsamp) 
@@ -45,8 +95,11 @@ perc_agri_res <- sapply(vv, perc_agri)
 euro_agri_surf <- data.frame(geo=euro_nuts3_sf$geo,perc_agri=perc_agri_res)
 
 
-### download eurostat data of surface by NUTS-3 region
+#### Download eurostat data of surface by NUTS-3 region
+
 euro_surface_nuts <- get_eurostat('demo_r_d3area', stringsAsFactors = FALSE) %>%  filter(TIME_PERIOD=="2015-01-01", str_length(geo) == 5, landuse=="TOTAL") # NUTS-3
+
+#### Update NUTS3 codes
 
 euro_surface_nuts$geo <- sub("FR21","FRF2",euro_surface_nuts$geo)
 euro_surface_nuts$geo <- sub("FR22","FRE2",euro_surface_nuts$geo)
@@ -174,17 +227,20 @@ temporary_row <- euro_surface_nuts[which(euro_surface_nuts$geo=="UKN16"),]
 temporary_row$geo <- "UKN07"
 euro_surface_nuts <- rbind(euro_surface_nuts,temporary_row)
 
+#### Calculate number of agricultural hectars per NUTS3
 
 euro_agri_surf <- merge(euro_agri_surf,euro_surface_nuts, by="geo", all.x=TRUE)
 euro_agri_surf$value_ha <- euro_agri_surf$values*100
 euro_agri_surf$agri_surf <- euro_agri_surf$perc_agri*euro_agri_surf$value_ha
 
-# pesticide
+### From pesticide quantity to number of unit dose
+
+#### Load quantity data per NUTS3
 
 pesticide_table <- read.csv("raw_data/pesticide/pesticideActiveSubtances.csv")
 pesticide_table <- pesticide_table[which(!(pesticide_table$COUNTRY %in% c("1-","2-","3-","4-","5-","6-"))),]
 
-### from quantity to unit dose
+### Retrieve the NODU per active substance
 
 pesticide_dose <- read.csv2("raw_data/pesticide/pesticide_fr/agence_eau/usage_pesticide.csv", header=TRUE)
 
@@ -392,7 +448,8 @@ pesticide_name$Substances_common_names <- pesticide_name$Substances_common_names
 pesticide_table <- merge(pesticide_table,pesticide_name, by="Substances_common_names",all.x=TRUE)
 pesticide_table$nodu <- pesticide_table$KG_TOT/pesticide_table$Dose
 
-### update NUTS names
+#### Update NUTS names
+
 pesticide_table$NUTS3 <- sub("FR21","FRF2",pesticide_table$NUTS3)
 pesticide_table$NUTS3 <- sub("FR22","FRE2",pesticide_table$NUTS3)
 pesticide_table$NUTS3 <- sub("FR23","FRD2",pesticide_table$NUTS3)
@@ -519,9 +576,15 @@ temporary_row <- pesticide_table[which(pesticide_table$NUTS3=="UKN16"),]
 temporary_row$NUTS3 <- "UKN07"
 pesticide_table <- rbind(pesticide_table,temporary_row)
 
+#### Use the NODU per ha to compare between NUTS3
+
 pesticide_table <- merge(pesticide_table,euro_agri_surf, by.x="NUTS3",by.y="geo", all.x=TRUE)
 pesticide_table$nodu_ha <- pesticide_table$nodu/pesticide_table$agri_surf
 pesticide_table$kg_ha <- pesticide_table$KG_TOT/pesticide_table$agri_surf
+
+saveRDS(pesticide_table,"output/pesticide_table.rds")
+
+#### Plot pesticides quantity and NODU per ha
 
 pesticide_table_melt <- as.data.table(pesticide_table %>% group_by(COUNTRY,NUTS3,Categories_of_products) %>% summarize(total_kg=sum(kg_ha),total_nodu_ha=sum(nodu_ha)))
 pesticide_table_wide_kg <- dcast(pesticide_table_melt,COUNTRY + NUTS3 ~ Categories_of_products, value.var="total_kg")
@@ -536,3 +599,320 @@ ggplot(pesticide_sf) +
   geom_sf(aes(fill = log(total_kg_ha)))
 ggplot(pesticide_sf) +
   geom_sf(aes(fill = log(total_nodu_ha)))
+
+
+## Wood production
+
+woodprod_2000 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2000.tif")
+woodprod_2001 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2001.tif")
+woodprod_2002 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2002.tif")
+woodprod_2003 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2003.tif")
+woodprod_2004 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2004.tif")
+woodprod_2005 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2005.tif")
+woodprod_2006 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2006.tif")
+woodprod_2007 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2007.tif")
+woodprod_2008 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2008.tif")
+woodprod_2009 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2009.tif")
+woodprod_2010 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2010.tif")
+woodprod_average <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_average.tif")
+
+# Productivity
+
+## Dry matter productivity
+
+## Decline in productivity
+
+decline_productivity <- read_sf(dsn = "raw_data/decline_productivity/", layer = "lpd_int2")
+
+
+# Landscape
+
+## Small wood features
+
+smallwoodyfeatures <- raster(x = "raw_data/small_woody_feature/SWF_2018_100m_eu_03035_V1_0/Data/SWF_2018_100m_eu_03035_V1_0.tif")
+
+## Landscape fragmentation
+
+fragmentation <- raster(x = "raw_data/fragmentation/eea_r_3035_100_m_fga2-s-2012_p_2012-2016_v01_r00/FGA2_S_2012_v3.tif")
+
+## Forest intergrity
+
+forestintegrity <- raster(x = "raw_data/forest_integrity/flii_Europe.tif")
+
+
+# Climate
+
+## Mean temperature
+
+mean_temperature <- raster(x = "raw_data/climate/tg_ens_mean_0.1deg_reg_v28.0e.nc")
+
+## Min temperature
+
+min_temperature <- raster(x = "raw_data/climate/tn_ens_mean_0.1deg_reg_v28.0e.nc")
+
+## Max temperature
+
+max_temperature <- raster(x = "raw_data/climate/tx_ens_mean_0.1deg_reg_v28.0e.nc")
+
+## Sum of precipitation
+
+sum_precipitation <- raster(x = "raw_data/climate/rr_ens_mean_0.1deg_reg_v28.0e.nc")
+
+## Relative humidity
+
+relative_humidity <- raster(x = "raw_data/climate/hu_ens_mean_0.1deg_reg_v28.0e.nc")
+
+
+# Socio-economic
+
+## Population
+
+### 1995
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/1995/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E1995_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+                pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+                pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+                pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_1995 <- merge(pop_all)
+
+writeRaster(population_1995,'raw_data/population/population_1995.tif')
+
+population_1995 <- raster(x = "raw_data/population/population_1995.tif")
+
+### 2000
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/2000/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E2000_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+                pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+                pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+                pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_2000 <- merge(pop_all)
+
+writeRaster(population_2000,'raw_data/population/population_2000.tif')
+
+population_2000 <- raster(x = "raw_data/population/population_2000.tif")
+
+### 2005
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/2005/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E2005_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+                pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+                pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+                pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_2005 <- merge(pop_all)
+
+writeRaster(population_2005,'raw_data/population/population_2005.tif')
+
+population_2005 <- raster(x = "raw_data/population/population_2005.tif")
+
+### 2010
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/2010/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E2010_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+                pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+                pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+                pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_2010 <- merge(pop_all)
+
+writeRaster(population_2010,'raw_data/population/population_2010.tif')
+
+population_2010 <- raster(x = "raw_data/population/population_2010.tif")
+
+### 2015
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/2015/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E2015_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+                pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+                pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+                pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_2015 <- merge(pop_all)
+
+writeRaster(population_2015,'raw_data/population/population_2015.tif')
+
+population_2015 <- raster(x = "raw_data/population/population_2015.tif")
+
+### 2020
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/2020/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E2020_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+                pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+                pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+                pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_2020 <- merge(pop_all)
+
+writeRaster(population_2020,'raw_data/population/population_2020.tif')
+
+population_2020 <- raster(x = "raw_data/population/population_2020.tif")
+
+### 2025
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/2025/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+                pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+                pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+                pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_2025 <- merge(pop_all)
+
+writeRaster(population_2025,'raw_data/population/population_2025.tif')
+
+population_2025 <- raster(x = "raw_data/population/population_2025.tif")
+
+### 2030
+
+pop_r2_c17 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C17/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C17.tif"))
+pop_r2_c18 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C18/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C18.tif"))
+pop_r2_c19 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C19/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C19.tif"))
+pop_r2_c20 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C20/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C20.tif"))
+pop_r2_c21 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C21/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R2_C21.tif"))
+pop_r3_c18 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C18/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C18.tif"))
+pop_r3_c19 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C19/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C19.tif"))
+pop_r3_c20 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C20/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C20.tif"))
+pop_r3_c21 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C21/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R3_C21.tif"))
+pop_r4_c18 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C18/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C18.tif"))
+pop_r4_c19 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C19/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C19.tif"))
+pop_r4_c20 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C20/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C20.tif"))
+pop_r4_c21 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C21/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R4_C21.tif"))
+pop_r5_c18 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C18/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C18.tif"))
+pop_r5_c19 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C19/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C19.tif"))
+pop_r5_c20 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C20/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C20.tif"))
+pop_r5_c21 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C21/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C21.tif"))
+pop_r5_c22 <- rast(raster(x = "raw_data/population/2030/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C22/GHS_POP_E2030_GLOBE_R2023A_54009_100_V1_0_R5_C22.tif"))
+
+
+pop_all <- sprc(pop_r2_c17,pop_r2_c18,pop_r2_c19,pop_r2_c20,pop_r2_c21,
+          pop_r3_c18,pop_r3_c19,pop_r3_c20,pop_r3_c21,
+          pop_r4_c18,pop_r4_c19,pop_r4_c20,pop_r4_c21,
+          pop_r5_c18,pop_r5_c19,pop_r5_c20,pop_r5_c21,pop_r5_c22)
+population_2030 <- merge(pop_all)
+
+writeRaster(population_2030,'raw_data/population/population_2030.tif')
+
+population_2030 <- raster(x = "raw_data/population/population_2030.tif")
+
