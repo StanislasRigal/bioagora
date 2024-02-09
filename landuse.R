@@ -4,13 +4,13 @@
 
 ## Imperviousness
 
-impervious_2006 <- raster(x = "raw_data/Imperviousness/IMD_2006_100m_eu_03035_d03_Full/IMD_2006_100m_eu_03035_d03_full.tif")
-impervious_2018 <- raster(x = "raw_data/Imperviousness/IMD_2018_100m_eu_03035_v020/DATA/IMD_2018_100m_eu_03035_V2_0.tif")
+impervious_2006 <- rast(raster(x = "raw_data/Imperviousness/IMD_2006_100m_eu_03035_d03_Full/IMD_2006_100m_eu_03035_d03_full.tif"))
+impervious_2018 <- rast(raster(x = "raw_data/Imperviousness/IMD_2018_100m_eu_03035_v020/DATA/IMD_2018_100m_eu_03035_V2_0.tif"))
 
 ## Tree density
 
-treedensity_2012 <- raster(x = "raw_data/tree_cover/TCD_2012_100m_eu_03035_d04_Full/TCD_2012_100m_eu_03035_d04_full.tif")
-treedensity_2018 <- raster(x = "raw_data/tree_cover/TCD_2018_100m_eu_03035_v020/DATA/TCD_2018_100m_eu_03035_V2_0.tif")
+treedensity_2012 <- rast(raster(x = "raw_data/tree_cover/TCD_2012_100m_eu_03035_d04_Full/TCD_2012_100m_eu_03035_d04_full.tif"))
+treedensity_2018 <- rast(raster(x = "raw_data/tree_cover/TCD_2018_100m_eu_03035_v020/DATA/TCD_2018_100m_eu_03035_V2_0.tif"))
 
 # Land use intensity
 
@@ -20,16 +20,18 @@ ex_tile <- raster(x = "raw_data/landuse_intensity/Cropping_Intensity_30m_2016_20
 
 ## European land system intensity
 
-eu_land_system <- raster(x = "raw_data/land_system/EU_landSystem.tif")
+eu_land_system <- rast(raster(x = "raw_data/land_system/EU_landSystem.tif"))
 
 ## Protected areas 
 
 protected_area_shp0 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_0/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
+protected_area_shp0 <- protected_area_shp0[,c("IUCN_CAT")]
 protected_area_shp1 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_1/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
+protected_area_shp1 <- protected_area_shp1[,c("IUCN_CAT")]
 protected_area_shp2 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_2/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
+protected_area_shp2 <- protected_area_shp2[,c("IUCN_CAT")]
 protected_area <- rbind(protected_area_shp0, protected_area_shp1)
 protected_area <- rbind(protected_area, protected_area_shp2)
-
 
 ## Light pollution
 
@@ -41,7 +43,7 @@ lightpollution_1996 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_D
 lightpollution_1997 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1997_calDMSP.tif")
 lightpollution_1998 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1998_calDMSP.tif")
 lightpollution_1999 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_1999_calDMSP.tif")
-lightpollution_2000 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2000_calDMSP.tif")
+lightpollution_2000 <- rast(raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2000_calDMSP.tif"))
 lightpollution_2001 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2001_calDMSP.tif")
 lightpollution_2002 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2002_calDMSP.tif")
 lightpollution_2003 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2003_calDMSP.tif")
@@ -54,7 +56,7 @@ lightpollution_2009 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_D
 lightpollution_2010 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2010_calDMSP.tif")
 lightpollution_2011 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2011_calDMSP.tif")
 lightpollution_2012 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2012_calDMSP.tif")
-lightpollution_2013 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2013_calDMSP.tif")
+lightpollution_2013 <- rast(raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2013_calDMSP.tif"))
 #lightpollution_2014 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2014_simVIIRS.tif")
 #lightpollution_2015 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2015_simVIIRS.tif")
 #lightpollution_2016 <- raster(x = "raw_data/light_pollution/9828827/Harmonized_DN_NTL_2016_simVIIRS.tif")
@@ -727,7 +729,7 @@ population_2000 <- merge(pop_all)
 
 writeRaster(population_2000,'raw_data/population/population_2000.tif')
 
-population_2000 <- raster(x = "raw_data/population/population_2000.tif")
+population_2000 <- rast(raster(x = "raw_data/population/population_2000.tif"))
 
 ### 2005
 
@@ -851,7 +853,7 @@ population_2020 <- merge(pop_all)
 
 writeRaster(population_2020,'raw_data/population/population_2020.tif')
 
-population_2020 <- raster(x = "raw_data/population/population_2020.tif")
+population_2020 <- rast(raster(x = "raw_data/population/population_2020.tif"))
 
 ### 2025
 
@@ -916,3 +918,179 @@ writeRaster(population_2030,'raw_data/population/population_2030.tif')
 
 population_2030 <- raster(x = "raw_data/population/population_2030.tif")
 
+
+# Merge all layers at same scale
+
+## Load 1km grid for EU from https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data/grids
+
+grid_eu <- st_read("raw_data/grid_eu/grid_1km_surf.gpkg")
+
+## Test function extraction
+
+grid_eu_test <- grid_eu[which(grid_eu$NUTS2021_1=="FR1"),]
+test1 <- project(population_2000, crs(grid_eu))
+test1b <- crop(test1,ext(grid_eu_test))
+test2 <- project(population_2020, crs(grid_eu))
+test2b <- crop(test2,ext(grid_eu_test))
+
+grid_eu_test$pop2000 <- excat_extract(test1,grid_eu_test, fun="sum")
+
+ggplot(grid_eu_test) +
+  geom_sf(aes(fill = sqrt(pop2000)))
+
+## Apply on all datasets
+
+### Population
+
+population_2000_reproj <- project(population_2000, crs(grid_eu))
+writeRaster(population_2000_reproj,'output/population_2000_reproj.tif')
+
+population_2020_reproj <- project(population_2020, crs(grid_eu))
+writeRaster(population_2020_reproj,'output/population_2020_reproj.tif')
+
+population_2000_reproj <- rast(raster(x = "output/population_2000_reproj.tif"))
+population_2020_reproj <- rast(raster(x = "output/population_2020_reproj.tif"))
+population_2000_reproj <- crop(population_2000_reproj,ext(grid_eu))
+population_2020_reproj <- crop(population_2020_reproj,ext(grid_eu))
+
+grid_eu$pop2000 <- exact_extract(population_2000_reproj,grid_eu, fun="sum")
+grid_eu$pop2020 <- exact_extract(population_2020_reproj,grid_eu, fun="sum")
+
+grid_eu$diff_pop_perc <- (grid_eu$pop2020 - grid_eu$pop2000)/grid_eu$pop2000
+
+st_write(grid_eu,"output/grid_eu_pop.gpkg")
+
+### Imperviousness
+
+grid_eu <- st_read("output/grid_eu_pop.gpkg")
+
+impervious_2006_reproj <- project(impervious_2006, crs(grid_eu))
+writeRaster(impervious_2006_reproj,'output/impervious_2006_reproj.tif')
+
+impervious_2018_reproj <- project(impervious_2018, crs(grid_eu))
+writeRaster(impervious_2018_reproj,'output/impervious_2018_reproj.tif')
+
+impervious_2006_reproj <- rast(raster(x = "output/impervious_2006_reproj.tif"))
+impervious_2018_reproj <- rast(raster(x = "output/impervious_2018_reproj.tif"))
+impervious_2006_reproj <- crop(impervious_2006_reproj,ext(grid_eu))
+impervious_2018_reproj <- crop(impervious_2018_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(impervious_2006_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(impervious_2018_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp1$mean[which(temp1$mean>100)] <- NA
+temp2$mean <- temp2$sum/temp2$count
+
+grid_eu$impervious2006 <- temp1$mean
+grid_eu$impervious2018 <- temp2$mean
+
+grid_eu$diff_impervious <- (grid_eu$impervious2018 - grid_eu$impervious2006)/grid_eu$impervious2006
+
+st_write(grid_eu,"output/grid_eu_impervious.gpkg")
+
+### Tree density
+
+grid_eu <- st_read("output/grid_eu_impervious.gpkg")
+
+treedensity_2012_reproj <- project(treedensity_2012, crs(grid_eu))
+writeRaster(treedensity_2012_reproj,'output/treedensity_2012_reproj.tif')
+
+treedensity_2018_reproj <- project(treedensity_2018, crs(grid_eu))
+writeRaster(treedensity_2018_reproj,'output/treedensity_2018_reproj.tif')
+
+treedensity_2012_reproj <- rast(raster(x = "output/treedensity_2012_reproj.tif"))
+treedensity_2018_reproj <- rast(raster(x = "output/treedensity_2018_reproj.tif"))
+treedensity_2012_reproj <- crop(treedensity_2012_reproj,ext(grid_eu))
+treedensity_2018_reproj <- crop(treedensity_2018_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(treedensity_2012_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(treedensity_2018_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp1$mean[which(temp1$mean>100)] <- NA
+temp2$mean <- temp2$sum/temp2$count
+
+grid_eu$treedensity2012 <- temp1$mean
+grid_eu$treedensity2018 <- temp2$mean
+
+grid_eu$diff_treedensity <- (grid_eu$treedensity2018 - grid_eu$treedensity2012)/grid_eu$treedensity2012
+
+st_write(grid_eu,"output/grid_eu_treedensity.gpkg")
+
+### European land system intensity
+
+grid_eu <- st_read("output/grid_eu_treedensity.gpkg")
+
+eu_land_system_reproj <- project(eu_land_system, crs(grid_eu))
+writeRaster(eu_land_system_reproj,'output/eu_land_system_reproj.tif')
+
+eu_land_system_reproj <- rast(raster(x = "output/eu_land_system_reproj.tif"))
+eu_land_system_reproj <- crop(eu_land_system_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(eu_land_system_reproj,grid_eu, fun="mode")
+
+grid_eu$eulandsystem <- temp1
+
+st_write(grid_eu,"output/grid_eu_eulandsystem.gpkg")
+
+## Protected areas 
+
+grid_eu <- st_read("output/grid_eu_eulandsystem.gpkg")
+
+sf::sf_use_s2(FALSE)
+
+protected_area_reproj <- st_crop(protected_area, xmin = -25, xmax = 45, ymin = 26, ymax = 76)
+
+protected_area_reproj <- st_transform(protected_area, crs(grid_eu))
+
+raster_template <- rast(raster(x = "output/eu_land_system.tif"))
+
+grid_eu_test <- grid_eu[which(grid_eu$NUTS2021_1=="FR1"),]
+raster_template_test <- crop(raster_template,ext(grid_eu_test))
+raster_template_test[] <- NA
+test <-  st_intersection(grid_eu_test, protected_area_reproj)
+test$IUCN_CAT<- as.numeric(as.factor(test$IUCN_CAT))
+test_rast <- st_rasterize(test %>% dplyr::select(IUCN_CAT, geom), template=st_as_stars(raster_template_test), field = "IUCN_CAT")
+
+raster_template[] <- NA
+protected_area_reproj$IUCN_CAT<- as.numeric(as.factor(protected_area_reproj$IUCN_CAT))
+protected_area_rast <- st_rasterize(protected_area_reproj %>% dplyr::select(IUCN_CAT, geometry), template=st_as_stars(raster_template), field = "IUCN_CAT")
+
+protected_area_rast2 <- rast(protected_area_rast)
+
+st_write(grid_eu,"output/grid_eu_protectedarea.gpkg")
+
+### Ligth pollution
+
+grid_eu <- st_read("output/grid_eu_protectedarea.gpkg")
+
+lightpollution_2000_reproj <- crop(lightpollution_2000,ext(c(-25,45,26,76)))
+lightpollution_2000_reproj <- project(lightpollution_2000_reproj, crs(grid_eu))
+writeRaster(lightpollution_2000_reproj,'output/lightpollution_2000_reproj.tif')
+
+lightpollution_2013_reproj <- crop(lightpollution_2013,ext(c(-25,45,26,76)))
+lightpollution_2013_reproj <- project(lightpollution_2013_reproj, crs(grid_eu))
+writeRaster(lightpollution_2013_reproj,'output/lightpollution_2013_reproj.tif')
+
+lightpollution_2000_reproj <- rast(raster(x = "output/lightpollution_2000_reproj.tif"))
+lightpollution_2013_reproj <- rast(raster(x = "output/lightpollution_2013_reproj.tif"))
+lightpollution_2000_reproj <- crop(lightpollution_2000_reproj,ext(grid_eu))
+lightpollution_2013_reproj <- crop(lightpollution_2013_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(lightpollution_2000_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(lightpollution_2013_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+
+grid_eu$lightpollution2000 <- temp1$mean
+grid_eu$lightpollution2013 <- temp2$mean
+
+grid_eu$diff_lightpollution <- (grid_eu$lightpollution2013 - grid_eu$lightpollution2000)/grid_eu$lightpollution2000
+
+st_write(grid_eu,"output/grid_eu_lightpollution.gpkg")
+
+ggplot(grid_eu) +
+  geom_sf(aes(fill = lightpollution2013), colour=NA) +
+  coord_sf(
+    xlim = c(2834303, 7323799),
+    ylim = c(1570352, 5418000)
+  )
