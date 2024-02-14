@@ -602,10 +602,11 @@ ggplot(pesticide_sf) +
 ggplot(pesticide_sf) +
   geom_sf(aes(fill = log(total_nodu_ha)))
 
+st_write(pesticide_sf,"output/pesticide_sf.shp")
 
 ## Wood production
 
-woodprod_2000 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2000.tif")
+woodprod_2000 <- rast(raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2000.tif"))
 woodprod_2001 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2001.tif")
 woodprod_2002 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2002.tif")
 woodprod_2003 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2003.tif")
@@ -615,12 +616,117 @@ woodprod_2006 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2006
 woodprod_2007 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2007.tif")
 woodprod_2008 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2008.tif")
 woodprod_2009 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2009.tif")
-woodprod_2010 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2010.tif")
-woodprod_average <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_average.tif")
+woodprod_2010 <- rast(raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2010.tif"))
+woodprod_average <- rast(raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_average.tif"))
 
 # Productivity
 
 ## Dry matter productivity
+
+drymatter_19990310 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199903100000_GLOBE_VGT_V2.0.1/19990310/c_gls_DMP-DMP_199903100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990320 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199903200000_GLOBE_VGT_V2.0.1/19990320/c_gls_DMP-DMP_199903200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990331 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199903310000_GLOBE_VGT_V2.0.1/19990331/c_gls_DMP-DMP_199903310000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990410 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199904100000_GLOBE_VGT_V2.0.1/19990410/c_gls_DMP-DMP_199904100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990420 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199904200000_GLOBE_VGT_V2.0.1/19990420/c_gls_DMP-DMP_199904200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990430 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199904300000_GLOBE_VGT_V2.0.1/19990430/c_gls_DMP-DMP_199904300000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990510 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199905100000_GLOBE_VGT_V2.0.1/19990510/c_gls_DMP-DMP_199905100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990520 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199905200000_GLOBE_VGT_V2.0.1/19990520/c_gls_DMP-DMP_199905200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990531 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199905310000_GLOBE_VGT_V2.0.1/19990531/c_gls_DMP-DMP_199905310000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990610 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199906100000_GLOBE_VGT_V2.0.1/19990610/c_gls_DMP-DMP_199906100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990620 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199906200000_GLOBE_VGT_V2.0.1/19990620/c_gls_DMP-DMP_199906200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_19990630 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_199906300000_GLOBE_VGT_V2.0.1/19990630/c_gls_DMP-DMP_199906300000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000310 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200003100000_GLOBE_VGT_V2.0.1/20000310/c_gls_DMP-DMP_200003100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000320 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200003200000_GLOBE_VGT_V2.0.1/20000320/c_gls_DMP-DMP_200003200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000331 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200003310000_GLOBE_VGT_V2.0.1/20000331/c_gls_DMP-DMP_200003310000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000410 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200004100000_GLOBE_VGT_V2.0.1/20000410/c_gls_DMP-DMP_200004100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000420 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200004200000_GLOBE_VGT_V2.0.1/20000420/c_gls_DMP-DMP_200004200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000430 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200004300000_GLOBE_VGT_V2.0.1/20000430/c_gls_DMP-DMP_200004300000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000510 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200005100000_GLOBE_VGT_V2.0.1/20000510/c_gls_DMP-DMP_200005100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000520 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200005200000_GLOBE_VGT_V2.0.1/20000520/c_gls_DMP-DMP_200005200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000531 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200005310000_GLOBE_VGT_V2.0.1/20000531/c_gls_DMP-DMP_200005310000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000610 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200006100000_GLOBE_VGT_V2.0.1/20000610/c_gls_DMP-DMP_200006100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000620 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200006200000_GLOBE_VGT_V2.0.1/20000620/c_gls_DMP-DMP_200006200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20000630 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200006300000_GLOBE_VGT_V2.0.1/20000630/c_gls_DMP-DMP_200006300000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010310 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200103100000_GLOBE_VGT_V2.0.1/20010310/c_gls_DMP-DMP_200103100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010320 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200103200000_GLOBE_VGT_V2.0.1/20010320/c_gls_DMP-DMP_200103200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010331 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200103310000_GLOBE_VGT_V2.0.1/20010331/c_gls_DMP-DMP_200103310000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010410 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200104100000_GLOBE_VGT_V2.0.1/20010410/c_gls_DMP-DMP_200104100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010420 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200104200000_GLOBE_VGT_V2.0.1/20010420/c_gls_DMP-DMP_200104200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010430 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200104300000_GLOBE_VGT_V2.0.1/20010430/c_gls_DMP-DMP_200104300000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010510 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200105100000_GLOBE_VGT_V2.0.1/20010510/c_gls_DMP-DMP_200105100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010520 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200105200000_GLOBE_VGT_V2.0.1/20010520/c_gls_DMP-DMP_200105200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010531 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200105310000_GLOBE_VGT_V2.0.1/20010531/c_gls_DMP-DMP_200105310000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010610 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200106100000_GLOBE_VGT_V2.0.1/20010610/c_gls_DMP-DMP_200106100000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010620 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200106200000_GLOBE_VGT_V2.0.1/20010620/c_gls_DMP-DMP_200106200000_CUSTOM_VGT_V2.0.1.tiff"))
+drymatter_20010630 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP_200106300000_GLOBE_VGT_V2.0.1/20010630/c_gls_DMP-DMP_200106300000_CUSTOM_VGT_V2.0.1.tiff"))
+
+drymatter_2000 <- (drymatter_19990310 + drymatter_19990320 + drymatter_19990331 +
+                   drymatter_19990410 + drymatter_19990420 + drymatter_19990430 +
+                   drymatter_19990510 + drymatter_19990520 + drymatter_19990531 +
+                   drymatter_19990610 + drymatter_19990620 + drymatter_19990630 +
+                   drymatter_20000310 + drymatter_20000320 + drymatter_20000331 +
+                   drymatter_20000410 + drymatter_20000420 + drymatter_20000430 +
+                   drymatter_20000510 + drymatter_20000520 + drymatter_20000531 +
+                   drymatter_20000610 + drymatter_20000620 + drymatter_20000630 +
+                   drymatter_20010310 + drymatter_20010320 + drymatter_20010331 +
+                   drymatter_20010410 + drymatter_20010420 + drymatter_20010430 +
+                   drymatter_20010510 + drymatter_20010520 + drymatter_20010531 +
+                   drymatter_20010610 + drymatter_20010620 + drymatter_20010630)/36
+writeRaster(drymatter_2000,'raw_data/drymatter/drymatter_2000.tif')
+
+drymatter_20170310 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201703100000_GLOBE_PROBAV_V2.0.1/20170310/c_gls_DMP-RT6-DMP_201703100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170320 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201703200000_GLOBE_PROBAV_V2.0.1/20170320/c_gls_DMP-RT6-DMP_201703200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170331 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201703310000_GLOBE_PROBAV_V2.0.1/20170331/c_gls_DMP-RT6-DMP_201703310000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170410 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201704100000_GLOBE_PROBAV_V2.0.1/20170410/c_gls_DMP-RT6-DMP_201704100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170420 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201704200000_GLOBE_PROBAV_V2.0.1/20170420/c_gls_DMP-RT6-DMP_201704200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170430 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201704300000_GLOBE_PROBAV_V2.0.1/20170430/c_gls_DMP-RT6-DMP_201704300000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170510 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201705100000_GLOBE_PROBAV_V2.0.1/20170510/c_gls_DMP-RT6-DMP_201705100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170520 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201705200000_GLOBE_PROBAV_V2.0.1/20170520/c_gls_DMP-RT6-DMP_201705200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170531 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201705310000_GLOBE_PROBAV_V2.0.1/20170531/c_gls_DMP-RT6-DMP_201705310000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170610 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201706100000_GLOBE_PROBAV_V2.0.1/20170610/c_gls_DMP-RT6-DMP_201706100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170620 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201706200000_GLOBE_PROBAV_V2.0.1/20170620/c_gls_DMP-RT6-DMP_201706200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20170630 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201706300000_GLOBE_PROBAV_V2.0.1/20170630/c_gls_DMP-RT6-DMP_201706300000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180310 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201803100000_GLOBE_PROBAV_V2.0.1/20180310/c_gls_DMP-RT6-DMP_201803100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180320 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201803200000_GLOBE_PROBAV_V2.0.1/20180320/c_gls_DMP-RT6-DMP_201803200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180331 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201803310000_GLOBE_PROBAV_V2.0.1/20180331/c_gls_DMP-RT6-DMP_201803310000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180410 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201804100000_GLOBE_PROBAV_V2.0.1/20180410/c_gls_DMP-RT6-DMP_201804100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180420 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201804200000_GLOBE_PROBAV_V2.0.1/20180420/c_gls_DMP-RT6-DMP_201804200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180430 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201804300000_GLOBE_PROBAV_V2.0.1/20180430/c_gls_DMP-RT6-DMP_201804300000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180510 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201805100000_GLOBE_PROBAV_V2.0.1/20180510/c_gls_DMP-RT6-DMP_201805100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180520 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201805200000_GLOBE_PROBAV_V2.0.1/20180520/c_gls_DMP-RT6-DMP_201805200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180531 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201805310000_GLOBE_PROBAV_V2.0.1/20180531/c_gls_DMP-RT6-DMP_201805310000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180610 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201806100000_GLOBE_PROBAV_V2.0.1/20180610/c_gls_DMP-RT6-DMP_201806100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180620 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201806200000_GLOBE_PROBAV_V2.0.1/20180620/c_gls_DMP-RT6-DMP_201806200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20180630 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201806300000_GLOBE_PROBAV_V2.0.1/20180630/c_gls_DMP-RT6-DMP_201806300000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190310 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201903100000_GLOBE_PROBAV_V2.0.1/20190310/c_gls_DMP-RT6-DMP_201903100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190320 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201903200000_GLOBE_PROBAV_V2.0.1/20190320/c_gls_DMP-RT6-DMP_201903200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190331 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201903310000_GLOBE_PROBAV_V2.0.1/20190331/c_gls_DMP-RT6-DMP_201903310000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190410 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201904100000_GLOBE_PROBAV_V2.0.1/20190410/c_gls_DMP-RT6-DMP_201904100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190420 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201904200000_GLOBE_PROBAV_V2.0.1/20190420/c_gls_DMP-RT6-DMP_201904200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190430 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201904300000_GLOBE_PROBAV_V2.0.1/20190430/c_gls_DMP-RT6-DMP_201904300000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190510 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201905100000_GLOBE_PROBAV_V2.0.1/20190510/c_gls_DMP-RT6-DMP_201905100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190520 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201905200000_GLOBE_PROBAV_V2.0.1/20190520/c_gls_DMP-RT6-DMP_201905200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190531 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201905310000_GLOBE_PROBAV_V2.0.1/20190531/c_gls_DMP-RT6-DMP_201905310000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190610 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201906100000_GLOBE_PROBAV_V2.0.1/20190610/c_gls_DMP-RT6-DMP_201906100000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190620 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201906200000_GLOBE_PROBAV_V2.0.1/20190620/c_gls_DMP-RT6-DMP_201906200000_CUSTOM_PROBAV_V2.0.1.tiff"))
+drymatter_20190630 <- rast(raster(x = "raw_data/drymatter/c_gls_DMP-RT6_201906300000_GLOBE_PROBAV_V2.0.1/20190630/c_gls_DMP-RT6-DMP_201906300000_CUSTOM_PROBAV_V2.0.1.tiff"))
+
+drymatter_2018 <- (drymatter_20170310 + drymatter_20170320 + drymatter_20170331 +
+                     drymatter_20170410 + drymatter_20170420 + drymatter_20170430 +
+                     drymatter_20170510 + drymatter_20170520 + drymatter_20170531 +
+                     drymatter_20170610 + drymatter_20170620 + drymatter_20170630 +
+                     drymatter_20180310 + drymatter_20180320 + drymatter_20180331 +
+                     drymatter_20180410 + drymatter_20180420 + drymatter_20180430 +
+                     drymatter_20180510 + drymatter_20180520 + drymatter_20180531 +
+                     drymatter_20180610 + drymatter_20180620 + drymatter_20180630 +
+                     drymatter_20190310 + drymatter_20190320 + drymatter_20190331 +
+                     drymatter_20190410 + drymatter_20190420 + drymatter_20190430 +
+                     drymatter_20190510 + drymatter_20190520 + drymatter_20190531 +
+                     drymatter_20190610 + drymatter_20190620 + drymatter_20190630)/36
+writeRaster(drymatter_2018,'raw_data/drymatter/drymatter_2018.tif')
+
+drymatter_2000 <- rast(raster(x = "raw_data/drymatter/drymatter_2000.tif"))
+drymatter_2018 <- rast(raster(x = "raw_data/drymatter/drymatter_2018.tif"))
 
 ## Decline in productivity
 
@@ -631,38 +737,38 @@ decline_productivity <- read_sf(dsn = "raw_data/decline_productivity/", layer = 
 
 ## Small wood features
 
-smallwoodyfeatures <- raster(x = "raw_data/small_woody_feature/SWF_2018_100m_eu_03035_V1_0/Data/SWF_2018_100m_eu_03035_V1_0.tif")
+smallwoodyfeatures <- rast(raster(x = "raw_data/small_woody_feature/SWF_2018_100m_eu_03035_V1_0/Data/SWF_2018_100m_eu_03035_V1_0.tif"))
 
 ## Landscape fragmentation
 
-fragmentation <- raster(x = "raw_data/fragmentation/eea_r_3035_100_m_fga2-s-2012_p_2012-2016_v01_r00/FGA2_S_2012_v3.tif")
+fragmentation <- rast(raster(x = "raw_data/fragmentation/eea_r_3035_100_m_fga2-s-2012_p_2012-2016_v01_r00/FGA2_S_2012_v3.tif"))
 
 ## Forest intergrity
 
-forestintegrity <- raster(x = "raw_data/forest_integrity/flii_Europe.tif")
+forestintegrity <- rast(raster(x = "raw_data/forest_integrity/flii_Europe.tif"))
 
 
 # Climate
 
 ## Mean temperature
 
-mean_temperature <- raster(x = "raw_data/climate/tg_ens_mean_0.1deg_reg_v28.0e.nc")
+mean_temperature <- rast(raster(x = "raw_data/climate/tg_ens_mean_0.1deg_reg_v28.0e.nc"))
 
 ## Min temperature
 
-min_temperature <- raster(x = "raw_data/climate/tn_ens_mean_0.1deg_reg_v28.0e.nc")
+min_temperature <- rast(raster(x = "raw_data/climate/tn_ens_mean_0.1deg_reg_v28.0e.nc"))
 
 ## Max temperature
 
-max_temperature <- raster(x = "raw_data/climate/tx_ens_mean_0.1deg_reg_v28.0e.nc")
+max_temperature <- rast(raster(x = "raw_data/climate/tx_ens_mean_0.1deg_reg_v28.0e.nc"))
 
 ## Sum of precipitation
 
-sum_precipitation <- raster(x = "raw_data/climate/rr_ens_mean_0.1deg_reg_v28.0e.nc")
+sum_precipitation <- rast(raster(x = "raw_data/climate/rr_ens_mean_0.1deg_reg_v28.0e.nc"))
 
 ## Relative humidity
 
-relative_humidity <- raster(x = "raw_data/climate/hu_ens_mean_0.1deg_reg_v28.0e.nc")
+relative_humidity <- rast(raster(x = "raw_data/climate/hu_ens_mean_0.1deg_reg_v28.0e.nc"))
 
 
 # Socio-economic
@@ -1032,36 +1138,10 @@ grid_eu$eulandsystem <- temp1
 
 st_write(grid_eu,"output/grid_eu_eulandsystem.gpkg")
 
-## Protected areas 
+
+### Light pollution
 
 grid_eu <- st_read("output/grid_eu_eulandsystem.gpkg")
-
-sf::sf_use_s2(FALSE)
-
-protected_area_reproj <- st_crop(protected_area, xmin = -25, xmax = 45, ymin = 26, ymax = 76)
-
-protected_area_reproj <- st_transform(protected_area, crs(grid_eu))
-
-raster_template <- rast(raster(x = "output/eu_land_system.tif"))
-
-grid_eu_test <- grid_eu[which(grid_eu$NUTS2021_1=="FR1"),]
-raster_template_test <- crop(raster_template,ext(grid_eu_test))
-raster_template_test[] <- NA
-test <-  st_intersection(grid_eu_test, protected_area_reproj)
-test$IUCN_CAT<- as.numeric(as.factor(test$IUCN_CAT))
-test_rast <- st_rasterize(test %>% dplyr::select(IUCN_CAT, geom), template=st_as_stars(raster_template_test), field = "IUCN_CAT")
-
-raster_template[] <- NA
-protected_area_reproj$IUCN_CAT<- as.numeric(as.factor(protected_area_reproj$IUCN_CAT))
-protected_area_rast <- st_rasterize(protected_area_reproj %>% dplyr::select(IUCN_CAT, geometry), template=st_as_stars(raster_template), field = "IUCN_CAT")
-
-protected_area_rast2 <- rast(protected_area_rast)
-
-st_write(grid_eu,"output/grid_eu_protectedarea.gpkg")
-
-### Ligth pollution
-
-grid_eu <- st_read("output/grid_eu_protectedarea.gpkg")
 
 lightpollution_2000_reproj <- crop(lightpollution_2000,ext(c(-25,45,26,76)))
 lightpollution_2000_reproj <- project(lightpollution_2000_reproj, crs(grid_eu))
@@ -1094,3 +1174,163 @@ ggplot(grid_eu) +
     xlim = c(2834303, 7323799),
     ylim = c(1570352, 5418000)
   )
+
+## Protected areas 
+
+grid_eu <- st_read("output/grid_eu_lightpollution.gpkg")
+
+sf::sf_use_s2(FALSE)
+
+protected_area_reproj <- st_crop(protected_area, xmin = -25, xmax = 45, ymin = 26, ymax = 76)
+
+protected_area_reproj <- st_transform(protected_area, crs(grid_eu))
+
+raster_template <- rast(raster(x = "output/eu_land_system.tif"))
+
+grid_eu_test <- grid_eu[which(grid_eu$NUTS2021_1=="FR1"),]
+raster_template_test <- crop(raster_template,ext(grid_eu_test))
+raster_template_test[] <- NA
+test <-  st_intersection(grid_eu_test, protected_area_reproj)
+test$IUCN_CAT<- as.numeric(as.factor(test$IUCN_CAT))
+test_rast <- st_rasterize(test %>% dplyr::select(IUCN_CAT, geom), template=st_as_stars(raster_template_test), field = "IUCN_CAT")
+
+raster_template[] <- NA
+protected_area_reproj$IUCN_CAT<- as.numeric(as.factor(protected_area_reproj$IUCN_CAT))
+protected_area_rast <- st_rasterize(protected_area_reproj %>% dplyr::select(IUCN_CAT, geometry), template=st_as_stars(raster_template), field = "IUCN_CAT")
+
+write_stars(protected_area_rast,"output/protected_area_rast.tif")
+
+protected_area_rast_reproj <- rast(raster(x = "output/protected_area_rast.tif"))
+temp1 <- exact_extract(protected_area_rast_reproj,grid_eu, fun=c("mode"))
+
+grid_eu$protectedarea <- temp1
+
+st_write(grid_eu,"output/grid_eu_protectedarea.gpkg")
+
+### pesticides
+
+grid_eu <- st_read("output/grid_eu_protectedarea.gpkg")
+
+raster_template <- rast(raster(x = "output/eu_land_system_reproj.tif"))
+raster_template[] <- NA
+pesticide_rast <- st_rasterize(pesticide_sf %>% dplyr::select(total_kg, total_kg_ha, total_nodu_ha, geometry), template=st_as_stars(raster_template), field = c("total_kg", "total_kg_ha", "total_nodu_ha"))
+
+write_stars(pesticide_rast,"output/pesticide_rast_kg.tif", layer = 1)
+write_stars(pesticide_rast,"output/pesticide_rast_kg_ha.tif", layer = 2)
+write_stars(pesticide_rast,"output/pesticide_rast_nodu_ha.tif", layer = 3)
+
+pesticide_rast_kg <- rast(raster(x = "output/pesticide_rast_kg.tif"))
+pesticide_rast_kg_ha <- rast(raster(x = "output/pesticide_rast_kg_ha.tif"))
+pesticide_rast_nodu_ha <- rast(raster(x = "output/pesticide_rast_nodu_ha.tif"))
+
+temp1 <- exact_extract(pesticide_rast_kg,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(pesticide_rast_kg_ha,grid_eu, fun=c("sum","count"))
+temp3 <- exact_extract(pesticide_rast_nodu_ha,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+temp3$mean <- temp3$sum/temp3$count
+
+grid_eu$pesticide_kg <- temp1$mean
+grid_eu$pesticide_kg_ha <- temp2$mean
+grid_eu$pesticide_nodu_kg <- temp3$mean
+
+st_write(grid_eu,"output/grid_eu_pesticide.gpkg")
+
+### woodproduction
+
+grid_eu <- st_read("output/grid_eu_pesticide.gpkg")
+
+woodprod_2000_reproj <- project(woodprod_2000, crs(grid_eu))
+writeRaster(woodprod_2000_reproj,'output/woodprod_2000_reproj.tif')
+
+woodprod_2010_reproj <- project(woodprod_2010, crs(grid_eu))
+writeRaster(woodprod_2010_reproj,'output/woodprod_2010_reproj.tif')
+
+woodprod_average_reproj <- project(woodprod_average, crs(grid_eu))
+writeRaster(woodprod_average_reproj,'output/woodprod_average_reproj.tif')
+
+woodprod_2000_reproj <- rast(raster(x = "output/woodprod_2000_reproj.tif"))
+woodprod_2010_reproj <- rast(raster(x = "output/woodprod_2010_reproj.tif"))
+woodprod_average_reproj <- rast(raster(x = "output/woodprod_average_reproj.tif"))
+woodprod_2000_reproj <- crop(woodprod_2000_reproj,ext(grid_eu))
+woodprod_2010_reproj <- crop(woodprod_2010_reproj,ext(grid_eu))
+woodprod_average_reproj <- crop(woodprod_average_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(woodprod_2000_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(woodprod_2010_reproj,grid_eu, fun=c("sum","count"))
+temp3 <- exact_extract(woodprod_average_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+temp3$mean <- temp3$sum/temp3$count
+
+grid_eu$woodprod2000 <- temp1$mean
+grid_eu$woodprod2010 <- temp2$mean
+grid_eu$woodprodaverage <- temp3$mean
+
+grid_eu$diff_woodprod <- (grid_eu$woodprod2010 - grid_eu$woodprod2000)/grid_eu$woodprod2000
+
+st_write(grid_eu,"output/grid_eu_woodprod.gpkg")
+
+### productivity
+
+grid_eu <- st_read("output/grid_eu_woodprod.gpkg")
+
+drymatter_2000_reproj <- project(drymatter_2000, crs(grid_eu))
+writeRaster(drymatter_2000_reproj,'output/drymatter_2000_reproj.tif')
+
+drymatter_2018_reproj <- project(drymatter_2018, crs(grid_eu))
+writeRaster(drymatter_2018_reproj,'output/drymatter_2018_reproj.tif')
+
+drymatter_2000_reproj <- rast(raster(x = "output/drymatter_2000_reproj.tif"))
+drymatter_2018_reproj <- rast(raster(x = "output/drymatter_2018_reproj.tif"))
+drymatter_2000_reproj <- crop(drymatter_2000_reproj,ext(grid_eu))
+drymatter_2018_reproj <- crop(drymatter_2018_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(drymatter_2000_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(drymatter_2018_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+
+grid_eu$drymatter2000 <- temp1$mean
+grid_eu$drymatter2018 <- temp2$mean
+
+grid_eu$diff_drymatter <- (grid_eu$drymatter2018 - grid_eu$drymatter2000)/grid_eu$drymatter2000
+
+st_write(grid_eu,"output/grid_eu_drymatter.gpkg")
+
+### decline in productivity
+
+grid_eu <- st_read("output/grid_eu_drymatter.gpkg")
+
+decline_productivity_reproj <- decline_productivity[which(decline_productivity$name_iso31 %in% c("Albania","Andorra","Austria","Belgium",
+                                                                                                 "Bulgaria","Bosnia and Herzegovina","Belarus","Switzerland",
+                                                                                                 "Croatia","Hungary","Cyprus","Czechia",
+                                                                                                 "Germany","Denmark","Spain","Estonia",
+                                                                                                 "Finland","France","Faroe Islands","United Kingdom of Great Britain and Northern Ireland",
+                                                                                                 "Georgia","Guernsey","Greece","Isle of Man",
+                                                                                                 "Ireland","Iceland","Italy","Jersey",
+                                                                                                 "Kuwait","Lithuania","Luxembourg","Latvia",
+                                                                                                 "Moldova (Republic of)","Macedonia (the former Yugoslav Republic of)","Malta","Montenegro",
+                                                                                                 "Poland","Netherlands","Norway","Portugal",
+                                                                                                 "Romania","Serbia","San Marino","Slovakia",
+                                                                                                 "Slovenia","Sweden","Turkey","Ukraine")),]
+decline_productivity_reproj <- st_transform(decline_productivity_reproj, crs(grid_eu))
+
+raster_template <- rast(raster(x = "output/eu_land_system_reproj.tif"))
+raster_template[] <- NA
+decline_productivity_rast <- st_rasterize(decline_productivity_reproj %>% dplyr::select(lpd_p, geometry), template=st_as_stars(raster_template), field = c("lpd_p"))
+
+write_stars(decline_productivity_rast,"output/decline_productivity_rast.tif", layer = 1)
+
+decline_productivity_rast <- rast(raster(x = "output/decline_productivity_rast.tif"))
+write_stars(decline_productivity_rast,"output/decline_productivity_rast.tif")
+
+decline_productivity_rast <- rast(raster(x = "output/decline_productivity_rast.tif"))
+temp1 <- exact_extract(decline_productivity_rast,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+
+grid_eu$declineproductivity <- temp1$mean
+decline_productivity_rast
+
+st_write(grid_eu,"output/grid_eu_declineproductivity.gpkg")
+
