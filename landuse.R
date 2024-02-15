@@ -754,21 +754,374 @@ forestintegrity <- rast(raster(x = "raw_data/forest_integrity/flii_Europe.tif"))
 
 mean_temperature <- rast(raster(x = "raw_data/climate/tg_ens_mean_0.1deg_reg_v28.0e.nc"))
 
+r_temp <- brick("raw_data/climate/tg_ens_mean_0.1deg_reg_v28.0e.nc")
+
+### Average daily data by year
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  end_year <- end_year+365
+  year <- paste0("temp_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+  }
+  map_year <- assign(year, mean(r_temp[[beg_year:end_year]], na.rm=T))
+  path <- paste0("output/temp_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("temp_",1949+i)
+  path <- paste0("output/temp_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+}
+
+temp_2000_average <- (temp_1998 + temp_1999 + temp_2000 + temp_2001 + temp_2002)/5
+temp_2020_average <- (temp_2018 + temp_2019 + temp_2020 + temp_2021 + temp_2022)/5
+writeRaster(temp_2000_average,'raw_data/climate/temp_2000_average.tif')
+writeRaster(temp_2020_average,'raw_data/climate/temp_2020_average.tif')
+
+temp_2000_average <- rast(raster(x = "raw_data/climate/temp_2000_average.tif"))
+temp_2020_average <- rast(raster(x = "raw_data/climate/temp_2020_average.tif"))
+
+### Average daily data by spring
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  beg_spring <- beg_year + 60
+  end_spring <- beg_spring + 122
+  end_year <- end_year+365
+  year <- paste0("temp_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+    beg_spring <- beg_spring + 1
+    end_spring <- end_spring + 1
+  }
+  map_year <- assign(year, mean(r_temp[[beg_spring:end_spring]], na.rm=T))
+  path <- paste0("output/temp_spring_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+  map_year_var <- assign(year, calc(r_temp[[beg_spring:end_spring]], var))
+  path <- paste0("output/temp_spring_var_",1949+i,".tif")
+  writeRaster(x=map_year_var, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("temp_spring_",1949+i)
+  path <- paste0("output/temp_spring_",1949+i,".tif")
+  year_var <- paste0("temp_spring_var_",1949+i)
+  path_var <- paste0("output/temp_spring_var_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+  assign(year_var, rast(raster(path_var)))
+}
+
+temp_spring_2000_average <- (temp_spring_1998 + temp_spring_1999 + temp_spring_2000 + temp_spring_2001 + temp_spring_2002)/5
+temp_spring_2020_average <- (temp_spring_2018 + temp_spring_2019 + temp_spring_2020 + temp_spring_2021 + temp_spring_2022)/5
+writeRaster(temp_spring_2000_average,'raw_data/climate/temp_spring_2000_average.tif')
+writeRaster(temp_spring_2020_average,'raw_data/climate/temp_spring_2020_average.tif')
+
+temp_spring_var_2000_average <- (temp_spring_var_1998 + temp_spring_var_1999 + temp_spring_var_2000 + temp_spring_var_2001 + temp_spring_var_2002)/5
+temp_spring_var_2020_average <- (temp_spring_var_2018 + temp_spring_var_2019 + temp_spring_var_2020 + temp_spring_var_2021 + temp_spring_var_2022)/5
+writeRaster(temp_spring_var_2000_average,'raw_data/climate/temp_spring_var_2000_average.tif')
+writeRaster(temp_spring_var_2020_average,'raw_data/climate/temp_spring_var_2020_average.tif')
+
+temp_spring_2000_average <- rast(raster(x = "raw_data/climate/temp_spring_2000_average.tif"))
+temp_spring_2020_average <- rast(raster(x = "raw_data/climate/temp_spring_2020_average.tif"))
+
+temp_spring_var_2000_average <- rast(raster(x = "raw_data/climate/temp_spring_var_2000_average.tif"))
+temp_spring_var_2020_average <- rast(raster(x = "raw_data/climate/temp_spring_var_2020_average.tif"))
+
 ## Min temperature
 
 min_temperature <- rast(raster(x = "raw_data/climate/tn_ens_mean_0.1deg_reg_v28.0e.nc"))
+
+r_temp <- brick("raw_data/climate/tn_ens_mean_0.1deg_reg_v28.0e.nc")
+
+### Average daily data by spring
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  beg_spring <- beg_year + 60
+  end_spring <- beg_spring + 122
+  end_year <- end_year+365
+  year <- paste0("temp_min_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+    beg_spring <- beg_spring + 1
+    end_spring <- end_spring + 1
+  }
+  map_year <- assign(year, mean(r_temp[[beg_spring:end_spring]], na.rm=T))
+  path <- paste0("output/temp_min_spring_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+  map_year_var <- assign(year, calc(r_temp[[beg_spring:end_spring]], var))
+  path <- paste0("output/temp_min_spring_var_",1949+i,".tif")
+  writeRaster(x=map_year_var, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("temp_min_spring_",1949+i)
+  path <- paste0("output/temp_min_spring_",1949+i,".tif")
+  year_var <- paste0("temp_min_spring_var_",1949+i)
+  path_var <- paste0("output/temp_min_spring_var_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+  assign(year_var, rast(raster(path_var)))
+}
+
+temp_min_spring_2000_average <- (temp_min_spring_1998 + temp_min_spring_1999 + temp_min_spring_2000 + temp_min_spring_2001 + temp_min_spring_2002)/5
+temp_min_spring_2020_average <- (temp_min_spring_2018 + temp_min_spring_2019 + temp_min_spring_2020 + temp_min_spring_2021 + temp_min_spring_2022)/5
+writeRaster(temp_min_spring_2000_average,'raw_data/climate/temp_min_spring_2000_average.tif')
+writeRaster(temp_min_spring_2020_average,'raw_data/climate/temp_min_spring_2020_average.tif')
+
+temp_min_spring_var_2000_average <- (temp_min_spring_var_1998 + temp_min_spring_var_1999 + temp_min_spring_var_2000 + temp_min_spring_var_2001 + temp_min_spring_var_2002)/5
+temp_min_spring_var_2020_average <- (temp_min_spring_var_2018 + temp_min_spring_var_2019 + temp_min_spring_var_2020 + temp_min_spring_var_2021 + temp_min_spring_var_2022)/5
+writeRaster(temp_min_spring_var_2000_average,'raw_data/climate/temp_min_spring_var_2000_average.tif')
+writeRaster(temp_min_spring_var_2020_average,'raw_data/climate/temp_min_spring_var_2020_average.tif')
+
+temp_min_spring_2000_average <- rast(raster(x = "raw_data/climate/temp_min_spring_2000_average.tif"))
+temp_min_spring_2020_average <- rast(raster(x = "raw_data/climate/temp_min_spring_2020_average.tif"))
+
+temp_min_spring_var_2000_average <- rast(raster(x = "raw_data/climate/temp_min_spring_var_2000_average.tif"))
+temp_min_spring_var_2020_average <- rast(raster(x = "raw_data/climate/temp_min_spring_var_2020_average.tif"))
+
 
 ## Max temperature
 
 max_temperature <- rast(raster(x = "raw_data/climate/tx_ens_mean_0.1deg_reg_v28.0e.nc"))
 
+r_temp <- brick("raw_data/climate/tx_ens_mean_0.1deg_reg_v28.0e.nc")
+
+### Average daily data by spring
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  beg_spring <- beg_year + 60
+  end_spring <- beg_spring + 122
+  end_year <- end_year+365
+  year <- paste0("temp_max_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+    beg_spring <- beg_spring + 1
+    end_spring <- end_spring + 1
+  }
+  map_year <- assign(year, mean(r_temp[[beg_spring:end_spring]], na.rm=T))
+  path <- paste0("output/temp_max_spring_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+  map_year_var <- assign(year, calc(r_temp[[beg_spring:end_spring]], var))
+  path <- paste0("output/temp_max_spring_var_",1949+i,".tif")
+  writeRaster(x=map_year_var, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("temp_max_spring_",1949+i)
+  path <- paste0("output/temp_max_spring_",1949+i,".tif")
+  year_var <- paste0("temp_max_spring_var_",1949+i)
+  path_var <- paste0("output/temp_max_spring_var_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+  assign(year_var, rast(raster(path_var)))
+}
+
+temp_max_spring_2000_average <- (temp_max_spring_1998 + temp_max_spring_1999 + temp_max_spring_2000 + temp_max_spring_2001 + temp_max_spring_2002)/5
+temp_max_spring_2020_average <- (temp_max_spring_2018 + temp_max_spring_2019 + temp_max_spring_2020 + temp_max_spring_2021 + temp_max_spring_2022)/5
+writeRaster(temp_max_spring_2000_average,'raw_data/climate/temp_max_spring_2000_average.tif')
+writeRaster(temp_max_spring_2020_average,'raw_data/climate/temp_max_spring_2020_average.tif')
+
+temp_max_spring_var_2000_average <- (temp_max_spring_var_1998 + temp_max_spring_var_1999 + temp_max_spring_var_2000 + temp_max_spring_var_2001 + temp_max_spring_var_2002)/5
+temp_max_spring_var_2020_average <- (temp_max_spring_var_2018 + temp_max_spring_var_2019 + temp_max_spring_var_2020 + temp_max_spring_var_2021 + temp_max_spring_var_2022)/5
+writeRaster(temp_max_spring_var_2000_average,'raw_data/climate/temp_max_spring_var_2000_average.tif')
+writeRaster(temp_max_spring_var_2020_average,'raw_data/climate/temp_max_spring_var_2020_average.tif')
+
+temp_max_spring_2000_average <- rast(raster(x = "raw_data/climate/temp_max_spring_2000_average.tif"))
+temp_max_spring_2020_average <- rast(raster(x = "raw_data/climate/temp_max_spring_2020_average.tif"))
+
+temp_max_spring_var_2000_average <- rast(raster(x = "raw_data/climate/temp_max_spring_var_2000_average.tif"))
+temp_max_spring_var_2020_average <- rast(raster(x = "raw_data/climate/temp_max_spring_var_2020_average.tif"))
+
+
 ## Sum of precipitation
 
 sum_precipitation <- rast(raster(x = "raw_data/climate/rr_ens_mean_0.1deg_reg_v28.0e.nc"))
 
+
+r_prec <- brick("raw_data/climate/rr_ens_mean_0.1deg_reg_v28.0e.nc")
+
+### Average daily data by year
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  end_year <- end_year+365
+  year <- paste0("prec_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+  }
+  map_year <- assign(year, mean(r_prec[[beg_year:end_year]], na.rm=T))
+  path <- paste0("output/prec_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("prec_",1949+i)
+  path <- paste0("output/prec_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+}
+
+prec_2000_average <- (prec_1998 + prec_1999 + prec_2000 + prec_2001 + prec_2002)/5
+prec_2020_average <- (prec_2018 + prec_2019 + prec_2020 + prec_2021 + prec_2022)/5
+writeRaster(prec_2000_average,'raw_data/climate/prec_2000_average.tif')
+writeRaster(prec_2020_average,'raw_data/climate/prec_2020_average.tif')
+
+prec_2000_average <- rast(raster(x = "raw_data/climate/prec_2000_average.tif"))
+prec_2020_average <- rast(raster(x = "raw_data/climate/prec_2020_average.tif"))
+
+### Average daily data by spring
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  beg_spring <- beg_year + 60
+  end_spring <- beg_spring + 122
+  end_year <- end_year+365
+  year <- paste0("prec_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+    beg_spring <- beg_spring + 1
+    end_spring <- end_spring + 1
+  }
+  map_year <- assign(year, mean(r_prec[[beg_spring:end_spring]], na.rm=T))
+  path <- paste0("output/prec_spring_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+  map_year_var <- assign(year, calc(r_prec[[beg_spring:end_spring]], var))
+  path <- paste0("output/prec_spring_var_",1949+i,".tif")
+  writeRaster(x=map_year_var, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("prec_spring_",1949+i)
+  path <- paste0("output/prec_spring_",1949+i,".tif")
+  year_var <- paste0("prec_spring_var_",1949+i)
+  path_var <- paste0("output/prec_spring_var_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+  assign(year_var, rast(raster(path_var)))
+}
+
+prec_spring_2000_average <- (prec_spring_1998 + prec_spring_1999 + prec_spring_2000 + prec_spring_2001 + prec_spring_2002)/5
+prec_spring_2020_average <- (prec_spring_2018 + prec_spring_2019 + prec_spring_2020 + prec_spring_2021 + prec_spring_2022)/5
+writeRaster(prec_spring_2000_average,'raw_data/climate/prec_spring_2000_average.tif')
+writeRaster(prec_spring_2020_average,'raw_data/climate/prec_spring_2020_average.tif')
+
+prec_spring_var_2000_average <- (prec_spring_var_1998 + prec_spring_var_1999 + prec_spring_var_2000 + prec_spring_var_2001 + prec_spring_var_2002)/5
+prec_spring_var_2020_average <- (prec_spring_var_2018 + prec_spring_var_2019 + prec_spring_var_2020 + prec_spring_var_2021 + prec_spring_var_2022)/5
+writeRaster(prec_spring_var_2000_average,'raw_data/climate/prec_spring_var_2000_average.tif')
+writeRaster(prec_spring_var_2020_average,'raw_data/climate/prec_spring_var_2020_average.tif')
+
+prec_spring_2000_average <- rast(raster(x = "raw_data/climate/prec_spring_2000_average.tif"))
+prec_spring_2020_average <- rast(raster(x = "raw_data/climate/prec_spring_2020_average.tif"))
+
+prec_spring_var_2000_average <- rast(raster(x = "raw_data/climate/prec_spring_var_2000_average.tif"))
+prec_spring_var_2020_average <- rast(raster(x = "raw_data/climate/prec_spring_var_2020_average.tif"))
+
+
 ## Relative humidity
 
 relative_humidity <- rast(raster(x = "raw_data/climate/hu_ens_mean_0.1deg_reg_v28.0e.nc"))
+
+
+r_humidity <- brick("raw_data/climate/hu_ens_mean_0.1deg_reg_v28.0e.nc")
+
+### Average daily data by year
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  end_year <- end_year+365
+  year <- paste0("humidity_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+  }
+  map_year <- assign(year, mean(r_humidity[[beg_year:end_year]], na.rm=T))
+  path <- paste0("output/humidity_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("humidity_",1949+i)
+  path <- paste0("output/humidity_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+}
+
+humidity_2000_average <- (humidity_1998 + humidity_1999 + humidity_2000 + humidity_2001 + humidity_2002)/5
+humidity_2020_average <- (humidity_2018 + humidity_2019 + humidity_2020 + humidity_2021 + humidity_2022)/5
+writeRaster(humidity_2000_average,'raw_data/climate/humidity_2000_average.tif')
+writeRaster(humidity_2020_average,'raw_data/climate/humidity_2020_average.tif')
+
+humidity_2000_average <- rast(raster(x = "raw_data/climate/humidity_2000_average.tif"))
+humidity_2020_average <- rast(raster(x = "raw_data/climate/humidity_2020_average.tif"))
+
+### Average daily data by spring
+
+end_year <- 0
+for(i in 1:(2023-1950)){
+  print(i)
+  beg_year <- end_year+1
+  beg_spring <- beg_year + 60
+  end_spring <- beg_spring + 122
+  end_year <- end_year+365
+  year <- paste0("humidity_",1949+i)
+  if(i %in% c(seq(1952,2023,4)-1949)){
+    end_year <- end_year+1 # account for bisextil years
+    beg_spring <- beg_spring + 1
+    end_spring <- end_spring + 1
+  }
+  map_year <- assign(year, mean(r_humidity[[beg_spring:end_spring]], na.rm=T))
+  path <- paste0("output/humidity_spring_",1949+i,".tif")
+  writeRaster(x=map_year, filename=path, overwrite=T)
+  map_year_var <- assign(year, calc(r_humidity[[beg_spring:end_spring]], var))
+  path <- paste0("output/humidity_spring_var_",1949+i,".tif")
+  writeRaster(x=map_year_var, filename=path, overwrite=T)
+}
+
+for(i in 1:(2023-1950)){
+  print(i)
+  year <- paste0("humidity_spring_",1949+i)
+  path <- paste0("output/humidity_spring_",1949+i,".tif")
+  year_var <- paste0("humidity_spring_var_",1949+i)
+  path_var <- paste0("output/humidity_spring_var_",1949+i,".tif")
+  assign(year, rast(raster(path)))
+  assign(year_var, rast(raster(path_var)))
+}
+
+humidity_spring_2000_average <- (humidity_spring_1998 + humidity_spring_1999 + humidity_spring_2000 + humidity_spring_2001 + humidity_spring_2002)/5
+humidity_spring_2020_average <- (humidity_spring_2018 + humidity_spring_2019 + humidity_spring_2020 + humidity_spring_2021 + humidity_spring_2022)/5
+writeRaster(humidity_spring_2000_average,'raw_data/climate/humidity_spring_2000_average.tif')
+writeRaster(humidity_spring_2020_average,'raw_data/climate/humidity_spring_2020_average.tif')
+
+humidity_spring_var_2000_average <- (humidity_spring_var_1998 + humidity_spring_var_1999 + humidity_spring_var_2000 + humidity_spring_var_2001 + humidity_spring_var_2002)/5
+humidity_spring_var_2020_average <- (humidity_spring_var_2018 + humidity_spring_var_2019 + humidity_spring_var_2020 + humidity_spring_var_2021 + humidity_spring_var_2022)/5
+writeRaster(humidity_spring_var_2000_average,'raw_data/climate/humidity_spring_var_2000_average.tif')
+writeRaster(humidity_spring_var_2020_average,'raw_data/climate/humidity_spring_var_2020_average.tif')
+
+humidity_spring_2000_average <- rast(raster(x = "raw_data/climate/humidity_spring_2000_average.tif"))
+humidity_spring_2020_average <- rast(raster(x = "raw_data/climate/humidity_spring_2020_average.tif"))
+
+humidity_spring_var_2000_average <- rast(raster(x = "raw_data/climate/humidity_spring_var_2000_average.tif"))
+humidity_spring_var_2020_average <- rast(raster(x = "raw_data/climate/humidity_spring_var_2020_average.tif"))
 
 
 # Socio-economic
@@ -1175,6 +1528,9 @@ ggplot(grid_eu) +
     ylim = c(1570352, 5418000)
   )
 
+ggplot(grid_eu [which(grid_eu$NUTS2021_1=="FR1"),]) +
+  geom_sf(aes(fill = lightpollution2013), colour=NA)
+
 ## Protected areas 
 
 grid_eu <- st_read("output/grid_eu_lightpollution.gpkg")
@@ -1319,18 +1675,81 @@ decline_productivity_reproj <- st_transform(decline_productivity_reproj, crs(gri
 raster_template <- rast(raster(x = "output/eu_land_system_reproj.tif"))
 raster_template[] <- NA
 decline_productivity_rast <- st_rasterize(decline_productivity_reproj %>% dplyr::select(lpd_p, geometry), template=st_as_stars(raster_template), field = c("lpd_p"))
-
 write_stars(decline_productivity_rast,"output/decline_productivity_rast.tif", layer = 1)
-
-decline_productivity_rast <- rast(raster(x = "output/decline_productivity_rast.tif"))
-write_stars(decline_productivity_rast,"output/decline_productivity_rast.tif")
 
 decline_productivity_rast <- rast(raster(x = "output/decline_productivity_rast.tif"))
 temp1 <- exact_extract(decline_productivity_rast,grid_eu, fun=c("sum","count"))
 temp1$mean <- temp1$sum/temp1$count
 
 grid_eu$declineproductivity <- temp1$mean
-decline_productivity_rast
 
 st_write(grid_eu,"output/grid_eu_declineproductivity.gpkg")
+
+
+### small woody feature
+
+grid_eu <- st_read("output/grid_eu_declineproductivity.gpkg")
+
+smallwoodyfeatures_reproj <- project(smallwoodyfeatures, crs(grid_eu))
+writeRaster(smallwoodyfeatures_reproj,'output/smallwoodyfeatures_reproj.tif')
+
+smallwoodyfeatures_reproj <- rast(raster(x = "output/smallwoodyfeatures_reproj.tif"))
+smallwoodyfeatures_reproj <- crop(smallwoodyfeatures_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(smallwoodyfeatures_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+
+grid_eu$smallwoodyfeatures <- temp1$mean
+
+st_write(grid_eu,"output/grid_eu_smallwoodyfeatures.gpkg")
+
+
+## fragmentation
+
+grid_eu <- st_read("output/grid_eu_smallwoodyfeatures.gpkg")
+
+fragmentation_reproj <- project(fragmentation, crs(grid_eu))
+writeRaster(fragmentation_reproj,'output/fragmentation_reproj.tif')
+
+fragmentation_reproj <- rast(raster(x = "output/fragmentation_reproj.tif"))
+fragmentation_reproj <- crop(fragmentation_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(fragmentation_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+
+grid_eu$fragmentation <- temp1$mean
+
+st_write(grid_eu,"output/grid_eu_fragmentation.gpkg")
+
+
+## forestintegrity
+
+grid_eu <- st_read("output/grid_eu_fragmentation.gpkg")
+
+forestintegrity[forestintegrity == -9999] <- NA
+
+forestintegrity_reproj <- crop(forestintegrity, ext(-25, 45, 26, 76))
+
+forestintegrity_reproj <- project(forestintegrity_reproj, crs(grid_eu))
+writeRaster(forestintegrity_reproj,'output/forestintegrity_reproj.tif')
+
+forestintegrity_reproj <- rast(raster(x = "output/forestintegrity_reproj.tif"))
+forestintegrity_reproj <- crop(forestintegrity_reproj,ext(grid_eu))
+
+forestintegrity_reproj <- forestintegrity_reproj/1000
+
+temp1 <- exact_extract(forestintegrity_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp1$mean_cat <- NA
+temp1$mean_cat[which(temp1$mean<=6)] <- "low"
+temp1$mean_cat[which(temp1$mean>6 & temp1$mean<9.6)] <- "medium"
+temp1$mean_cat[which(temp1$mean>=9.6)] <- "high"
+
+grid_eu$forestintegrity <- temp1$mean
+grid_eu$forestintegrity_cat <- temp1$mean_cat
+
+st_write(grid_eu,"output/grid_eu_forestintegrity.gpkg")
+
+
+## Mean temperature
 
