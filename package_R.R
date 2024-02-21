@@ -17,4 +17,6 @@ library(str2str)
 library(exactextractr)
 library(terra)
 library(stars)
-
+library(readr)
+library(bioregion)
+library(eSDM)

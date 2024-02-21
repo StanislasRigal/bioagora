@@ -619,6 +619,11 @@ woodprod_2009 <- raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2009
 woodprod_2010 <- rast(raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_2010.tif"))
 woodprod_average <- rast(raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodprod_average.tif"))
 
+## Habitat diversity (simpson diversity of habitat proportion)
+
+clc_land_cover <- raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+
+
 # Productivity
 
 ## Dry matter productivity
@@ -1125,6 +1130,87 @@ humidity_spring_var_2020_average <- rast(raster(x = "raw_data/climate/humidity_s
 
 
 # Socio-economic
+
+## GDP
+
+### per capita
+
+r_gdp_cap <- brick("raw_data/GDP/GDP_per_capita_PPP_1990_2015_v2.nc")
+
+writeRaster(x=r_gdp_cap[["X1998"]], filename="raw_data/GDP/GDP_pc_1998.tif")
+GDP_pc_1998 <- rast(raster(x = "raw_data/GDP/GDP_pc_1998.tif"))
+writeRaster(x=crop(GDP_pc_1998, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_1998.tif", overwrite = T)
+GDP_pc_1998 <- rast(raster(x = "raw_data/GDP/GDP_pc_1998.tif"))
+
+writeRaster(x=r_gdp_cap[["X1999"]], filename="raw_data/GDP/GDP_pc_1999.tif")
+GDP_pc_1999 <- rast(raster(x = "raw_data/GDP/GDP_pc_1999.tif"))
+writeRaster(x=crop(GDP_pc_1999, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_1999.tif", overwrite = T)
+GDP_pc_1999 <- rast(raster(x = "raw_data/GDP/GDP_pc_1999.tif"))
+
+writeRaster(x=r_gdp_cap[["X2000"]], filename="raw_data/GDP/GDP_pc_2000.tif")
+GDP_pc_2000 <- rast(raster(x = "raw_data/GDP/GDP_pc_2000.tif"))
+writeRaster(x=crop(GDP_pc_2000, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2000.tif", overwrite = T)
+GDP_pc_2000 <- rast(raster(x = "raw_data/GDP/GDP_pc_2000.tif"))
+
+writeRaster(x=r_gdp_cap[["X2001"]], filename="raw_data/GDP/GDP_pc_2001.tif")
+GDP_pc_2001 <- rast(raster(x = "raw_data/GDP/GDP_pc_2001.tif"))
+writeRaster(x=crop(GDP_pc_2001, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2001.tif", overwrite = T)
+GDP_pc_2001 <- rast(raster(x = "raw_data/GDP/GDP_pc_2001.tif"))
+
+writeRaster(x=r_gdp_cap[["X2002"]], filename="raw_data/GDP/GDP_pc_2002.tif")
+GDP_pc_2002 <- rast(raster(x = "raw_data/GDP/GDP_pc_2002.tif"))
+writeRaster(x=crop(GDP_pc_2002, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2002.tif", overwrite = T)
+GDP_pc_2002 <- rast(raster(x = "raw_data/GDP/GDP_pc_2002.tif"))
+
+
+GDP_pc_2000_average <- (GDP_pc_1998 + GDP_pc_1999 + GDP_pc_2000 + GDP_pc_2001 + GDP_pc_2002)/5
+
+writeRaster(x=GDP_pc_2000_average, filename="raw_data/GDP/GDP_pc_2000_average.tif")
+
+
+writeRaster(x=r_gdp_cap[["X2011"]], filename="raw_data/GDP/GDP_pc_2011.tif")
+GDP_pc_2011 <- rast(raster(x = "raw_data/GDP/GDP_pc_2011.tif"))
+writeRaster(x=crop(GDP_pc_2011, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2011.tif", overwrite = T)
+GDP_pc_2011 <- rast(raster(x = "raw_data/GDP/GDP_pc_2011.tif"))
+
+writeRaster(x=r_gdp_cap[["X2012"]], filename="raw_data/GDP/GDP_pc_2012.tif")
+GDP_pc_2012 <- rast(raster(x = "raw_data/GDP/GDP_pc_2012.tif"))
+writeRaster(x=crop(GDP_pc_2012, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2012.tif", overwrite = T)
+GDP_pc_2012 <- rast(raster(x = "raw_data/GDP/GDP_pc_2012.tif"))
+
+writeRaster(x=r_gdp_cap[["X2013"]], filename="raw_data/GDP/GDP_pc_2013.tif")
+GDP_pc_2013 <- rast(raster(x = "raw_data/GDP/GDP_pc_2013.tif"))
+writeRaster(x=crop(GDP_pc_2013, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2013.tif", overwrite = T)
+GDP_pc_2013 <- rast(raster(x = "raw_data/GDP/GDP_pc_2013.tif"))
+
+writeRaster(x=r_gdp_cap[["X2014"]], filename="raw_data/GDP/GDP_pc_2014.tif")
+GDP_pc_2014 <- rast(raster(x = "raw_data/GDP/GDP_pc_2014.tif"))
+writeRaster(x=crop(GDP_pc_2014, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2014.tif", overwrite = T)
+GDP_pc_2014 <- rast(raster(x = "raw_data/GDP/GDP_pc_2014.tif"))
+
+writeRaster(x=r_gdp_cap[["X2015"]], filename="raw_data/GDP/GDP_pc_2015.tif")
+GDP_pc_2015 <- rast(raster(x = "raw_data/GDP/GDP_pc_2015.tif"))
+writeRaster(x=crop(GDP_pc_2015, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_pc_2015.tif", overwrite = T)
+GDP_pc_2015 <- rast(raster(x = "raw_data/GDP/GDP_pc_2015.tif"))
+
+
+GDP_pc_2013_average <- (GDP_pc_2011 + GDP_pc_2012 + GDP_pc_2013 + GDP_pc_2014 + GDP_pc_2015)/5
+
+writeRaster(x=GDP_pc_2013_average, filename="raw_data/GDP/GDP_pc_2013_average.tif")
+
+### per area
+
+r_gdp <- brick("raw_data/GDP/GDP_PPP_30arcsec_v3.nc")
+
+writeRaster(x=r_gdp[["X2000"]], filename="raw_data/GDP/GDP_2000.tif")
+GDP_2000 <- rast(raster(x = "raw_data/GDP/GDP_2000.tif"))
+writeRaster(x=crop(GDP_2000, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_2000.tif", overwrite = T)
+GDP_2000 <- rast(raster(x = "raw_data/GDP/GDP_2000.tif"))
+
+writeRaster(x=r_gdp[["X2015"]], filename="raw_data/GDP/GDP_2015.tif")
+GDP_2015 <- rast(raster(x = "raw_data/GDP/GDP_2015.tif"))
+writeRaster(x=crop(GDP_2015, ext(-25, 45, 26, 76)), filename="raw_data/GDP/GDP_2015.tif", overwrite = T)
+GDP_2015 <- rast(raster(x = "raw_data/GDP/GDP_2015.tif"))
 
 ## Population
 
@@ -1753,3 +1839,323 @@ st_write(grid_eu,"output/grid_eu_forestintegrity.gpkg")
 
 ## Mean temperature
 
+grid_eu <- st_read("output/grid_eu_forestintegrity.gpkg")
+
+temp_2000_average_reproj <- project(temp_2000_average, crs(grid_eu))
+writeRaster(temp_2000_average_reproj,'output/temp_2000_average_reproj.tif')
+temp_2020_average_reproj <- project(temp_2020_average, crs(grid_eu))
+writeRaster(temp_2020_average_reproj,'output/temp_2020_average_reproj.tif')
+temp_spring_2000_average_reproj <- project(temp_spring_2000_average, crs(grid_eu))
+writeRaster(temp_spring_2000_average_reproj,'output/temp_spring_2000_average_reproj.tif')
+temp_spring_2020_average_reproj <- project(temp_spring_2020_average, crs(grid_eu))
+writeRaster(temp_spring_2020_average_reproj,'output/temp_spring_2020_average_reproj.tif')
+temp_spring_var_2000_average_reproj <- project(temp_spring_var_2000_average, crs(grid_eu))
+writeRaster(temp_spring_var_2000_average_reproj,'output/temp_spring_var_2000_average_reproj.tif')
+temp_spring_var_2020_average_reproj <- project(temp_spring_var_2020_average, crs(grid_eu))
+writeRaster(temp_spring_var_2020_average_reproj,'output/temp_spring_var_2020_average_reproj.tif')
+
+temp_2000_average_reproj <- rast(raster(x = "output/temp_2000_average_reproj.tif"))
+temp_2020_average_reproj <- rast(raster(x = "output/temp_2020_average_reproj.tif"))
+temp_spring_2000_average_reproj <- rast(raster(x = "output/temp_spring_2000_average_reproj.tif"))
+temp_spring_2020_average_reproj <- rast(raster(x = "output/temp_spring_2020_average_reproj.tif"))
+temp_spring_var_2000_average_reproj <- rast(raster(x = "output/temp_spring_var_2000_average_reproj.tif"))
+temp_spring_var_2020_average_reproj <- rast(raster(x = "output/temp_spring_var_2020_average_reproj.tif"))
+temp_2000_average_reproj <- crop(temp_2000_average_reproj,ext(grid_eu))
+temp_2020_average_reproj <- crop(temp_2020_average_reproj,ext(grid_eu))
+temp_spring_2000_average_reproj <- crop(temp_spring_2000_average_reproj,ext(grid_eu))
+temp_spring_2020_average_reproj <- crop(temp_spring_2020_average_reproj,ext(grid_eu))
+temp_spring_var_2000_average_reproj <- crop(temp_spring_var_2000_average_reproj,ext(grid_eu))
+temp_spring_var_2020_average_reproj <- crop(temp_spring_var_2020_average_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(temp_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(temp_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp3 <- exact_extract(temp_spring_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp4 <- exact_extract(temp_spring_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp5 <- exact_extract(temp_spring_var_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp6 <- exact_extract(temp_spring_var_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+temp3$mean <- temp3$sum/temp3$count
+temp4$mean <- temp4$sum/temp4$count
+temp5$mean <- temp5$sum/temp5$count
+temp6$mean <- temp6$sum/temp6$count
+
+grid_eu$temp2000 <- temp1$mean
+grid_eu$temp2020 <- temp2$mean
+grid_eu$tempspring2000 <- temp3$mean
+grid_eu$tempspring2020 <- temp4$mean
+grid_eu$tempspringvar2000 <- temp5$mean
+grid_eu$tempspringvar2020 <- temp6$mean
+
+st_write(grid_eu,"output/grid_eu_temp.gpkg")
+
+
+## Minimum and maximum temperature
+
+grid_eu <- st_read("output/grid_eu_temp.gpkg")
+
+temp_min_spring_2000_average_reproj <- project(temp_min_spring_2000_average, crs(grid_eu))
+writeRaster(temp_min_spring_2000_average_reproj,'output/temp_min_spring_2000_average_reproj.tif')
+temp_min_spring_2020_average_reproj <- project(temp_min_spring_2020_average, crs(grid_eu))
+writeRaster(temp_min_spring_2020_average_reproj,'output/temp_min_spring_2020_average_reproj.tif')
+temp_min_spring_var_2000_average_reproj <- project(temp_min_spring_var_2000_average, crs(grid_eu))
+writeRaster(temp_min_spring_var_2000_average_reproj,'output/temp_min_spring_var_2000_average_reproj.tif')
+temp_min_spring_var_2020_average_reproj <- project(temp_min_spring_var_2020_average, crs(grid_eu))
+writeRaster(temp_min_spring_var_2020_average_reproj,'output/temp_min_spring_var_2020_average_reproj.tif')
+
+temp_min_spring_2000_average_reproj <- rast(raster(x = "output/temp_min_spring_2000_average_reproj.tif"))
+temp_min_spring_2020_average_reproj <- rast(raster(x = "output/temp_min_spring_2020_average_reproj.tif"))
+temp_min_spring_var_2000_average_reproj <- rast(raster(x = "output/temp_min_spring_var_2000_average_reproj.tif"))
+temp_min_spring_var_2020_average_reproj <- rast(raster(x = "output/temp_min_spring_var_2020_average_reproj.tif"))
+temp_min_spring_2000_average_reproj <- crop(temp_min_spring_2000_average_reproj,ext(grid_eu))
+temp_min_spring_2020_average_reproj <- crop(temp_min_spring_2020_average_reproj,ext(grid_eu))
+temp_min_spring_var_2000_average_reproj <- crop(temp_min_spring_var_2000_average_reproj,ext(grid_eu))
+temp_min_spring_var_2020_average_reproj <- crop(temp_min_spring_var_2020_average_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(temp_min_spring_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(temp_min_spring_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp3 <- exact_extract(temp_min_spring_var_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp4 <- exact_extract(temp_min_spring_var_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+temp3$mean <- temp3$sum/temp3$count
+temp4$mean <- temp4$sum/temp4$count
+
+grid_eu$tempspringmin2000 <- temp1$mean
+grid_eu$tempspringmin2020 <- temp2$mean
+grid_eu$tempspringminvar2000 <- temp3$mean
+grid_eu$tempspringminvar2020 <- temp4$mean
+
+
+temp_max_spring_2000_average_reproj <- project(temp_max_spring_2000_average, crs(grid_eu))
+writeRaster(temp_max_spring_2000_average_reproj,'output/temp_max_spring_2000_average_reproj.tif')
+temp_max_spring_2020_average_reproj <- project(temp_max_spring_2020_average, crs(grid_eu))
+writeRaster(temp_max_spring_2020_average_reproj,'output/temp_max_spring_2020_average_reproj.tif')
+temp_max_spring_var_2000_average_reproj <- project(temp_max_spring_var_2000_average, crs(grid_eu))
+writeRaster(temp_max_spring_var_2000_average_reproj,'output/temp_max_spring_var_2000_average_reproj.tif')
+temp_max_spring_var_2020_average_reproj <- project(temp_max_spring_var_2020_average, crs(grid_eu))
+writeRaster(temp_max_spring_var_2020_average_reproj,'output/temp_max_spring_var_2020_average_reproj.tif')
+
+temp_max_spring_2000_average_reproj <- rast(raster(x = "output/temp_max_spring_2000_average_reproj.tif"))
+temp_max_spring_2020_average_reproj <- rast(raster(x = "output/temp_max_spring_2020_average_reproj.tif"))
+temp_max_spring_var_2000_average_reproj <- rast(raster(x = "output/temp_max_spring_var_2000_average_reproj.tif"))
+temp_max_spring_var_2020_average_reproj <- rast(raster(x = "output/temp_max_spring_var_2020_average_reproj.tif"))
+temp_max_spring_2000_average_reproj <- crop(temp_max_spring_2000_average_reproj,ext(grid_eu))
+temp_max_spring_2020_average_reproj <- crop(temp_max_spring_2020_average_reproj,ext(grid_eu))
+temp_max_spring_var_2000_average_reproj <- crop(temp_max_spring_var_2000_average_reproj,ext(grid_eu))
+temp_max_spring_var_2020_average_reproj <- crop(temp_max_spring_var_2020_average_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(temp_max_spring_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(temp_max_spring_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp3 <- exact_extract(temp_max_spring_var_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp4 <- exact_extract(temp_max_spring_var_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+temp3$mean <- temp3$sum/temp3$count
+temp4$mean <- temp4$sum/temp4$count
+
+grid_eu$tempspringmax2000 <- temp1$mean
+grid_eu$tempspringmax2020 <- temp2$mean
+grid_eu$tempspringmaxvar2000 <- temp3$mean
+grid_eu$tempspringmaxvar2020 <- temp4$mean
+
+st_write(grid_eu,"output/grid_eu_temp_min_max.gpkg")
+
+## Mean temperature
+
+grid_eu <- st_read("output/grid_eu_temp_min_max.gpkg")
+
+prec_2000_average <- rast(raster(x = "raw_data/climate/prec_2000_average.tif"))
+prec_2020_average <- rast(raster(x = "raw_data/climate/prec_2020_average.tif"))
+
+prec_spring_2000_average <- rast(raster(x = "raw_data/climate/prec_spring_2000_average.tif"))
+prec_spring_2020_average <- rast(raster(x = "raw_data/climate/prec_spring_2020_average.tif"))
+
+prec_spring_var_2000_average <- rast(raster(x = "raw_data/climate/prec_spring_var_2000_average.tif"))
+prec_spring_var_2020_average <- rast(raster(x = "raw_data/climate/prec_spring_var_2020_average.tif"))
+
+humidity_2000_average <- rast(raster(x = "raw_data/climate/humidity_2000_average.tif"))
+humidity_2020_average <- rast(raster(x = "raw_data/climate/humidity_2020_average.tif"))
+
+humidity_spring_2000_average <- rast(raster(x = "raw_data/climate/humidity_spring_2000_average.tif"))
+humidity_spring_2020_average <- rast(raster(x = "raw_data/climate/humidity_spring_2020_average.tif"))
+
+humidity_spring_var_2000_average <- rast(raster(x = "raw_data/climate/humidity_spring_var_2000_average.tif"))
+humidity_spring_var_2020_average <- rast(raster(x = "raw_data/climate/humidity_spring_var_2020_average.tif"))
+
+prec_2000_average_reproj <- project(prec_2000_average, crs(grid_eu))
+writeRaster(prec_2000_average_reproj,'output/prec_2000_average_reproj.tif')
+prec_2020_average_reproj <- project(prec_2020_average, crs(grid_eu))
+writeRaster(prec_2020_average_reproj,'output/prec_2020_average_reproj.tif')
+prec_spring_2000_average_reproj <- project(prec_spring_2000_average, crs(grid_eu))
+writeRaster(prec_spring_2000_average_reproj,'output/prec_spring_2000_average_reproj.tif')
+prec_spring_2020_average_reproj <- project(prec_spring_2020_average, crs(grid_eu))
+writeRaster(prec_spring_2020_average_reproj,'output/prec_spring_2020_average_reproj.tif')
+prec_spring_var_2000_average_reproj <- project(prec_spring_var_2000_average, crs(grid_eu))
+writeRaster(prec_spring_var_2000_average_reproj,'output/prec_spring_var_2000_average_reproj.tif')
+prec_spring_var_2020_average_reproj <- project(prec_spring_var_2020_average, crs(grid_eu))
+writeRaster(prec_spring_var_2020_average_reproj,'output/prec_spring_var_2020_average_reproj.tif')
+
+prec_2000_average_reproj <- rast(raster(x = "output/prec_2000_average_reproj.tif"))
+prec_2020_average_reproj <- rast(raster(x = "output/prec_2020_average_reproj.tif"))
+prec_spring_2000_average_reproj <- rast(raster(x = "output/prec_spring_2000_average_reproj.tif"))
+prec_spring_2020_average_reproj <- rast(raster(x = "output/prec_spring_2020_average_reproj.tif"))
+prec_spring_var_2000_average_reproj <- rast(raster(x = "output/prec_spring_var_2000_average_reproj.tif"))
+prec_spring_var_2020_average_reproj <- rast(raster(x = "output/prec_spring_var_2020_average_reproj.tif"))
+prec_2000_average_reproj <- crop(prec_2000_average_reproj,ext(grid_eu))
+prec_2020_average_reproj <- crop(prec_2020_average_reproj,ext(grid_eu))
+prec_spring_2000_average_reproj <- crop(prec_spring_2000_average_reproj,ext(grid_eu))
+prec_spring_2020_average_reproj <- crop(prec_spring_2020_average_reproj,ext(grid_eu))
+prec_spring_var_2000_average_reproj <- crop(prec_spring_var_2000_average_reproj,ext(grid_eu))
+prec_spring_var_2020_average_reproj <- crop(prec_spring_var_2020_average_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(prec_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(prec_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp3 <- exact_extract(prec_spring_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp4 <- exact_extract(prec_spring_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp5 <- exact_extract(prec_spring_var_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp6 <- exact_extract(prec_spring_var_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+temp3$mean <- temp3$sum/temp3$count
+temp4$mean <- temp4$sum/temp4$count
+temp5$mean <- temp5$sum/temp5$count
+temp6$mean <- temp6$sum/temp6$count
+
+grid_eu$prec2000 <- temp1$mean
+grid_eu$prec2020 <- temp2$mean
+grid_eu$precspring2000 <- temp3$mean
+grid_eu$precspring2020 <- temp4$mean
+grid_eu$precspringvar2000 <- temp5$mean
+grid_eu$precspringvar2020 <- temp6$mean
+
+
+
+humidity_2000_average_reproj <- project(humidity_2000_average, crs(grid_eu))
+writeRaster(humidity_2000_average_reproj,'output/humidity_2000_average_reproj.tif')
+humidity_2020_average_reproj <- project(humidity_2020_average, crs(grid_eu))
+writeRaster(humidity_2020_average_reproj,'output/humidity_2020_average_reproj.tif')
+humidity_spring_2000_average_reproj <- project(humidity_spring_2000_average, crs(grid_eu))
+writeRaster(humidity_spring_2000_average_reproj,'output/humidity_spring_2000_average_reproj.tif')
+humidity_spring_2020_average_reproj <- project(humidity_spring_2020_average, crs(grid_eu))
+writeRaster(humidity_spring_2020_average_reproj,'output/humidity_spring_2020_average_reproj.tif')
+humidity_spring_var_2000_average_reproj <- project(humidity_spring_var_2000_average, crs(grid_eu))
+writeRaster(humidity_spring_var_2000_average_reproj,'output/humidity_spring_var_2000_average_reproj.tif')
+humidity_spring_var_2020_average_reproj <- project(humidity_spring_var_2020_average, crs(grid_eu))
+writeRaster(humidity_spring_var_2020_average_reproj,'output/humidity_spring_var_2020_average_reproj.tif')
+
+humidity_2000_average_reproj <- rast(raster(x = "output/humidity_2000_average_reproj.tif"))
+humidity_2020_average_reproj <- rast(raster(x = "output/humidity_2020_average_reproj.tif"))
+humidity_spring_2000_average_reproj <- rast(raster(x = "output/humidity_spring_2000_average_reproj.tif"))
+humidity_spring_2020_average_reproj <- rast(raster(x = "output/humidity_spring_2020_average_reproj.tif"))
+humidity_spring_var_2000_average_reproj <- rast(raster(x = "output/humidity_spring_var_2000_average_reproj.tif"))
+humidity_spring_var_2020_average_reproj <- rast(raster(x = "output/humidity_spring_var_2020_average_reproj.tif"))
+humidity_2000_average_reproj <- crop(humidity_2000_average_reproj,ext(grid_eu))
+humidity_2020_average_reproj <- crop(humidity_2020_average_reproj,ext(grid_eu))
+humidity_spring_2000_average_reproj <- crop(humidity_spring_2000_average_reproj,ext(grid_eu))
+humidity_spring_2020_average_reproj <- crop(humidity_spring_2020_average_reproj,ext(grid_eu))
+humidity_spring_var_2000_average_reproj <- crop(humidity_spring_var_2000_average_reproj,ext(grid_eu))
+humidity_spring_var_2020_average_reproj <- crop(humidity_spring_var_2020_average_reproj,ext(grid_eu))
+
+temp1 <- exact_extract(humidity_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(humidity_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp3 <- exact_extract(humidity_spring_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp4 <- exact_extract(humidity_spring_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp5 <- exact_extract(humidity_spring_var_2000_average_reproj,grid_eu, fun=c("sum","count"))
+temp6 <- exact_extract(humidity_spring_var_2020_average_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+temp3$mean <- temp3$sum/temp3$count
+temp4$mean <- temp4$sum/temp4$count
+temp5$mean <- temp5$sum/temp5$count
+temp6$mean <- temp6$sum/temp6$count
+
+grid_eu$humidity2000 <- temp1$mean
+grid_eu$humidity2020 <- temp2$mean
+grid_eu$humidityspring2000 <- temp3$mean
+grid_eu$humidityspring2020 <- temp4$mean
+grid_eu$humidityspringvar2000 <- temp5$mean
+grid_eu$humidityspringvar2020 <- temp6$mean
+
+st_write(grid_eu,"output/grid_eu_prec_hum.gpkg")
+
+## Landscape diversity for 1 km (grid_eu) and 3 km
+
+grid_eu <- st_read("output/grid_eu_prec_hum.gpkg")
+
+clc_land_cover2 <- classify(rast(clc_land_cover),cbind(c(1:44,48),
+                                                       c(rep(11,2),rep(12,4),rep(13,3),rep(14,2),
+                                                         rep(21,3),rep(22,3),rep(23,1),rep(24,4),
+                                                         rep(31,3),rep(32,4),rep(33,5),rep(41,2),
+                                                         rep(42,3),rep(51,2),rep(52,3),NA)))
+writeRaster(clc_land_cover2,'raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/clc_land_cover2.tif')
+clc_land_cover2 <- rast(raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/clc_land_cover2.tif"))
+
+### test
+
+grid_eu_test <- grid_eu[which(grid_eu$NUTS2021_1=="FRD"),]
+
+sp_grid_eu <- st_as_sf(grid_eu_test$geom)
+sp_grid_eu_buffer <- st_buffer(sp_grid_eu,3000) # from https://link.springer.com/chapter/10.1007/978-3-319-43314-1_8
+
+temp1 <- exact_extract(clc_land_cover2,sp_grid_eu_buffer,fun="frac")
+temp1$shannon <- apply(temp1,1, # from https://doi.org/10.1038/s41467-023-37027-5
+                       function(x){
+                         x_nnull <- x[which(x>0)]
+                         shannon_i <- -sum(x_nnull*log(x_nnull))
+                         return(shannon_i)
+                         })
+temp2 <- exact_extract(clc_land_cover2,grid_eu_test,fun="frac")
+temp2$shannon <- apply(temp2,1,
+                       function(x){
+                         x_nnull <- x[which(x>0)]
+                         shannon_i <- -sum(x_nnull*log(x_nnull))
+                         return(shannon_i)
+                       })
+
+grid_eu_test$buffer3 <- temp1$shannon
+grid_eu_test$buffer1 <- temp2$shannon
+
+ggplot(grid_eu_test) +
+  geom_sf(aes(fill = buffer1), colour=NA)
+
+### apply
+
+temp2 <- exact_extract(clc_land_cover2,grid_eu,fun="frac")
+temp2$shannon <- apply(temp2,1,
+                       function(x){
+                         x_nnull <- x[which(x>0)]
+                         shannon_i <- -sum(x_nnull*log(x_nnull))
+                         return(shannon_i)
+                       })
+
+grid_eu$shannon <- temp2$shannon
+grid_eu$DIST_BORD <- grid_eu$TOT_P_2011 <- grid_eu$TOT_P_2018 <-
+  grid_eu$Y_LLC <- grid_eu$X_LLC <- NULL
+
+st_write(grid_eu,"output/grid_eu_shannon.gpkg")
+
+## GDP
+
+grid_eu <- st_read("output/grid_eu_shannon.gpkg")
+
+GDP_2000_reproj <- project(GDP_2000, crs(grid_eu))
+writeRaster(GDP_2000_reproj,'output/GDP_2000_reproj.tif')
+GDP_2015_reproj <- project(GDP_2015, crs(grid_eu))
+writeRaster(GDP_2015_reproj,'output/GDP_2015_reproj.tif')
+
+GDP_2000_reproj <- rast(raster(x = "output/GDP_2000_reproj.tif"))
+GDP_2015_reproj <- rast(raster(x = "output/GDP_2015_reproj.tif"))
+GDP_2000_reproj <- crop(GDP_2000_reproj,ext(grid_eu))
+GDP_2015_reproj <- crop(GDP_2015_reproj,ext(grid_eu))
+
+
+temp1 <- exact_extract(GDP_2000_reproj,grid_eu, fun=c("sum","count"))
+temp2 <- exact_extract(GDP_2015_reproj,grid_eu, fun=c("sum","count"))
+temp1$mean <- temp1$sum/temp1$count
+temp2$mean <- temp2$sum/temp2$count
+
+grid_eu$GDP2000 <- temp1$mean
+grid_eu$GDP2015 <- temp2$mean
+
+st_write(grid_eu,"output/grid_eu_gdp.gpkg")
