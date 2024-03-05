@@ -341,11 +341,16 @@ nb_tot_site_per_cell <- nb_tot_site_per_cell %>% group_by(grid) %>% summarize(co
 vegedf_fr_grid2 <- merge(vegedf_fr_grid2, nb_tot_site_per_cell, by="grid", all.x=TRUE)
 vegedf_fr_grid2$perc_cover <- vegedf_fr_grid2$sum_cover/vegedf_fr_grid2$count
 
+### Select the cells with enough sites
+
+nb_select_site <- 10
+vegedf_fr_grid_10site <- vegedf_fr_grid2[which(vegedf_fr_grid2$grid %in% which(nb_site_per_grid>=nb_select_site)),]
+
 ### Select the five most important species in each cell
 
-vegedf_fr_grid2 <- vegedf_fr_grid2 %>%  group_by(grid) %>%  arrange(desc(perc_cover), .by_group=TRUE)
+vegedf_fr_grid_10site <- vegedf_fr_grid_10site %>%  group_by(grid) %>%  arrange(desc(perc_cover), .by_group=TRUE)
 
-vegedf_fr_grid_5_sp <- vegedf_fr_grid2 %>% group_by(grid)  %>% slice(1:5)
+vegedf_fr_grid_5_sp <- vegedf_fr_grid_10site %>% group_by(grid)  %>% slice(1:10)
 
 ### apply bioregion
 
@@ -358,6 +363,8 @@ vegedf_fr <- vegedf_fr[,c("site","species","cover")]
 vegedf_fr <- na.omit(vegedf_fr[!duplicated(vegedf_fr[,c(1,2)]),])
 
 vegemat_fr <- net_to_mat(as.data.frame(vegedf_fr), weight = TRUE, squared = FALSE, symmetrical = FALSE, missing_value = 0)
+
+#### hierarchical clustering
 
 dissim <- na.omit(dissimilarity(vegemat_fr))
 
@@ -372,13 +379,50 @@ opti_n_tree4 <- find_optimal_n(eval_tree4)
 
 K_name <- opti_n_tree4$evaluation_df$K[opti_n_tree4$evaluation_df$optimal_n_pc_distance]
 
-### Make a map of the clusters
+#### Make a map of the clusters
 
 grid_eu_fr$ID <- 1:nrow(grid_eu_fr)
 grid_eu_fr <- st_sf(grid_eu_fr)
 map_clusters(tree4$clusters[, c("ID", K_name)],
              grid_eu_fr[,c("ID","geometry")])
 
+
+#### network clustering
+
+vegemat_fr_simil <- similarity(vegemat_fr, metric = "Simpson")
+
+install_binaries(binpath = "tempdir", infomap_version = c("2.1.0", "2.6.0"))
+
+set.seed(1)
+ex_infomap <- netclu_infomap(vegemat_fr_simil,
+                             weight = TRUE,
+                             index = names(vegemat_fr_simil)[3],
+                             nbmod = 0,
+                             markovtime = 1,
+                             seed = 0,
+                             numtrials = 1,
+                             twolevel = FALSE,
+                             show_hierarchy = FALSE,
+                             directed = FALSE,
+                             bipartite_version = FALSE,
+                             bipartite = FALSE,
+                             site_col = 1,
+                             species_col = 2,
+                             return_node_type = "both",
+                             version = "2.6.0",
+                             binpath = "tempdir",
+                             path_temp = "infomap_temp",
+                             delete_temp = TRUE)
+
+table(ex_infomap$clusters[,2])
+K_name <- names(ex_infomap$clusters)[2]
+
+#### Make a map of the clusters
+
+grid_eu_fr$ID <- 1:nrow(grid_eu_fr)
+grid_eu_fr <- st_sf(grid_eu_fr)
+map_clusters(ex_infomap$clusters[, c("ID", K_name)],
+             grid_eu_fr[,c("ID","geometry")])
 
 # for Europe
 
@@ -464,6 +508,12 @@ nb_tot_site_per_cell <- nb_tot_site_per_cell %>% group_by(grid) %>% summarize(co
 vegedf_grid2 <- merge(vegedf_grid2, nb_tot_site_per_cell, by="grid", all.x=TRUE)
 vegedf_grid2$perc_cover <- vegedf_grid2$sum_cover/vegedf_grid2$count
 
+vegedf_grid_saturation <- vegedf %>% group_by(grid,`Turboveg2 concept`) %>% summarize(count=n())
+vegedf_grid_saturation <- vegedf_grid_saturation %>% group_by(grid) %>% summarize(count=n())
+vegedf_grid_saturation <- merge(vegedf_grid_saturation,nb_tot_site_per_cell, by="grid",all.x=TRUE)
+names(vegedf_grid_saturation)[2:3] <- c("nb_species","nb_sites")
+plot(nb_species~nb_sites,vegedf_grid_saturation[which(vegedf_grid_saturation$nb_sites<100),])
+
 ### Select the cells with enough sites
 
 nb_select_site <- 10
@@ -472,7 +522,7 @@ vegedf_grid_10site <- vegedf_grid2[which(vegedf_grid2$grid %in% which(nb_site_pe
 ### Select the n most important species in each cell
 
 vegedf_grid_10site <- vegedf_grid_10site %>%  group_by(grid) %>%  arrange(desc(perc_cover), .by_group=TRUE)
-nb_select_sp <- 10
+nb_select_sp <- 100
 vegedf_grid_10site <- vegedf_grid_10site %>% group_by(grid)  %>% slice(1:nb_select_sp)
 
 ### apply bioregion
@@ -487,6 +537,8 @@ vegedf_eu <- na.omit(vegedf_eu[!duplicated(vegedf_eu[,c(1,2)]),])
 
 vegemat <- net_to_mat(as.data.frame(vegedf_eu), weight = TRUE, squared = FALSE, symmetrical = FALSE, missing_value = 0)
 
+#### hierarchical clustering
+
 dissim <- na.omit(dissimilarity(vegemat))
 
 tree4 <- hclu_hierarclust(dissim,
@@ -500,12 +552,135 @@ opti_n_tree4 <- find_optimal_n(eval_tree4)
 
 K_name <- opti_n_tree4$evaluation_df$K[opti_n_tree4$evaluation_df$optimal_n_pc_distance]
 
-### Make a map of the clusters
+#### Make a map of the clusters
 
 grid_eu$ID <- 1:nrow(grid_eu)
 grid_eu <- st_sf(grid_eu)
 map_clusters(tree4$clusters[, c("ID", K_name)],
              grid_eu[,c("ID","geometry")])
+
+#### network clustering
+
+vegemat_simil <- similarity(vegemat, metric = "Simpson")
+vegemat_simil <- similarity(vegemat, metric = "Bray")
+
+install_binaries(binpath = "tempdir", infomap_version = c("2.1.0", "2.6.0"))
+
+set.seed(1)#un
+ex_infomap <- netclu_infomap(na.omit(vegemat_simil),
+                             weight = TRUE,
+                             index = names(vegemat_simil)[3],
+                             nbmod = 0,
+                             markovtime = 1,
+                             seed = 0,
+                             numtrials = 10,
+                             twolevel = FALSE,
+                             show_hierarchy = TRUE,
+                             directed = FALSE,
+                             bipartite_version = FALSE,
+                             bipartite = FALSE,
+                             site_col = 1,
+                             species_col = 2,
+                             return_node_type = "both",
+                             version = "2.6.0",
+                             binpath = "tempdir",
+                             path_temp = "infomap_temp",
+                             delete_temp = TRUE)
+table(ex_infomap$clusters[,2])
+K_name_info <- names(ex_infomap$clusters)[2]
+
+
+set.seed(1)
+ex_louvain <- netclu_louvain(na.omit(vegemat_simil),
+                             weight = TRUE,
+                             index = names(vegemat_simil)[3],
+                             lang = "Cpp",
+                             q = 0,
+                             c = 0.5,
+                             k = 1,
+                             bipartite = FALSE,
+                             site_col = 1,
+                             species_col = 2,
+                             return_node_type = "both",
+                             binpath = "tempdir",
+                             path_temp = "louvain_temp",
+                             delete_temp = TRUE,
+                             algorithm_in_output = TRUE)
+table(ex_louvain$clusters[,2])
+K_name_louv <- names(ex_louvain$clusters)[2]
+
+set.seed(1)
+ex_greedy <- netclu_greedy(na.omit(vegemat_simil),
+                           weight = FALSE,
+                           index = names(vegemat_simil)[3],
+                           bipartite = FALSE,
+                           site_col = 1,
+                           species_col = 2,
+                           return_node_type = "both",
+                           algorithm_in_output = TRUE)
+table(ex_greedy$clusters[,2])
+K_name_gree <- names(ex_greedy$clusters)[2]
+
+set.seed(1) #un
+ex_labelprop <- netclu_labelprop(na.omit(vegemat_simil),
+                                 weight = TRUE,
+                                 index = names(vegemat_simil)[3],
+                                 bipartite = FALSE,
+                                 site_col = 1,
+                                 species_col = 2,
+                                 return_node_type = "both",
+                                 algorithm_in_output = TRUE)
+table(ex_labelprop$clusters[,2])
+K_name_labe <- names(ex_labelprop$clusters)[2]
+
+set.seed(1) # trop nombreux
+ex_leiden <- netclu_leiden(na.omit(vegemat_simil),
+                           weight = FALSE,
+                           index = names(vegemat_simil)[3],
+                           objective_function = c("CPM", "modularity"),
+                           resolution_parameter = 1,
+                           beta = 0.01,
+                           initial_membership = NULL,
+                           n_iterations = 2,
+                           vertex_weights = NULL,
+                           bipartite = FALSE,
+                           site_col = 1,
+                           species_col = 2,
+                           return_node_type = "both",
+                           algorithm_in_output = TRUE)
+table(ex_leiden$clusters[,2])
+K_name_leid <- names(ex_leiden$clusters)[2]
+
+set.seed(1)#un
+ex_leadingeigen <- netclu_leadingeigen(na.omit(vegemat_simil),
+                                       weight = FALSE,
+                                       index = names(vegemat_simil)[3],
+                                       bipartite = FALSE,
+                                       site_col = 1,
+                                       species_col = 2,
+                                       return_node_type = "both",
+                                       algorithm_in_output = TRUE)
+table(ex_leadingeigen$clusters[,2])
+K_name_lead <- names(ex_leadingeigen$clusters)[2]
+
+
+#### Make a map of the clusters
+
+grid_eu$ID <- 1:nrow(grid_eu)
+grid_eu <- st_sf(grid_eu)
+map_clusters(ex_infomap$clusters[, c("ID", K_name_info)],
+             grid_eu[,c("ID","geometry")])
+map_clusters(ex_louvain$clusters[, c("ID", K_name_louv)],
+             grid_eu[,c("ID","geometry")])
+map_clusters(ex_greedy$clusters[, c("ID", K_name_gree)],
+             grid_eu[,c("ID","geometry")])
+map_clusters(ex_labelprop$clusters[, c("ID", K_name_labe)],
+             grid_eu[,c("ID","geometry")])
+map_clusters(ex_leiden$clusters[, c("ID", K_name_labe)],
+             grid_eu[,c("ID","geometry")])
+map_clusters(ex_leadingeigen$clusters[, c("ID", K_name_lead)],
+             grid_eu[,c("ID","geometry")])
+
 
 
 ### If grid 50 Calculate  cover of each species in each cell
