@@ -492,6 +492,65 @@ for(i in 1:length(nb_site_per_grid)){
 }
 
 
+
+### If grid 50 Calculate  cover of each species in each cell
+
+vegedf <- species_eva[which(species_eva$Match==1),c("PlotObservationID","Turboveg2 concept","Cover %")]
+
+vegedf$grid <- NA
+for(i in 1:length(vegesf_grid)){
+  print(i)
+  site_id <- header_eva$PlotObservationID[vegesf_grid[[i]]]
+  vegedf$grid[which(vegedf$PlotObservationID %in% site_id)] <- i
+}
+
+vegedf_grid2 <- vegedf %>% group_by(grid,`Turboveg2 concept`) %>% summarize(sum_cover=sum(`Cover %`))
+nb_tot_site_per_cell <- vegedf %>% group_by(grid,PlotObservationID) %>% summarize(count=n())
+nb_tot_site_per_cell <- nb_tot_site_per_cell %>% group_by(grid) %>% summarize(count=n())
+
+vegedf_grid2 <- merge(vegedf_grid2, nb_tot_site_per_cell, by="grid", all.x=TRUE)
+vegedf_grid2$perc_cover <- vegedf_grid2$sum_cover/vegedf_grid2$count
+
+### Select the n most important species in each cell
+
+vegedf_grid2 <- vegedf_grid2 %>%  group_by(grid) %>%  arrange(desc(perc_cover), .by_group=TRUE)
+nb_select_sp <- 10
+vegedf_grid_5_sp <- vegedf_grid2 %>% group_by(grid)  %>% slice(1:nb_select_sp)
+
+### apply bioregion
+
+vegedf_eu <- vegedf_grid_5_sp
+
+vegedf_eu$species <- as.numeric(as.factor(vegedf_eu$`Turboveg2 concept`))
+names(vegedf_eu)[c(1,3)] <- c("site","cover")
+vegedf_eu$`Turboveg2 concept` <- NULL
+vegedf_eu <- vegedf_eu[,c("site","species","cover")]
+vegedf_eu <- na.omit(vegedf_eu[!duplicated(vegedf_eu[,c(1,2)]),])
+
+vegemat <- net_to_mat(as.data.frame(vegedf_eu), weight = TRUE, squared = FALSE, symmetrical = FALSE, missing_value = 0)
+
+dissim <- na.omit(dissimilarity(vegemat))
+
+tree4 <- hclu_hierarclust(dissim,
+                          n_clust = 2:100)
+
+eval_tree4 <- partition_metrics(tree4, 
+                                dissimilarity = dissim, # Provide distances to compute the metrics
+                                eval_metric = "pc_distance")
+
+opti_n_tree4 <- find_optimal_n(eval_tree4)
+
+K_name <- opti_n_tree4$evaluation_df$K[opti_n_tree4$evaluation_df$optimal_n_pc_distance]
+
+### Make a map of the clusters
+
+grid_eu$ID <- 1:nrow(grid_eu)
+grid_eu <- st_sf(grid_eu)
+map_clusters(tree4$clusters[, c("ID", K_name)],
+             grid_eu[,c("ID","geometry")])
+
+
+
 ### If grid 20 Calculate  cover of each species in each cell
 
 vegedf <- species_eva[which(species_eva$Match==1),c("PlotObservationID","Turboveg2 concept","Cover %")]
@@ -563,6 +622,8 @@ map_clusters(tree4$clusters[, c("ID", K_name)],
 
 vegemat_simil <- similarity(vegemat, metric = "Simpson")
 vegemat_simil <- similarity(vegemat, metric = "Bray")
+
+saveRDS(vegemat_simil,"output/vegemat_simil_bray.rds")
 
 install_binaries(binpath = "tempdir", infomap_version = c("2.1.0", "2.6.0"))
 
@@ -681,60 +742,387 @@ map_clusters(ex_leiden$clusters[, c("ID", K_name_labe)],
 map_clusters(ex_leadingeigen$clusters[, c("ID", K_name_lead)],
              grid_eu[,c("ID","geometry")])
 
+### Louvain seems to be the best compromise speed, segregation so its repeated several times to assess the stability of clusters
 
+n_repet_clustering <- 20
 
-### If grid 50 Calculate  cover of each species in each cell
-
-vegedf <- species_eva[which(species_eva$Match==1),c("PlotObservationID","Turboveg2 concept","Cover %")]
-
-vegedf$grid <- NA
-for(i in 1:length(vegesf_grid)){
+for(i in 1:n_repet_clustering){
+  set.seed(i+1)
   print(i)
-  site_id <- header_eva$PlotObservationID[vegesf_grid[[i]]]
-  vegedf$grid[which(vegedf$PlotObservationID %in% site_id)] <- i
+  ex_louvain_repet <- netclu_louvain(na.omit(vegemat_simil),
+                               weight = TRUE,
+                               index = names(vegemat_simil)[3],
+                               lang = "Cpp",
+                               q = 0,
+                               c = 0.5,
+                               k = 1,
+                               bipartite = FALSE,
+                               site_col = 1,
+                               species_col = 2,
+                               return_node_type = "both",
+                               binpath = "tempdir",
+                               path_temp = "louvain_temp",
+                               delete_temp = TRUE,
+                               algorithm_in_output = TRUE)
+  ex_louvain$clusters[,(i+2)] <- ex_louvain_repet$clusters[,2]
+  names(ex_louvain$clusters[,(i+2)]) <- paste0(names(ex_louvain_repet$clusters)[2],sep="_",i+1)
 }
 
-vegedf_grid2 <- vegedf %>% group_by(grid,`Turboveg2 concept`) %>% summarize(sum_cover=sum(`Cover %`))
-nb_tot_site_per_cell <- vegedf %>% group_by(grid,PlotObservationID) %>% summarize(count=n())
-nb_tot_site_per_cell <- nb_tot_site_per_cell %>% group_by(grid) %>% summarize(count=n())
+saveRDS(ex_louvain,"output/ex_louvain.rds")
 
-vegedf_grid2 <- merge(vegedf_grid2, nb_tot_site_per_cell, by="grid", all.x=TRUE)
-vegedf_grid2$perc_cover <- vegedf_grid2$sum_cover/vegedf_grid2$count
 
-### Select the n most important species in each cell
+for(i in 2:ncol(ex_louvain$clusters)){
+  singleton <- as.numeric(names(table(ex_louvain$clusters[,i])[which(table(ex_louvain$clusters[,i])==1)]))
+  ex_louvain$clusters[which(ex_louvain$clusters[,i] %in% singleton),i] <- NA
+  ex_louvain$clusters[,i] <- as.numeric(ex_louvain$clusters[,i])
+  for(j in 1:length(unique(na.omit(ex_louvain$clusters[,i])))){
+    rep_val <- sort(unique(na.omit(ex_louvain$clusters[,i])))[j]
+    ex_louvain$clusters[,i] <- sapply(ex_louvain$clusters[,i],  function(x) replace(x, x == rep_val, j))
+  }
+}
 
-vegedf_grid2 <- vegedf_grid2 %>%  group_by(grid) %>%  arrange(desc(perc_cover), .by_group=TRUE)
-nb_select_sp <- 10
-vegedf_grid_5_sp <- vegedf_grid2 %>% group_by(grid)  %>% slice(1:nb_select_sp)
+for(i in 3:ncol(ex_louvain$clusters)){
+    
+    all_partition2 <- ex_louvain$clusters
+    
+    temp_partition <- all_partition2[,i]
+    
+    # Compute Jaccard similarity to relabel clusters as in the original clustering
+    
+    jac_sim_res <- matrix(NA, ncol=length(unique(na.omit(all_partition2[,2]))),
+                          nrow=length(unique(na.omit(temp_partition))))
+    for(k in sort(unique(all_partition2[,2]))){
+      for(l in sort(unique(temp_partition))){
+        jac_sim_mat <- all_partition2[,c(2,i)]
+        jac_sim_mat[,1] <- as.numeric(jac_sim_mat[,1])
+        jac_sim_mat[,2] <- as.numeric(jac_sim_mat[,2])
+        jac_sim_mat[,1][which(jac_sim_mat[,1]!=k | is.na(jac_sim_mat[,1]))] <- 0
+        jac_sim_mat[,2][which(jac_sim_mat[,2]!=l | is.na(jac_sim_mat[,2]))] <- 0
+        jac_sim_mat[jac_sim_mat>0] <- 1
+        jac_sim_mat <- t(jac_sim_mat)
+        jac_sim <- c(1 - vegan::vegdist(jac_sim_mat, method="jaccard"))
+        jac_sim_res[l,k] <- jac_sim
+      }
+    }
+    
+    # If same number of clusters
+    
+    if(length(unique(all_partition2[,2]))==length(unique(temp_partition))){
+      for(l in sort(unique(temp_partition))){
+        all_partition2[,i][which(temp_partition==l)] <- which.max(jac_sim_res[l,])
+      }
+    }
+    
+    # If more clusters in the bootstrap clustering
+    
+    if(length(unique(all_partition2[,2]))<length(unique(temp_partition))){
+      l_data <- c()
+      for(k in sort(unique(all_partition2[,2]))){
+        l_data <- c(l_data,which.max(jac_sim_res[,k]))
+      }
+      k <- 0
+      for(l in l_data){
+        k <- k+1
+        all_partition2[,i][which(temp_partition==l)] <- k
+      }
+      extra_clus <- sort(unique(all_partition2[,i]))[which(!(sort(unique(temp_partition)) %in% l_data))]
+      for(g_sup in 1:length(extra_clus)){
+        k <- k +1
+        all_partition2[,i][which(temp_partition==extra_clus[g_sup])] <- k
+      }
+      
+    }
+    
+    # If less clusters in the bootstrap clustering
+    
+    if(length(unique(all_partition2[,2]))>length(unique(temp_partition))){
+      k_data <- c()
+      for(l in sort(unique(temp_partition))){
+        k_data <- c(k_data,which.max(jac_sim_res[l,]))
+      }
+      l <- 0
+      for(k in k_data){
+        l <- l+1
+        all_partition2[,i][which(temp_partition==l)] <- k
+      }
+    }
+    ex_louvain$clusters <- all_partition2
+}
 
-### apply bioregion
+ex_louvain$clusters[is.na(ex_louvain$clusters)] <- 0
 
-vegedf_eu <- vegedf_grid_5_sp
+ex_louvain$clusters$max <- unlist(apply(ex_louvain$clusters[,2:ncol(ex_louvain$clusters)],1,function(x){as.numeric(names(which.max(table(as.numeric(x)))))}))
 
-vegedf_eu$species <- as.numeric(as.factor(vegedf_eu$`Turboveg2 concept`))
-names(vegedf_eu)[c(1,3)] <- c("site","cover")
-vegedf_eu$`Turboveg2 concept` <- NULL
-vegedf_eu <- vegedf_eu[,c("site","species","cover")]
-vegedf_eu <- na.omit(vegedf_eu[!duplicated(vegedf_eu[,c(1,2)]),])
 
-vegemat <- net_to_mat(as.data.frame(vegedf_eu), weight = TRUE, squared = FALSE, symmetrical = FALSE, missing_value = 0)
+grid_bioregion <- merge(ex_louvain$clusters[, c("ID", "max")],grid_eu[,c("ID","geometry")], by="ID", all.x=TRUE)
 
-dissim <- na.omit(dissimilarity(vegemat))
+saveRDS(grid_bioregion,"output/grid_bioregion.rds")
 
-tree4 <- hclu_hierarclust(dissim,
-                          n_clust = 2:100)
+# create polygons from sparse raster
 
-eval_tree4 <- partition_metrics(tree4, 
-                                dissimilarity = dissim, # Provide distances to compute the metrics
-                                eval_metric = "pc_distance")
+point_bioregion <- st_centroid(grid_bioregion$geometry)
+coord_point_bioregion <- do.call(rbind, st_geometry(point_bioregion)) %>% 
+  as.data.frame() %>% setNames(c("lon","lat"))
+alphahull_bioregion <- ahull(coord_point_bioregion,alpha = 1)
+plot(alphahull_bioregion)
 
-opti_n_tree4 <- find_optimal_n(eval_tree4)
 
-K_name <- opti_n_tree4$evaluation_df$K[opti_n_tree4$evaluation_df$optimal_n_pc_distance]
 
-### Make a map of the clusters
+##### Bioregion inside biogeographical areas
 
+biogeo_area <- read_sf(dsn = "raw_data/biogeography/eea_v_3035_1_mio_biogeo-regions_p_2016_v01_r00/", layer = "BiogeoRegions2016")
+
+grid_eu <- st_read("raw_data/grid_eu/grid_20km_surf.gpkg")
+
+biogeo_area_reproj <- st_transform(biogeo_area, crs(grid_eu))
+
+raster_template <- rast(raster(x = "output/eu_land_system_reproj.tif"))
+raster_template[] <- NA
+biogeo_area_reproj$num_name<- as.numeric(as.factor(biogeo_area_reproj$name))
+biogeo_area_reproj_rast <- st_rasterize(biogeo_area_reproj %>% dplyr::select(num_name, geometry), template=st_as_stars(raster_template), field = "num_name")
+
+write_stars(biogeo_area_reproj_rast,"output/biogeo_area_reproj_rast.tif")
+
+biogeo_area_reproj_rast <- rast(raster(x = "output/biogeo_area_reproj_rast.tif"))
+temp1 <- exact_extract(biogeo_area_reproj_rast,grid_eu, fun=c("mode"))
+
+grid_eu$biogeo_area <- temp1
+ggplot(grid_eu) +
+  geom_sf(aes(fill = biogeo_area), colour=NA) +
+  coord_sf(
+    xlim = c(2834303, 7323799),
+    ylim = c(1570352, 5418000)
+  )
+
+#st_write(grid_eu,"output/grid_eu_biogeo_area.gpkg")
+
+# create a grid for each bioregion
+
+grid_eu <- st_read("output/grid_eu_biogeo_area.gpkg")
 grid_eu$ID <- 1:nrow(grid_eu)
-grid_eu <- st_sf(grid_eu)
-map_clusters(tree4$clusters[, c("ID", K_name)],
-             grid_eu[,c("ID","geometry")])
+
+grid_eu_alpine <- grid_eu[which(grid_eu$biogeo_area==1),]
+grid_eu_atlantic <- grid_eu[which(grid_eu$biogeo_area==4),]
+grid_eu_boreal <- grid_eu[which(grid_eu$biogeo_area==6),]
+grid_eu_continental <- grid_eu[which(grid_eu$biogeo_area==7),]
+grid_eu_mediterranean <- grid_eu[which(grid_eu$biogeo_area==9),]
+grid_eu_pannonian <- grid_eu[which(grid_eu$biogeo_area==11),]
+
+# load plant data
+
+header_eva <- read.csv("raw_data/EVA/197_Bioregions20240222_notJUICE/197_Bioregions20240222_notJUICE_header.csv", sep="\t", header=TRUE)
+
+species_eva <- readRDS("output/species_eva.rds")
+
+# prepare plant data
+
+centroid_coord <- data.frame(header_eva[,c("Longitude","Latitude")])
+centroid_coord$Longitude <- as.numeric(centroid_coord$Longitude)
+vegesf <- st_geometry(st_as_sf(na.omit(centroid_coord),coords = c("Longitude","Latitude")))
+st_crs(vegesf) <- 4326
+vegesf <- st_transform(vegesf,crs = 3035)
+vegesf <- as.data.frame(st_coordinates(vegesf))
+vegesf <- vegesf[which(!is.na(vegesf$X)),]
+vegesf <- pts2poly_centroids(vegesf,3000, crs = 3035)
+vegesf <- st_sf(vegesf)
+
+# load functions
+
+source(file = "functions.R")
+
+# apply the bioregion function in each biogeographical area
+
+bioregion_alpine <- bioregion_plant(grid_eu_tempo=grid_eu_alpine,vegesf_tempo=vegesf,
+                                    species_eva_tempo=species_eva,header_eva_tempo=header_eva,
+                                    nb_select_site = 10,
+                                    nb_select_sp = 100,n_repet_clustering = 20)
+
+ggplot(st_as_sf(bioregion_alpine)) +
+  geom_sf(aes(fill = max), colour=NA) + scale_fill_viridis_b()
+
+bioregion_atlantic <- bioregion_plant(grid_eu_tempo=grid_eu_atlantic,vegesf_tempo=vegesf,
+                                      species_eva_tempo=species_eva,header_eva_tempo=header_eva,
+                                      nb_select_site = 10,
+                                      nb_select_sp = 100,n_repet_clustering = 20)
+
+ggplot(st_as_sf(bioregion_atlantic)) +
+  geom_sf(aes(fill = max), colour=NA) + scale_fill_viridis_b()
+
+bioregion_boreal <- bioregion_plant(grid_eu_tempo=grid_eu_boreal,vegesf_tempo=vegesf,
+                                      species_eva_tempo=species_eva,header_eva_tempo=header_eva,
+                                      nb_select_site = 10,
+                                      nb_select_sp = 100,n_repet_clustering = 20)
+
+ggplot(st_as_sf(bioregion_boreal)) +
+  geom_sf(aes(fill = max), colour=NA) + scale_fill_viridis_b()
+
+bioregion_continental <- bioregion_plant(grid_eu_tempo=grid_eu_continental,vegesf_tempo=vegesf,
+                                    species_eva_tempo=species_eva,header_eva_tempo=header_eva,
+                                    nb_select_site = 10,
+                                    nb_select_sp = 100,n_repet_clustering = 20)
+
+ggplot(st_as_sf(bioregion_continental)) +
+  geom_sf(aes(fill = max), colour=NA) + scale_fill_viridis_b()
+
+bioregion_mediterranean <- bioregion_plant(grid_eu_tempo=grid_eu_mediterranean,vegesf_tempo=vegesf,
+                                    species_eva_tempo=species_eva,header_eva_tempo=header_eva,
+                                    nb_select_site = 10,
+                                    nb_select_sp = 100,n_repet_clustering = 20)
+
+ggplot(st_as_sf(bioregion_mediterranean)) +
+  geom_sf(aes(fill = max), colour=NA) + scale_fill_viridis_b()
+
+bioregion_pannonian <- bioregion_plant(grid_eu_tempo=grid_eu_pannonian,vegesf_tempo=vegesf,
+                                           species_eva_tempo=species_eva,header_eva_tempo=header_eva,
+                                           nb_select_site = 10,
+                                           nb_select_sp = 100,n_repet_clustering = 20)
+
+ggplot(st_as_sf(bioregion_pannonian)) +
+  geom_sf(aes(fill = max), colour=NA) + scale_fill_viridis_b()
+
+# merge the result (sparse as only grid cells with more than 10 monitoring sites)
+
+bioregion_alpine$biogeo_max <- paste0("alpine",sep="_",bioregion_alpine$max) 
+bioregion_atlantic$biogeo_max <- paste0("atlantic",sep="_",bioregion_atlantic$max) 
+bioregion_boreal$biogeo_max <- paste0("boreal",sep="_",bioregion_boreal$max) 
+bioregion_continental$biogeo_max <- paste0("continental",sep="_",bioregion_continental$max) 
+bioregion_mediterranean$biogeo_max <- paste0("mediterranean",sep="_",bioregion_mediterranean$max) 
+bioregion_pannonian$biogeo_max <- paste0("pannonian",sep="_",bioregion_pannonian$max) 
+
+bioregion_all <- bind_rows(bioregion_alpine, bioregion_atlantic, bioregion_boreal,
+                       bioregion_continental, bioregion_mediterranean, bioregion_pannonian)
+
+# merge with empty grid cells
+
+grid_bioregion_all <- merge(bioregion_all[,c("ID","biogeo_max")],grid_eu[,c("ID","geom")], by="ID", all.y=TRUE)
+
+#saveRDS(grid_bioregion_all,"output/grid_bioregion_all.rds")
+grid_bioregion_all <- readRDS("output/grid_bioregion_all.rds")
+
+ggplot(st_as_sf(grid_bioregion_all)) +
+  geom_sf(aes(fill = biogeo_max), colour=NA) +
+  scale_fill_viridis_d(na.value = "grey50") +
+  coord_sf(
+    xlim = c(2834303, 7323799),
+    ylim = c(1570352, 5418000)
+  )
+
+# complete empty cells by proximity
+
+index <- st_touches(st_as_sf(grid_bioregion_all),st_as_sf(grid_bioregion_all))
+
+output <- st_as_sf(grid_bioregion_all) %>% 
+  mutate(biogeo_max = ifelse(is.na(biogeo_max),
+                       apply(index, 1, function(i){names(which.max(table(.$biogeo_max[i])))}),
+                       biogeo_max))
+output$biogeo_max <- sapply(output$biogeo_max, function(x) ifelse(is.null(x), NA, x))
+
+while (length(which(is.na(output$biogeo_max)))>4000) { # 4000 because countries without any site (turkey, ukraine, iceland)
+  print(length(which(is.na(output$biogeo_max))))
+  index <- st_touches(st_as_sf(output),st_as_sf(output))
+  output <- st_as_sf(output) %>% 
+    mutate(biogeo_max = ifelse(is.na(biogeo_max),
+                               apply(index, 1, function(i){names(which.max(table(.$biogeo_max[i])))}),
+                               biogeo_max))
+  output$biogeo_max <- sapply(output$biogeo_max, function(x) ifelse(is.null(x), NA, x))
+}
+
+# some bioregion are very small (< 1% of the 15 000 full cells) so remove and try again
+
+table(output$biogeo_max)
+
+grid_bioregion_all$biogeo_max[which(grid_bioregion_all$biogeo_max %in% names(table(output$biogeo_max)[which(table(output$biogeo_max)<150)]) &
+                           !(grid_bioregion_all$biogeo_max %in% unique(grep('pann', grid_bioregion_all$biogeo_max, value=TRUE))))] <- NA
+grid_bioregion_all$biogeo_max[which(grid_bioregion_all$biogeo_max %in% names(table(output$biogeo_max)[which(table(output$biogeo_max)<69)]))] <- NA
+
+
+index <- st_touches(st_as_sf(grid_bioregion_all),st_as_sf(grid_bioregion_all))
+
+output2 <- st_as_sf(grid_bioregion_all) %>% 
+  mutate(biogeo_max = ifelse(is.na(biogeo_max),
+                             apply(index, 1, function(i){names(which.max(table(.$biogeo_max[i])))}),
+                             biogeo_max))
+output2$biogeo_max <- sapply(output2$biogeo_max, function(x) ifelse(is.null(x), NA, x))
+
+while (length(which(is.na(output2$biogeo_max)))>4000) { # 4000 because countries without any site (turkey, ukraine, iceland)
+  print(length(which(is.na(output2$biogeo_max))))
+  index <- st_touches(st_as_sf(output2),st_as_sf(output2))
+  output2 <- st_as_sf(output2) %>% 
+    mutate(biogeo_max = ifelse(is.na(biogeo_max),
+                               apply(index, 1, function(i){names(which.max(table(.$biogeo_max[i])))}),
+                               biogeo_max))
+  output2$biogeo_max <- sapply(output2$biogeo_max, function(x) ifelse(is.null(x), NA, x))
+}
+
+table(output2$biogeo_max)
+
+# merge grid cell according to bioregion
+
+poly_biogeo <- output2 %>%
+  group_by(biogeo_max) %>% 
+  summarize(geom = st_union(geom))
+
+ggplot(poly_biogeo) +
+  geom_sf(aes(fill = biogeo_max), alpha=0.5) + scale_fill_viridis_d() +
+  coord_sf(
+    xlim = c(2834303, 7323799),
+    ylim = c(1570352, 5418000)
+  )
+
+saveRDS(poly_biogeo,"output/poly_biogeo.rds")
+
+# some cells are isolated, so we dissolve them into the neighbourging polygon, to do so we start by disaggregating bioregion to identify small areas
+
+poly_biogeo_cast <- st_disaggregate(poly_biogeo)
+poly_biogeo_cast$biogeo_max[which(is.na(poly_biogeo_cast$biogeo_max))] <- "outside"
+poly_biogeo_cast$area <- st_area(poly_biogeo_cast)
+threshold <- 2500000000
+units(threshold) <- as_units("m^2")
+poly_biogeo_cast$biogeo_max[which(poly_biogeo_cast$area < threshold)] <- NA
+
+index <- st_touches(st_as_sf(poly_biogeo_cast),st_as_sf(poly_biogeo_cast))
+
+output3 <- st_as_sf(poly_biogeo_cast) %>% 
+  mutate(biogeo_max = ifelse(is.na(biogeo_max) ,
+                             apply(index, 1, function(i){names(which.max(table(.$biogeo_max[i])))}),
+                             biogeo_max))
+output3$biogeo_max <- sapply(output3$biogeo_max, function(x) ifelse(is.null(x), NA, x))
+
+# merge cleaned grid cells 
+
+poly_biogeo_clean <- output3 %>%
+  group_by(biogeo_max) %>% 
+  summarize(geom = st_union(geom))
+
+ggplot(poly_biogeo_clean) +
+  geom_sf(aes(fill = biogeo_max), alpha=0.5) + scale_fill_viridis_d() +
+  coord_sf(
+    xlim = c(2834303, 7323799),
+    ylim = c(1570352, 5418000)
+  )
+
+poly_biogeo_clean$biogeo_max[which(poly_biogeo_clean$biogeo_max == "outside")] <- NA
+
+saveRDS(poly_biogeo_clean,"output/poly_biogeo_clean.rds")
+
+grid_eu_1km <- st_read("raw_data/grid_eu/grid_1km_surf.gpkg")
+
+raster_template <- rast(raster(x = "output/eu_land_system_reproj.tif"))
+raster_template[] <- NA
+poly_biogeo_clean$num_biogeo_max <- as.numeric(as.factor(poly_biogeo_clean$biogeo_max))
+poly_biogeo_clean_rast <- st_rasterize(poly_biogeo_clean %>% dplyr::select(num_biogeo_max, geom), template=st_as_stars(raster_template), field = "num_biogeo_max")
+
+write_stars(poly_biogeo_clean_rast,"output/poly_biogeo_clean_rast.tif")
+
+poly_biogeo_clean_rast <- rast(raster(x = "output/poly_biogeo_clean_rast.tif"))
+temp1 <- exact_extract(poly_biogeo_clean_rast,grid_eu_1km, fun=c("mode"))
+
+grid_eu_1km$biogeo_area <- temp1
+ggplot(grid_eu_1km) +
+  geom_sf(aes(fill = biogeo_area), colour=NA) +
+  coord_sf(
+    xlim = c(2834303, 7323799),
+    ylim = c(1570352, 5418000)
+  )
+
+st_write(grid_eu_1km,"output/grid_eu_bioregion.gpkg")

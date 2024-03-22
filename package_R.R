@@ -1,3 +1,4 @@
+# bird_data and landuse
 library(geojsonio)
 library(plyr)
 library(dplyr)
@@ -20,3 +21,12 @@ library(stars)
 library(readr)
 library(bioregion)
 library(eSDM)
+
+# EVA_bioregion
+library(alphahull)
+library(concaveman)
+library(sfhelpers)
+library(units)
+
+# analysis_bird
+library(GWmodel)
