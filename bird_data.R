@@ -181,3 +181,7 @@ bird_data_preclean$count[which(bird_data_preclean$count_unit %in% c("pairs","ter
 
 # remove records of large groups
 bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.9995)),]
+
+bird_data_clean <- bird_data_preclean
+
+saveRDS(bird_data_clean,"output/bird_data_clean.rds")
