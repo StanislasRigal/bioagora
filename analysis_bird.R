@@ -24,7 +24,7 @@ st_crs(site_cat_sf) <- 4326
 grid_eu_cat <- grid_eu_all[which(grid_eu_all$NUTS2021_2 == "ES511"),]
 
 st_write(grid_eu_cat,"output/grid_eu_cat_test.gpkg")
-grid_eu_cat <- st_read("output/grid_eu_cat.gpkg")
+grid_eu_cat <- st_read("output/grid_eu_cat_test.gpkg")
 
 site_cat_sf_reproj <- st_transform(site_cat_sf,crs(grid_eu_cat))
 
@@ -75,6 +75,93 @@ pop2015 <- (value_site_cat$pop2020-value_site_cat$pop2000)/20*2015+value_site_ca
 value_site_cat$GDP2015_percap <- value_site_cat$GDP2015/pop2015
 value_site_cat$diff_gdp_percap <- (value_site_cat$GDP2015_percap-value_site_cat$GDP2000_percap)/value_site_cat$GDP2000_percap
 
+# add zero when species no present at monitored site
+
+wide_bird_data <- data.frame(bird_data_cat[,c("siteID","year","sci_name_out","count")] %>% group_by(siteID) %>% tidyr::complete(year,sci_name_out))
+wide_bird_data$count[which(is.na(wide_bird_data$count))] <- 0
+
+bird_data_cat <- merge(wide_bird_data,site_cat,by=c("siteID"), all.x=T)
+
 bird_data_cat <- merge(bird_data_cat,value_site_cat, by="siteID", all.x=TRUE)
+
+# test with most commun species
+
+fricoe_data_cat <- droplevels(bird_data_cat[which(bird_data_cat$sci_name_out=="Fringilla coelebs"),])
+
 # compute trend species
 
+nb_year_p_site <- data.frame(fricoe_data_cat %>% group_by(siteID) %>% summarise(nb_year=n(),
+                                                                                     min_year=min(year),
+                                                                                     max_year=max(year)))
+
+selected_site_trend <- nb_year_p_site[which(nb_year_p_site$nb_year > 4 &
+                                            nb_year_p_site$min_year < 2006 &
+                                            nb_year_p_site$max_year > 2014),]
+
+fricoe_data_cat_trend <- fricoe_data_cat[which(fricoe_data_cat$siteID %in% c(selected_site_trend$siteID)),]
+
+fricoe_cat_trend <- ddply(fricoe_data_cat_trend, .(siteID),
+                          .fun = function(x){
+                            mod <- glm(count~year, data=x, family = "poisson")
+                            mod_result <- as.data.frame(t(summary(mod)$coef[2,]))
+                            return(mod_result)
+                            },
+                          .progress = "text")
+
+# Multiscale gwr
+
+fricoe_cat_trend <- merge(fricoe_cat_trend,site_cat,by=c("siteID"), all.x=TRUE)
+fricoe_cat_trend <- merge(fricoe_cat_trend,value_site_cat, by="siteID", all.x=TRUE)
+
+fricoe_cat_data_analysis <- fricoe_cat_trend[,c("Estimate","pop2000","impervious2006","treedensity2012",
+                                                "eulandsystem","protectedarea","lightpollution2000",
+                                                "pesticide_nodu_kg","woodprod2000","drymatter2000",
+                                                "smallwoodyfeatures","fragmentation","forestintegrity_cat",
+                                                "tempspring2000","tempspringmaxvar2000","precspring2000",
+                                                "precspringvar2000","humidity2000",
+                                                "shannon",
+                                                "Long_WGS84", "Lat_WGS84")]
+
+fricoe_cat_data_analysis$protectedarea[which(is.na(fricoe_cat_data_analysis$protectedarea))] <- 0
+fricoe_cat_data_analysis$protectedarea[which(fricoe_cat_data_analysis$protectedarea>0)] <- 1
+fricoe_cat_data_analysis <- na.omit(fricoe_cat_data_analysis)
+fricoe_cat_data_analysis$eulandsystem_cat <- NA
+fricoe_cat_data_analysis$eulandsystem_cat[which(fricoe_cat_data_analysis$eulandsystem %in% c(11,12,13,80,90))] <-"no_intensity"
+fricoe_cat_data_analysis$eulandsystem_cat[which(fricoe_cat_data_analysis$eulandsystem %in% c(21,31,41,51,61,731,71:75))] <-"low_intensity"
+fricoe_cat_data_analysis$eulandsystem_cat[which(fricoe_cat_data_analysis$eulandsystem %in% c(22,32,42,52,62,732))] <-"medium_intensity"
+fricoe_cat_data_analysis$eulandsystem_cat[which(fricoe_cat_data_analysis$eulandsystem %in% c(23,43,53,63,733))] <-"high_intensity"
+fricoe_cat_data_analysis$eulandsystem_cat <- factor(fricoe_cat_data_analysis$eulandsystem_cat, levels = c("no_intensity","low_intensity","medium_intensity","high_intensity")) 
+fricoe_cat_data_analysis$eulandsystem <- NULL
+
+fricoe_cat_data_analysis[,c("pop2000","impervious2006","treedensity2012","lightpollution2000",
+                            "pesticide_nodu_kg","woodprod2000","drymatter2000",
+                            "smallwoodyfeatures","fragmentation",
+                            "tempspring2000","tempspringmaxvar2000","precspring2000",
+                            "precspringvar2000","humidity2000","shannon")] <- scale(fricoe_cat_data_analysis[,c("pop2000","impervious2006","treedensity2012","lightpollution2000",
+                                                                                                                "pesticide_nodu_kg","woodprod2000","drymatter2000",
+                                                                                                                "smallwoodyfeatures","fragmentation",
+                                                                                                                "tempspring2000","tempspringmaxvar2000","precspring2000",
+                                                                                                                "precspringvar2000","humidity2000","shannon")])
+
+fricoe_cat_trend_sp <- st_as_sf(fricoe_cat_data_analysis, coords = c("Long_WGS84", "Lat_WGS84"), crs = 4326) 
+
+
+gw.ms <- gwr.multiscale(Estimate ~ pop2000 + impervious2006 + treedensity2012 +
+                        eulandsystem_cat + protectedarea + lightpollution2000 +
+                        pesticide_nodu_kg + woodprod2000 + drymatter2000 +
+                        smallwoodyfeatures + fragmentation + forestintegrity_cat +
+                        tempspring2000 + tempspringmaxvar2000 + precspring2000 +
+                        precspringvar2000 + humidity2000 + shannon, 
+                        data = as(fricoe_cat_trend_sp, "Spatial"),
+                        adaptive = T, max.iterations = 1000,
+                        predictor.centered = rep(TRUE,(ncol(fricoe_cat_data_analysis)-3)),
+                        criterion="CVR",
+                        kernel = "bisquare",
+                        bws0 = rep(100,(ncol(fricoe_cat_data_analysis)-3)),
+                        verbose = F)
+gw.ms$GW.arguments$bws
+coefs_msgwr <- apply(gw.ms$SDF@data[, 1:(ncol(fricoe_cat_data_analysis))], 2, summary)
+round(coefs_msgwr,1)
+mgwr_sf <- st_as_sf(gw.ms$SDF)
+tm_shape(mgwr_sf) + tm_bubbles("woodprod2000",col="woodprod2000")+
+  tm_layout(legend.position = c("right","top"), frame = F)
