@@ -14,6 +14,8 @@ species_eva1 <- read_delim_chunked("raw_data/EVA/197_Bioregions20240222_notJUICE
 saveRDS(species_eva1,"output/species_eva1.rds")
 species_eva1 <- readRDS("output/species_eva1.rds")
 
+### Continue with all countries
+
 header_al <- header_eva[which(header_eva$Country=="Albania"),]
 f <- function(x, pos) subset(x, PlotObservationID %in% unique(header_al$PlotObservationID))
 species_eva2 <- read_delim_chunked("raw_data/EVA/197_Bioregions20240222_notJUICE/197_Bioregions20240222_notJUICE_species.csv",
@@ -218,10 +220,13 @@ species_eva35 <- read_delim_chunked("raw_data/EVA/197_Bioregions20240222_notJUIC
                                     DataFrameCallback$new(f),
                                     delim="\t")
 
-### Prepare data for bioregion
+### Prepare data to calculate bioregions for France to test from sparse site data
+
+#### subsample for computation time and get initial dataset
 
 vegedf_fr <- species_eva1[which(species_eva1$Match==1),c("PlotObservationID","Turboveg2 concept","Cover %")]
-set.seed(123)
+
+set.seed(123) 
 vegedf_fr <- vegedf_fr[which(vegedf_fr$PlotObservationID %in% sample(unique(vegedf_fr$PlotObservationID),2000)),]
 vegedf_fr$species <- as.numeric(as.factor(vegedf_fr$`Turboveg2 concept`))
 names(vegedf_fr)[c(1,3)] <- c("site","cover")
@@ -229,7 +234,10 @@ vegedf_fr$`Turboveg2 concept` <- NULL
 vegedf_fr <- vegedf_fr[,c("site","species","cover")]
 vegedf_fr <- vegedf_fr[!duplicated(vegedf_fr[,c(1,2)]),]
 
-vegemat_fr <- net_to_mat(as.data.frame(vegedf_fr), weight = TRUE, squared = FALSE, symmetrical = FALSE, missing_value = 0)
+#### Transform initial dataset into ready to use dataset as explain here https://biorgeo.github.io/bioregion/articles/bioregion.html
+
+vegemat_fr <- net_to_mat(as.data.frame(vegedf_fr), weight = TRUE, squared = FALSE,
+                         symmetrical = FALSE, missing_value = 0)
 
 dissim <- na.omit(dissimilarity(vegemat_fr))
 
@@ -240,11 +248,12 @@ eval_tree4 <- partition_metrics(tree4,
                                 dissimilarity = dissim, # Provide distances to compute the metrics
                                 eval_metric = "pc_distance")
 
-opti_n_tree4 <- find_optimal_n(eval_tree4)
+opti_n_tree4 <- find_optimal_n(eval_tree4) # optimal number of bioregion
 
 K_name <- opti_n_tree4$evaluation_df$K[opti_n_tree4$evaluation_df$optimal_n_pc_distance]
 
 ### Make a map of the clusters
+
 centroid_coord <- data.frame(header_fr[which(header_fr$PlotObservationID %in% unique(vegedf_fr$site)),c("Longitude","Latitude")])
 centroid_coord$Longitude <- as.numeric(centroid_coord$Longitude)
 vegesf_fr <- st_geometry(st_as_sf(centroid_coord,coords = c("Longitude","Latitude")))
@@ -259,11 +268,10 @@ vegesf_fr$geometry <- vegesf_fr$vegesf_fr
 vegesf_fr$vegesf_fr <- NULL
 vegesf_fr <- st_sf(vegesf_fr)
 
-
 map_clusters(tree4$clusters[, c("ID", K_name)],
              vegesf_fr)
 
-# for France
+# bioregion for France with European grid to test
 
 ### Use EU grid as site 
 
@@ -291,7 +299,7 @@ grid_eu_fr$nb_site <- lengths(vegesf_fr_grid)
 ggplot(grid_eu_fr) +
   geom_sf(aes(fill = nb_site))
 
-### Calculate  cover of each species in each cell
+### Calculate cover of each species in each cell
 
 vegedf_fr <- species_eva1[which(species_eva1$Match==1),c("PlotObservationID","Turboveg2 concept","Cover %")]
 
@@ -424,7 +432,7 @@ grid_eu_fr <- st_sf(grid_eu_fr)
 map_clusters(ex_infomap$clusters[, c("ID", K_name)],
              grid_eu_fr[,c("ID","geometry")])
 
-# for Europe
+# get bioregions for Europe
 
 species_eva <- rbind(species_eva1,species_eva2,species_eva3,species_eva4,species_eva5,
                      species_eva6,species_eva7,species_eva8,species_eva9,species_eva10,
@@ -618,7 +626,7 @@ grid_eu <- st_sf(grid_eu)
 map_clusters(tree4$clusters[, c("ID", K_name)],
              grid_eu[,c("ID","geometry")])
 
-#### network clustering
+#### network clustering (test different clustering technics)
 
 vegemat_simil <- similarity(vegemat, metric = "Simpson")
 vegemat_simil <- similarity(vegemat, metric = "Bray")
@@ -627,7 +635,7 @@ saveRDS(vegemat_simil,"output/vegemat_simil_bray.rds")
 
 install_binaries(binpath = "tempdir", infomap_version = c("2.1.0", "2.6.0"))
 
-set.seed(1)#un
+set.seed(1) # one group
 ex_infomap <- netclu_infomap(na.omit(vegemat_simil),
                              weight = TRUE,
                              index = names(vegemat_simil)[3],
@@ -682,7 +690,7 @@ ex_greedy <- netclu_greedy(na.omit(vegemat_simil),
 table(ex_greedy$clusters[,2])
 K_name_gree <- names(ex_greedy$clusters)[2]
 
-set.seed(1) #un
+set.seed(1) # one group
 ex_labelprop <- netclu_labelprop(na.omit(vegemat_simil),
                                  weight = TRUE,
                                  index = names(vegemat_simil)[3],
@@ -694,7 +702,7 @@ ex_labelprop <- netclu_labelprop(na.omit(vegemat_simil),
 table(ex_labelprop$clusters[,2])
 K_name_labe <- names(ex_labelprop$clusters)[2]
 
-set.seed(1) # trop nombreux
+set.seed(1) # too many groups
 ex_leiden <- netclu_leiden(na.omit(vegemat_simil),
                            weight = FALSE,
                            index = names(vegemat_simil)[3],
@@ -712,7 +720,7 @@ ex_leiden <- netclu_leiden(na.omit(vegemat_simil),
 table(ex_leiden$clusters[,2])
 K_name_leid <- names(ex_leiden$clusters)[2]
 
-set.seed(1)#un
+set.seed(1) # one group
 ex_leadingeigen <- netclu_leadingeigen(na.omit(vegemat_simil),
                                        weight = FALSE,
                                        index = names(vegemat_simil)[3],
@@ -769,6 +777,10 @@ for(i in 1:n_repet_clustering){
 }
 
 saveRDS(ex_louvain,"output/ex_louvain.rds")
+
+
+
+# bootstrap clusters
 
 
 for(i in 2:ncol(ex_louvain$clusters)){

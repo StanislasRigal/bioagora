@@ -12,27 +12,54 @@ bird_data_clean <- readRDS("output/bird_data_clean.rds")
 
 # Test with subregion (e.g. Catalonia)
 
-bird_data_cat <- bird_data_clean[which(bird_data_clean$scheme_code == "ES_CAT"),]
-
-sites <- read.table(file = "raw_data/pecbms_bird_data/sites.txt", header = TRUE, sep = "\t")
-
-site_cat <- sites[which(sites$siteID %in% unique(bird_data_cat$siteID)),]
-
-site_cat_sf <- st_as_sf(site_cat, coords = c("Long_WGS84","Lat_WGS84"))
-st_crs(site_cat_sf) <- 4326
+## grid data for Catalonia
 
 grid_eu_cat <- grid_eu_all[which(grid_eu_all$NUTS2021_2 == "ES511"),]
 
 st_write(grid_eu_cat,"output/grid_eu_cat_test.gpkg")
 grid_eu_cat <- st_read("output/grid_eu_cat_test.gpkg")
 
+# site and bird data from the Catalonian survey
+
+sites <- read.table(file = "raw_data/pecbms_bird_data/sites.txt", header = TRUE, sep = "\t")
+
+bird_data_cat <- bird_data_clean[which(bird_data_clean$scheme_code == "ES_CAT"),]
+
+site_cat <- sites[which(sites$siteID %in% unique(bird_data_cat$siteID)),]
+
+site_cat_sf <- st_as_sf(site_cat, coords = c("Long_WGS84","Lat_WGS84"))
+
+st_crs(site_cat_sf) <- 4326
+
 site_cat_sf_reproj <- st_transform(site_cat_sf,crs(grid_eu_cat))
+
+# site and bird data from the Spanish survey in Catalonia
+
+bird_data_esp <- bird_data_clean[which(bird_data_clean$scheme_code %in% c("ES")),]
+
+site_esp <- sites[which(sites$siteID %in% unique(bird_data_esp$siteID)),]
+
+site_esp_sf <- st_as_sf(site_esp, coords = c("Long_WGS84","Lat_WGS84"))
+st_crs(site_esp_sf) <- 4326
+
+site_esp_sf_reproj <- st_transform(site_esp_sf,crs(grid_eu_cat))
+
+site_esp_sf_reproj <- st_intersection(site_esp_sf_reproj,grid_eu_cat)
+
+# merge both and get bird data
+
+site_cat_sf_all <- rbind(site_cat_sf_reproj, site_esp_sf_reproj[,c(1:(ncol(site_cat_sf_reproj)-1),ncol(site_esp_sf_reproj))])
+
+bird_data_cat_all <- bird_data_clean[which(bird_data_clean$siteID %in% unique(site_cat_sf_all$siteID)),]
+
+site_cat_all <- sites[which(sites$siteID %in% unique(bird_data_cat_all$siteID)),]
+
 
 ggplot(grid_eu_cat) +
   geom_sf() +
-  geom_sf(data=site_cat_sf_reproj)
+  geom_sf(data=site_cat_sf_all)
 
-site_cat_buffer <- st_buffer(site_cat_sf_reproj, dist = sqrt(site_cat_sf_reproj$area_sampled_m2/pi))
+site_cat_buffer <- st_buffer(site_cat_sf_all, dist = sqrt(site_cat_sf_all$area_sampled_m2/pi))
 
 ggplot(grid_eu_cat) +
   geom_sf() +
@@ -77,10 +104,10 @@ value_site_cat$diff_gdp_percap <- (value_site_cat$GDP2015_percap-value_site_cat$
 
 # add zero when species no present at monitored site
 
-wide_bird_data <- data.frame(bird_data_cat[,c("siteID","year","sci_name_out","count")] %>% group_by(siteID) %>% tidyr::complete(year,sci_name_out))
+wide_bird_data <- data.frame(bird_data_cat_all[,c("siteID","year","sci_name_out","count")] %>% group_by(siteID) %>% tidyr::complete(year,sci_name_out))
 wide_bird_data$count[which(is.na(wide_bird_data$count))] <- 0
 
-bird_data_cat <- merge(wide_bird_data,site_cat,by=c("siteID"), all.x=T)
+bird_data_cat <- merge(wide_bird_data,site_cat_all,by=c("siteID"), all.x=T)
 
 bird_data_cat <- merge(bird_data_cat,value_site_cat, by="siteID", all.x=TRUE)
 
@@ -104,22 +131,23 @@ fricoe_cat_trend <- ddply(fricoe_data_cat_trend, .(siteID),
                           .fun = function(x){
                             mod <- glm(count~year, data=x, family = "poisson")
                             mod_result <- as.data.frame(t(summary(mod)$coef[2,]))
+                            mod_result$mean_ab <- mean(x$count)
                             return(mod_result)
                             },
                           .progress = "text")
 
 # Multiscale gwr
 
-fricoe_cat_trend <- merge(fricoe_cat_trend,site_cat,by=c("siteID"), all.x=TRUE)
+fricoe_cat_trend <- merge(fricoe_cat_trend,site_cat_all,by=c("siteID"), all.x=TRUE)
 fricoe_cat_trend <- merge(fricoe_cat_trend,value_site_cat, by="siteID", all.x=TRUE)
 
-fricoe_cat_data_analysis <- fricoe_cat_trend[,c("Estimate","pop2000","impervious2006","treedensity2012",
+fricoe_cat_data_analysis <- fricoe_cat_trend[,c("Estimate","mean_ab","pop2000","impervious2006","treedensity2012",
                                                 "eulandsystem","protectedarea","lightpollution2000",
                                                 "pesticide_nodu_kg","woodprod2000","drymatter2000",
                                                 "smallwoodyfeatures","fragmentation","forestintegrity_cat",
                                                 "tempspring2000","tempspringmaxvar2000","precspring2000",
                                                 "precspringvar2000","humidity2000",
-                                                "shannon",
+                                                "shannon",'scheme_code',
                                                 "Long_WGS84", "Lat_WGS84")]
 
 fricoe_cat_data_analysis$protectedarea[which(is.na(fricoe_cat_data_analysis$protectedarea))] <- 0
@@ -146,7 +174,7 @@ fricoe_cat_data_analysis[,c("pop2000","impervious2006","treedensity2012","lightp
 fricoe_cat_trend_sp <- st_as_sf(fricoe_cat_data_analysis, coords = c("Long_WGS84", "Lat_WGS84"), crs = 4326) 
 
 
-gw.ms <- gwr.multiscale(Estimate ~ pop2000 + impervious2006 + treedensity2012 +
+gw.ms <- gwr.multiscale(Estimate ~ mean_ab + pop2000 + impervious2006 + treedensity2012 +
                         eulandsystem_cat + protectedarea + lightpollution2000 +
                         pesticide_nodu_kg + woodprod2000 + drymatter2000 +
                         smallwoodyfeatures + fragmentation + forestintegrity_cat +
