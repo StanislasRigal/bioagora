@@ -687,7 +687,7 @@ subsite_data_spafra_trend <- bird_data_spafra[which(bird_data_spafra$siteID %in%
 
 ## get value per year per pressure
 
-press_spafra_trend <- ddply(subsite_data_spafra_trend, .(siteID,year),
+press_spafra_trend <- ddply(distinct(subsite_data_spafra_trend,siteID,year,.keep_all=TRUE), .(siteID,year),
                                 .fun = function(x){
                                   pop <- (x$pop2020-x$pop2000)/21*(x$year-2000)+x$pop2000
                                   impervious <- (x$impervious2018-x$impervious2006)/13*(x$year-2006)+x$impervious2006
@@ -703,9 +703,17 @@ press_spafra_trend <- ddply(subsite_data_spafra_trend, .(siteID,year),
                                   precspringvar <- (x$precspringvar2020-x$precspringvar2000)/21*(x$year-2000)+x$precspringvar2000
                                   GDP_percap <- (x$GDP2015_percap-x$GDP2000_percap)/16*(x$year-2000)+x$GDP2000_percap
                                   GDP <- (x$GDP2015-x$GDP2000)/16*(x$year-2000)+x$GDP2000
+                                  protectedarea <- x$protectedarea
+                                  pesticide_nodu <- x$pesticide_nodu_kg
+                                  smallwoodyfeatures <- x$smallwoodyfeatures
+                                  fragmentation <- x$fragmentation
+                                  forestintegrity_cat <- x$forestintegrity_cat
+                                  shannon <- x$shannon
+                                  eulandsystem_cat <- x$eulandsystem_cat
                                   trend_result <- data.frame(pop,impervious,treedensity,lightpollution,woodprod,drymatter,
                                                              temp,tempspring,tempspringvar,prec,precspring,precspringvar,
-                                                             GDP_percap,GDP)
+                                                             GDP_percap,GDP,protectedarea,pesticide_nodu,smallwoodyfeatures,
+                                                             fragmentation,forestintegrity_cat,shannon,eulandsystem_cat)
                                   return(trend_result)
                                 },
                                 .progress = "text")
@@ -713,10 +721,12 @@ press_spafra_trend <- ddply(subsite_data_spafra_trend, .(siteID,year),
 press_spafra_trend_scale <- press_spafra_trend
 
 press_spafra_trend_scale[,c("pop","impervious","treedensity","lightpollution",
-                                "woodprod","drymatter","temp","tempspring","tempspringvar","prec",        
-                                "precspring","precspringvar","GDP_percap","GDP")] <- scale(press_spafra_trend_scale[,c("pop","impervious","treedensity","lightpollution",
-                                                                                                                           "woodprod","drymatter","temp","tempspring","tempspringvar","prec",        
-                                                                                                                           "precspring","precspringvar","GDP_percap","GDP")])
+                            "woodprod","drymatter","temp","tempspring","tempspringvar","prec",        
+                            "precspring","precspringvar","GDP_percap","GDP","pesticide_nodu",
+                            "smallwoodyfeatures","fragmentation","shannon")] <- scale(press_spafra_trend_scale[,c("pop","impervious","treedensity","lightpollution",
+                                                                                                                  "woodprod","drymatter","temp","tempspring","tempspringvar","prec",
+                                                                                                                  "precspring","precspringvar","GDP_percap","GDP","pesticide_nodu",
+                                                                                                                  "smallwoodyfeatures","fragmentation","shannon")])
 ## Get the number of sites as a function of bandwidth
 
 data_mat_dist <- SpatialPoints(coords = as.matrix(site_spafra[,c("Long_LAEA","Lat_LAEA")]), proj4string = CRS(crs(site_spafra_sf_reproj)))
@@ -753,62 +763,148 @@ bird_data_test <- subsite_data_spafra_trend[which(subsite_data_spafra_trend$sci_
 
 site_data_test <- site_spafra_sf_reproj
 
-formula_gwpr_test <- count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:GDP_percap
+formula_gwpr_test <- count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+  year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+  year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+  year:shannon+year:eulandsystem_cat
 
 min_site_number <- 30
 bandwidth_test <- as.numeric(gsub("b","",names(apply(nb_site_window,2,function(x){quantile(x,0.1)})[min(which(apply(nb_site_window,2,function(x){quantile(x,0.1)}) >= min_site_number))])))
 
 bird_data=bird_data_test;pressure_data=pressure_data_test;site_data=site_data_test
-bandwidth=bandwidth_test;bandwidth_auto=FALSE;formula_gwpr=formula_gwpr_test
+bandwidth=bandwidth_test;bandwidth_auto=FALSE;formula_gwpr=formula_gwpr_test;min_site_number_per_species=5
 
-gwpr_species <- function(bird_data,pressure_data,site_data,bandwidth,bandwidth_auto=FALSE,formula_gwpr){
+gwpr_species <- function(bird_data,pressure_data,site_data,bandwidth,bandwidth_auto=FALSE,formula_gwpr,min_site_number_per_species){
   
-  species_press_data_year <- merge(bird_data, pressure_data, by =c("siteID","year"))
+  species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
   
-  poisson_df <- na.omit(species_press_data_year[,c("count","year","scheme_code","Long_LAEA","Lat_LAEA","pop","impervious","treedensity","lightpollution",
-                                                       "woodprod","drymatter","temp","tempspring","tempspringvar",  
-                                                       "prec","precspring","precspringvar","GDP_percap","GDP")])
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","scheme_code","Long_LAEA","Lat_LAEA","pop","impervious","treedensity","lightpollution",
+                                                   "woodprod","drymatter","tempspring","tempspringvar",  
+                                                   "precspring","precspringvar",
+                                                   "protectedarea","pesticide_nodu","smallwoodyfeatures",
+                                                   "fragmentation","shannon","eulandsystem_cat")])
   
   ### global poisson model
   
-  global_mod <- glm(count~scheme_code+year:treedensity+year:impervious+year:pop+year:lightpollution+
-                      year:woodprod+year:drymatter+year:tempspring+year:tempspringvar+
-                      year:precspring+year:precspringvar+year:GDP_percap, family="poisson", data=poisson_df)
+  global_mod <- glm(formula_gwpr, family="poisson", data=poisson_df)
   
   ### autocorrelation of residuals
   
   poisson_sf <- SpatialPointsDataFrame(coords = as.matrix(poisson_df[,c("Long_LAEA","Lat_LAEA")]), data = poisson_df,
                                             proj4string = CRS(crs(site_data)))
   
-
   nb <- dnearneigh(poisson_sf@coords, 10000,bandwidth)
   lw <- nb2listw(nb, style="W", zero.policy=TRUE)
   moran_I <- lm.morantest(global_mod,lw)
   moran_res <- c(unlist(moran_I[3])[1],unlist(moran_I[2])) # check if autocorrelated
   
-  if(moran_res)
-  
-  ### GWPR
-  
-  DM <- gw.dist(dp.locat = coordinates(test_poisson_sf))
-  
-  if(bandwidth_auto == TRUE){
-    bw.f1 <- bw.ggwr(formula = formula_gwpr, data = poisson_sf, dMat = DM,kernel = "gaussian")
+  if(moran_res[2]<0.05){
+    
+    ### GWPR
+    
+    DM <- gw.dist(dp.locat = coordinates(poisson_sf))
+    
+    if(bandwidth_auto == TRUE){
+      bw.f1 <- bw.ggwr(formula = formula_gwpr, data = poisson_sf, dMat = DM,kernel = "gaussian")
+    }
+    
+    bw.f1 <- bandwidth_test # based on apply(nb_site_window,2,min) > 30
+    res.poisson <- ggwr.basic(formula = formula_gwpr, bw = bw.f1,
+                              data = poisson_sf, dMat = DM, kernel = "gaussian")
+    
+    ### Remove edge effect by keeping sites with enough neighbourg
+    
+    unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+    
+    unique_poisson_sf <- SpatialPointsDataFrame(coords = as.matrix(unique_poisson_df[,c("Long_LAEA","Lat_LAEA")]), data = unique_poisson_df,
+                                                proj4string = CRS(crs(site_data)))
+    
+    unique_DM <- gw.dist(dp.locat = coordinates(unique_poisson_sf))
+    
+    site_to_keep <- unique_poisson_df$siteID[which(apply(unique_DM,1,function(x){length(which(x < bw.f1))}) > min_site_number_per_species)]
+    
+    res.poisson_noedge <- res.poisson$SDF[which(poisson_sf$siteID %in% site_to_keep),]
+    
+    #res_plot <- st_as_sf(res.poisson_noedge)
+    #ggplot(grid_eu_spafra) + geom_sf() +  geom_sf(data=res_plot, aes(col=exp(`year:treedensity`))) + scale_color_gradientn(colors = sf.colors(20))
+    
+    return(res.poisson_noedge)
+    
   }
-  
-  bw.f1 <- 51000 # based on apply(nb_site_window,2,min) > 30
-  res.poisson <- ggwr.basic(formula = formula_gwpr, bw = bw.f1,
-                            data = poisson_sf, dMat = DM, kernel = "gaussian")
-  
-  #res_plot <- st_as_sf(res.poisson$SDF)
-  #ggplot(grid_eu_cat) + geom_sf() +  geom_sf(data=res_plot, aes(col=exp(`year:treedensity`))) + scale_color_gradientn(colors = sf.colors(20))
-  
-  return()
-  
 }
 
 
-
+gwpr_species_manual <- function(bird_data,pressure_data,site_data,bandwidth,bandwidth_auto=FALSE,formula_gwpr,min_site_number_per_species){
+  
+  species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","scheme_code","Long_LAEA","Lat_LAEA","pop","impervious","treedensity","lightpollution",
+                                                   "woodprod","drymatter","tempspring","tempspringvar",  
+                                                   "precspring","precspringvar",
+                                                   "protectedarea","pesticide_nodu","smallwoodyfeatures",
+                                                   "fragmentation","shannon","eulandsystem_cat")])
+  
+  ### global poisson model
+  
+  global_mod <- glm(formula_gwpr, family="poisson", data=poisson_df)
+  
+  ### autocorrelation of residuals
+  
+  poisson_sf <- SpatialPointsDataFrame(coords = as.matrix(poisson_df[,c("Long_LAEA","Lat_LAEA")]), data = poisson_df,
+                                       proj4string = CRS(crs(site_data)))
+  
+  nb <- dnearneigh(poisson_sf@coords, 10000,bandwidth)
+  lw <- nb2listw(nb, style="W", zero.policy=TRUE)
+  moran_I <- lm.morantest(global_mod,lw)
+  moran_res <- c(unlist(moran_I[3])[1],unlist(moran_I[2])) # check if autocorrelated
+  
+  if(moran_res[2]<0.05){
+    
+    ### GWPR
+    
+    DM <- gw.dist(dp.locat = coordinates(poisson_sf))
+    
+    unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+    
+    unique_poisson_sf <- SpatialPointsDataFrame(coords = as.matrix(unique_poisson_df[,c("Long_LAEA","Lat_LAEA")]), data = unique_poisson_df,
+                                                proj4string = CRS(crs(site_data)))
+    
+    unique_DM <- gw.dist(dp.locat = coordinates(unique_poisson_sf))
+    
+    bw.f1 <- bandwidth_test
+    
+    num_site_within_bw <- apply(unique_DM,2,function(x){which(x<bw.f1)})
+    
+    for(i in 1:length(num_site_within_bw)){
+      unique_poisson_df_i <- unique_poisson_df[num_site_within_bw[[i]],]
+      unique_poisson_df_i$w <- exp(-.5*(unique_DM[1,num_site_within_bw[[i]]]/bw.f1)^2)
+      
+      poisson_df_i <- poisson_df[which(poisson_df$siteID %in% unique_poisson_df_i$siteID),]
+      
+      weigth_i <- merge(poisson_df_i,unique_poisson_df_i[,c("siteID","w")],by="siteID")
+      
+      res.poisson_i <- glm(formula_gwpr, family="poisson",
+                         data=weigth_i,
+                         weights = weigth_i$w) # bisquare
+    }
+    
+    
+    
+    ### Remove edge effect by keeping sites with enough neighbourg
+    
+    
+    
+    site_to_keep <- unique_poisson_df$siteID[which(apply(unique_DM,1,function(x){length(which(x < bw.f1))}) > min_site_number_per_species)]
+    
+    res.poisson_noedge <- res.poisson$SDF[which(poisson_sf$siteID %in% site_to_keep),]
+    
+    #res_plot <- st_as_sf(res.poisson_noedge)
+    #ggplot(grid_eu_spafra) + geom_sf() +  geom_sf(data=res_plot, aes(col=exp(`year:treedensity`))) + scale_color_gradientn(colors = sf.colors(20))
+    
+    return(res.poisson_noedge)
+    
+  }
+}
 
 
 
