@@ -767,12 +767,17 @@ formula_gwpr_test <- count~year:treedensity+year:impervious+year:pop+year:lightp
   year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
   year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
   year:shannon+year:eulandsystem_cat
+formula_gwpr_scheme_test <- count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+  year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+  year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+  year:shannon+year:eulandsystem_cat + scheme_code
 
 min_site_number <- 30
 bandwidth_test <- as.numeric(gsub("b","",names(apply(nb_site_window,2,function(x){quantile(x,0.1)})[min(which(apply(nb_site_window,2,function(x){quantile(x,0.1)}) >= min_site_number))])))
 
 bird_data=bird_data_test;pressure_data=pressure_data_test;site_data=site_data_test
-bandwidth=bandwidth_test;bandwidth_auto=FALSE;formula_gwpr=formula_gwpr_test;min_site_number_per_species=5
+bandwidth=bandwidth_test;bandwidth_auto=FALSE;formula_gwpr=formula_gwpr_test;
+formula_gwpr_scheme=formula_gwpr_scheme_test;min_site_number_per_species=5
 
 gwpr_species <- function(bird_data,pressure_data,site_data,bandwidth,bandwidth_auto=FALSE,formula_gwpr,min_site_number_per_species){
   
@@ -875,30 +880,98 @@ gwpr_species_manual <- function(bird_data,pressure_data,site_data,bandwidth,band
     
     num_site_within_bw <- apply(unique_DM,2,function(x){which(x<bw.f1)})
     
-    for(i in 1:length(num_site_within_bw)){
+    col_names <- c("(Intercept)","year:treedensity","year:impervious","year:pop", 
+                   "year:lightpollution","year:woodprod","year:drymatter","year:tempspring",
+                   "year:tempspringvar","year:precspring","year:precspringvar","year:protectedarea",
+                   "year:pesticide_nodu","year:smallwoodyfeatures","year:fragmentation","year:shannon",
+                   "year:eulandsystem_catlow_intensity","year:eulandsystem_catmedium_intensity",
+                   "year:eulandsystem_cathigh_intensity")
+    
+   for(i in 1:length(num_site_within_bw)){
+      
       unique_poisson_df_i <- unique_poisson_df[num_site_within_bw[[i]],]
-      unique_poisson_df_i$w <- exp(-.5*(unique_DM[1,num_site_within_bw[[i]]]/bw.f1)^2)
+      unique_poisson_df_i$w <- exp(-.5*(unique_DM[i,num_site_within_bw[[i]]]/bw.f1)^2)
       
       poisson_df_i <- poisson_df[which(poisson_df$siteID %in% unique_poisson_df_i$siteID),]
       
       weigth_i <- merge(poisson_df_i,unique_poisson_df_i[,c("siteID","w")],by="siteID")
       
-      res.poisson_i <- glm(formula_gwpr, family="poisson",
-                         data=weigth_i,
-                         weights = weigth_i$w) # bisquare
+      if(length(unique(weigth_i$eulandsystem_cat)) > 1){
+        if(length(unique(weigth_i$scheme_code)) > 1){
+          res.poisson_i <- glm(formula_gwpr_scheme, family="poisson",
+                               data=weigth_i,
+                               weights = weigth_i$w) # bisquare
+          result_i <- summary(res.poisson_i)$coefficients
+          result_i <- result_i[grep("scheme_code",row.names(result_i),invert = TRUE),]
+        }else{
+          res.poisson_i <- glm(formula_gwpr, family="poisson",
+                               data=weigth_i,
+                               weights = weigth_i$w) # bisquare
+          result_i <- summary(res.poisson_i)$coefficients
+        }
+      }else{
+        if(length(unique(weigth_i$scheme_code)) > 1){
+          res.poisson_i <- glm(formula_gwpr_test <- count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                 year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+                                 year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                 year:shannon + scheme_code, family="poisson",
+                               data=weigth_i,
+                               weights = weigth_i$w) # bisquare
+          result_i <- result_i[grep("scheme_code",row.names(result_i),invert = TRUE),]
+        }else{
+          res.poisson_i <- glm(formula_gwpr_test <- count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                 year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+                                 year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                 year:shannon, family="poisson",
+                               data=weigth_i,
+                               weights = weigth_i$w) # bisquare
+        }
+      }
+      
+      if(i==1){
+        result_all_site <- array(NA,c(19,4,length(num_site_within_bw)))
+      }
+      
+      if(nrow(result_i) == 19){
+        result_all_site[,,i] <- result_i
+      }else{
+        row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(result_i)))), ncol=1)
+        row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(result_i)))]
+        result_i_complet <- merge(result_i,row_to_add,by="row.names",all=TRUE)
+        result_i_complet <- result_i_complet[match(col_names, result_i_complet$Row.names),]
+        result_i_complet <- as.matrix(result_i_complet[2:5]) 
+      }
     }
-    
     
     
     ### Remove edge effect by keeping sites with enough neighbourg
     
-    
-    
     site_to_keep <- unique_poisson_df$siteID[which(apply(unique_DM,1,function(x){length(which(x < bw.f1))}) > min_site_number_per_species)]
     
-    res.poisson_noedge <- res.poisson$SDF[which(poisson_sf$siteID %in% site_to_keep),]
+    res.poisson_noedge <- result_all_site[,,which(unique_poisson_sf$siteID %in% site_to_keep)]
     
-    #res_plot <- st_as_sf(res.poisson_noedge)
+    res.poisson_noedge_df <- data.frame(res.poisson_noedge[1,1,],res.poisson_noedge[2,1,],res.poisson_noedge[3,1,],res.poisson_noedge[4,1,],
+                                        res.poisson_noedge[5,1,],res.poisson_noedge[6,1,],res.poisson_noedge[7,1,],res.poisson_noedge[8,1,],
+                                        res.poisson_noedge[9,1,],res.poisson_noedge[10,1,],res.poisson_noedge[11,1,],res.poisson_noedge[12,1,],
+                                        res.poisson_noedge[13,1,],res.poisson_noedge[14,1,],res.poisson_noedge[15,1,],res.poisson_noedge[16,1,],
+                                        res.poisson_noedge[17,1,],res.poisson_noedge[18,1,],res.poisson_noedge[19,1,])
+    res.poisson_noedge_pval <- data.frame(res.poisson_noedge[1,4,],res.poisson_noedge[2,4,],res.poisson_noedge[3,4,],res.poisson_noedge[4,4,],
+                                        res.poisson_noedge[5,4,],res.poisson_noedge[6,4,],res.poisson_noedge[7,4,],res.poisson_noedge[8,4,],
+                                        res.poisson_noedge[9,4,],res.poisson_noedge[10,4,],res.poisson_noedge[11,4,],res.poisson_noedge[12,4,],
+                                        res.poisson_noedge[13,4,],res.poisson_noedge[14,4,],res.poisson_noedge[15,4,],res.poisson_noedge[16,4,],
+                                        res.poisson_noedge[17,4,],res.poisson_noedge[18,4,],res.poisson_noedge[19,4,])
+    
+    res.poisson_noedge_df[res.poisson_noedge_pval > 0.05] <- NA 
+    
+    names(res.poisson_noedge_df) <- col_names
+    
+    res.poisson_noedge_df$siteID <-  unique_poisson_sf$siteID[which(unique_poisson_sf$siteID %in% site_to_keep)]
+    
+    res.poisson_noedge_df <- res.poisson_noedge_df[rowSums(is.na(res.poisson_noedge_df)) != ncol(res.poisson_noedge_df), ]
+    
+    res.poisson_noedge_sf <- merge(unique_poisson_sf[,c("siteID")],res.poisson_noedge_df)
+    
+    #res_plot <- st_as_sf(res.poisson_noedge_sf)
     #ggplot(grid_eu_spafra) + geom_sf() +  geom_sf(data=res_plot, aes(col=exp(`year:treedensity`))) + scale_color_gradientn(colors = sf.colors(20))
     
     return(res.poisson_noedge)
