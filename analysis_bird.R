@@ -835,6 +835,10 @@ gwpr_species_manual <- function(bird_data,pressure_data,site_data,bandwidth,band
       moran_I <- lm.morantest(global_mod,lw)
       moran_res <- c(unlist(moran_I[3])[1],unlist(moran_I[2])) # check if autocorrelated
       
+      if(is.na(moran_res[2])){
+        moran_res[2] <- 0
+      }
+      
       if(moran_res[2]<0.05){
         
         ### GWPR
@@ -867,8 +871,11 @@ gwpr_species_manual <- function(bird_data,pressure_data,site_data,bandwidth,band
             
             weigth_i <- merge(poisson_df_i,unique_poisson_df_i[,c("siteID","w")],by="siteID")
             
+            site_scheme <- weigth_i %>% group_by(scheme_code,siteID) %>% summarize(count=n())
+            site_scheme <- site_scheme %>% group_by(scheme_code) %>% summarise(nb_site = n())
+            
             if(length(unique(weigth_i$eulandsystem_cat)) > 1){
-              if(length(unique(weigth_i$scheme_code)) > 1){
+              if(length(unique(weigth_i$scheme_code)) > 1 && nrow(site_scheme[which(site_scheme$nb_site==1),]) == 0){
                 res.poisson_i <- glm(formula_gwpr_scheme, family="poisson",
                                      data=weigth_i,
                                      weights = w) # bisquare
@@ -881,7 +888,7 @@ gwpr_species_manual <- function(bird_data,pressure_data,site_data,bandwidth,band
                 result_i <- summary(res.poisson_i)$coefficients
               }
             }else{
-              if(length(unique(weigth_i$scheme_code)) > 1){
+              if(length(unique(weigth_i$scheme_code)) > 1 && nrow(site_scheme[which(site_scheme$nb_site==1),]) == 0){
                 res.poisson_i <- glm(count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
                                        year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
                                        year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
@@ -1043,9 +1050,14 @@ res_spafra_species <- ddply(subsite_data_spafra_trend[,c("siteID","year","sci_na
 
 
 
+#saveRDS(res_spafra_species,"output/res_spafra_species.rds")
+res_spafra_species <- readRDS("output/res_spafra_species")
 
+res_species_df <- res_spafra_species[which(res_spafra_species$sci_name_out == unique(res_spafra_species$sci_name_out)[9]),]
 
-
+res_species_sf <- merge(site_spafra_sf[,c("siteID")],res_species_df)
+res_plot <- st_as_sf(res_species_sf)
+ggplot(grid_eu_spafra_outline) + geom_sf() +  geom_sf(data=res_plot, aes(col=exp(`year:treedensity`))) + scale_color_gradientn(colors = sf.colors(20))
 
 
 
