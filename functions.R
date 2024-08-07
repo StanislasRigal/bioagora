@@ -554,6 +554,7 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
                                      year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
                                      year:shannon + scheme_code, family="poisson",
                                    data=poisson_df_i)
+              result_i <- summary(res.poisson_i)$coefficients
               result_i <- result_i[grep("scheme_code",row.names(result_i),invert = TRUE),]
             }else{
               res.poisson_i <- glm(count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
@@ -561,6 +562,7 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
                                      year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
                                      year:shannon, family="poisson",
                                    data=poisson_df_i)
+              result_i <- summary(res.poisson_i)$coefficients
             }
           }
           
@@ -642,16 +644,205 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
       #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=exp(`year:treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
       
     }else{
-      res.poisson_sf <- data.frame(t(rep(NA,19)))
-      names(res.poisson_sf) <- col_names
-      res.poisson_sf$biogeo_area <- NA
+      res.poisson_df <- data.frame(t(rep(NA,19)))
+      names(res.poisson_df) <- col_names
+      res.poisson_df$biogeo_area <- NA
     }
     
   }else{
-    res.poisson_sf <- data.frame(t(rep(NA,19)))
-    names(res.poisson_sf) <- col_names
-    res.poisson_sf$biogeo_area <- NA
+    res.poisson_df <- data.frame(t(rep(NA,19)))
+    names(res.poisson_df) <- col_names
+    res.poisson_df$biogeo_area <- NA
   }
   
-  return(res.poisson_sf)
+  return(res.poisson_df)
+}
+
+
+
+#### GLMM
+
+glmm_species_biogeo <- function(bird_data,pressure_data,site_data,
+                               formula_glmp,formula_glmp_scheme,min_site_number_per_species,min_occurence_species=200){
+  
+  species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","scheme_code","Long_LAEA","Lat_LAEA","pop","impervious","treedensity","lightpollution",
+                                                   "woodprod","drymatter","tempspring","tempspringvar",  
+                                                   "precspring","precspringvar",
+                                                   "protectedarea","pesticide_nodu","smallwoodyfeatures",
+                                                   "fragmentation","shannon","eulandsystem_cat","biogeo_area")])
+  
+  col_names <- c("(Intercept)","year","year:treedensity","year:impervious","year:pop", 
+                 "year:lightpollution","year:woodprod","year:drymatter","year:tempspring",
+                 "year:tempspringvar","year:precspring","year:precspringvar","year:protectedarea",
+                 "year:pesticide_nodu","year:smallwoodyfeatures","year:fragmentation","year:shannon",
+                 "year:eulandsystem_catlow_intensity","year:eulandsystem_catmedium_intensity",
+                 "year:eulandsystem_cathigh_intensity")
+  
+  if(nrow(poisson_df) >= min_occurence_species){
+    
+    ### global poisson model
+    
+    if(length(unique(poisson_df$eulandsystem_cat)) > 1){
+      if(length(unique(poisson_df$scheme_code)) > 1){
+        global_mod <- glmer(formula_glmp_scheme, family="poisson", data=poisson_df)
+      }else{
+        global_mod <- glmer(formula_glmp, family="poisson", data=poisson_df)
+      }
+    }else{
+      if(length(unique(poisson_df$scheme_code)) > 1){
+        global_mod <- glmer(count~year+year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + (1|scheme_code) + (1|siteID), family="poisson", data=poisson_df)
+      }else{
+        global_mod <- glmer(count~year+year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + (1|siteID), family="poisson", data=poisson_df)
+      }
+    }
+    
+
+    poisson_sf <- SpatialPointsDataFrame(coords = as.matrix(poisson_df[,c("Long_LAEA","Lat_LAEA")]), data = poisson_df,
+                                         proj4string = CRS(crs(site_data)))
+    
+    ### GLMMP
+    
+    unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+    
+    unique_poisson_sf <- SpatialPointsDataFrame(coords = as.matrix(unique_poisson_df[,c("Long_LAEA","Lat_LAEA")]), data = unique_poisson_df,
+                                                proj4string = CRS(crs(site_data)))
+    
+    
+    result_all_site <- daply(unique_poisson_df,.(biogeo_area),.fun=function(x,min_site_number_per_species,poisson_df){
+      
+      if(nrow(x) >= min_site_number_per_species){
+        
+        poisson_df_i <- poisson_df[which(poisson_df$biogeo_area == unique(x$biogeo_area)),]
+        
+        site_scheme <- poisson_df_i %>% group_by(scheme_code,siteID) %>% summarize(count=n())
+        site_scheme <- site_scheme %>% group_by(scheme_code) %>% summarise(nb_site = n())
+        
+        if(length(unique(poisson_df_i$eulandsystem_cat)) > 1){
+          if(length(unique(poisson_df_i$scheme_code)) > 1 && nrow(site_scheme[which(site_scheme$nb_site==1),]) == 0){
+            res.poisson_i <- glmer(formula_glmp_scheme, family="poisson",
+                                   data=poisson_df_i)
+            result_i <- summary(res.poisson_i)$coefficients
+          }else{
+            res.poisson_i <- glmer(formula_glmp, family="poisson",
+                                   data=poisson_df_i)
+            result_i <- summary(res.poisson_i)$coefficients
+          }
+        }else{
+          if(length(unique(poisson_df_i$scheme_code)) > 1 && nrow(site_scheme[which(site_scheme$nb_site==1),]) == 0){
+            res.poisson_i <- glmer(count~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon + (1|scheme_code) + (1|siteID), family="poisson",
+                                   data=poisson_df_i)
+            result_i <- summary(res.poisson_i)$coefficients
+          }else{
+            res.poisson_i <- glmer(count~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon + (1|siteID), family="poisson",
+                                   data=poisson_df_i)
+            result_i <- summary(res.poisson_i)$coefficients
+          }
+        }
+        
+        if(nrow(result_i) == 20){
+          result_site <- result_i
+        }else{
+          row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(result_i)))), ncol=1)
+          row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(result_i)))]
+          result_i_complet <- merge(result_i,row_to_add,by="row.names",all=TRUE)
+          result_i_complet <- result_i_complet[match(col_names, result_i_complet$Row.names),]
+          result_i_complet <- as.matrix(result_i_complet[2:5])
+          result_site <- result_i_complet
+        }
+      }else{
+        result_site <- matrix(NA,nrow=20,ncol=4)
+      }
+      
+      return(result_site)
+    },
+    min_site_number_per_species=min_site_number_per_species,poisson_df=poisson_df,
+    .progress="text")
+    
+    result_all_site <- aperm(result_all_site, c(2,3,1))
+    
+    result_all_site_scale <- result_all_site
+    for(i in 1:dim(result_all_site_scale)[3]){
+      result_all_site_scale[-1,1,i] <- scale(result_all_site_scale[-1,1,i],center = FALSE)
+    }
+    
+    
+    ### Remove edge effect by keeping sites with enough neighbourg
+    
+    if(dim(result_all_site)[3] > 1){
+      res.poisson_df <- data.frame(result_all_site[1,1,],result_all_site[2,1,],result_all_site[3,1,],result_all_site[4,1,],
+                                   result_all_site[5,1,],result_all_site[6,1,],result_all_site[7,1,],result_all_site[8,1,],
+                                   result_all_site[9,1,],result_all_site[10,1,],result_all_site[11,1,],result_all_site[12,1,],
+                                   result_all_site[13,1,],result_all_site[14,1,],result_all_site[15,1,],result_all_site[16,1,],
+                                   result_all_site[17,1,],result_all_site[18,1,],result_all_site[19,1,],result_all_site[20,1,])
+      res.poisson_pval <- data.frame(result_all_site[1,4,],result_all_site[2,4,],result_all_site[3,4,],result_all_site[4,4,],
+                                     result_all_site[5,4,],result_all_site[6,4,],result_all_site[7,4,],result_all_site[8,4,],
+                                     result_all_site[9,4,],result_all_site[10,4,],result_all_site[11,4,],result_all_site[12,4,],
+                                     result_all_site[13,4,],result_all_site[14,4,],result_all_site[15,4,],result_all_site[16,4,],
+                                     result_all_site[17,4,],result_all_site[18,4,],result_all_site[19,4,],result_all_site[20,4,])
+    }
+    if(dim(result_all_site)[3] == 1){
+      res.poisson_df <- data.frame(result_all_site[1,1],result_all_site[2,1],result_all_site[3,1],result_all_site[4,1],
+                                   result_all_site[5,1],result_all_site[6,1],result_all_site[7,1],result_all_site[8,1],
+                                   result_all_site[9,1],result_all_site[10,1],result_all_site[11,1],result_all_site[12,1],
+                                   result_all_site[13,1],result_all_site[14,1],result_all_site[15,1],result_all_site[16,1],
+                                   result_all_site[17,1],result_all_site[18,1],result_all_site[19,1],result_all_site[20,1])
+      res.poisson_pval <- data.frame(result_all_site[1,4],result_all_site[2,4],result_all_site[3,4],result_all_site[4,4],
+                                     result_all_site[5,4],result_all_site[6,4],result_all_site[7,4],result_all_site[8,4],
+                                     result_all_site[9,4],result_all_site[10,4],result_all_site[11,4],result_all_site[12,4],
+                                     result_all_site[13,4],result_all_site[14,4],result_all_site[15,4],result_all_site[16,4],
+                                     result_all_site[17,4],result_all_site[18,4],result_all_site[19,4],result_all_site[20,4])
+    }
+    if(dim(result_all_site)[3] == 0){
+      res.poisson_df <- data.frame(matrix(NA,nrow=1,ncol=20))
+      res.poisson_pval <- matrix(1,nrow=1,ncol=20)
+    }
+    
+    
+    
+    res.poisson_df[res.poisson_pval > 0.05] <- NA 
+    
+    names(res.poisson_df) <- col_names
+    
+    if(dim(result_all_site)[3] == 0){
+      
+      res.poisson_df$biogeo_area <- NA
+      
+    }else{
+      
+      res.poisson_df$biogeo_area <- row.names(res.poisson_df)
+      
+    }
+    
+    global_mod_coef <- summary(global_mod)$coef[,1]
+    global_mod_coef[which(summary(global_mod)$coef[,4] > 0.05)] <- NA
+    global_mod_df <- data.frame(t(global_mod_coef))
+    names(global_mod_df) <- col_names
+    global_mod_df$biogeo_area <- "europe"
+    
+    res.poisson_df <- rbind(res.poisson_df,global_mod_df)
+    
+    #res.poisson_sf <- merge(grid_eu_spafra_biogeo,res.poisson_df,by="biogeo_area")
+    #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=exp(`year:treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
+    
+  }else{
+    res.poisson_df <- data.frame(t(rep(NA,20)))
+    names(res.poisson_df) <- col_names
+    res.poisson_df$biogeo_area <- NA
+  }
+  
+  return(res.poisson_df)
 }

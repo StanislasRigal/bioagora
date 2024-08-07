@@ -903,6 +903,9 @@ st_crs(site_mainland_sf) <- 4326
 
 site_mainland_sf_reproj <- st_transform(site_mainland_sf,crs(grid_eu_mainland))
 
+#saveRDS(site_mainland_sf_reproj,"output/site_mainland_sf_reproj.rds")
+site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
+
 site_mainland$Long_LAEA <- st_coordinates(site_mainland_sf_reproj)[,1]
 site_mainland$Lat_LAEA <- st_coordinates(site_mainland_sf_reproj)[,2]
 
@@ -960,6 +963,7 @@ value_site_mainland$eulandsystem_cat[which(value_site_mainland$eulandsystem %in%
 value_site_mainland$eulandsystem_cat <- factor(value_site_mainland$eulandsystem_cat, levels = c("no_intensity","low_intensity","medium_intensity","high_intensity")) 
 value_site_mainland$eulandsystem <- NULL
 
+value_site_mainland <- as.data.frame(value_site_mainland)
 
 ## add zero when species no present at monitored site
 
@@ -968,7 +972,7 @@ wide_bird_data$count[which(is.na(wide_bird_data$count))] <- 0
 
 bird_data_mainland <- merge(wide_bird_data,site_mainland,by=c("siteID"), all.x=T)
 
-bird_data_mainland <- merge(bird_data_mainland,value_site_mainland, by="siteID", all.x=TRUE)
+#bird_data_mainland <- merge(bird_data_mainland,value_site_mainland, by="siteID", all.x=TRUE)
 
 ## remove site not followed enough
 
@@ -977,45 +981,50 @@ nb_year_p_site <- data.frame(nb_year_p_site %>% group_by(siteID) %>% summarise(n
                                                                                min_year=min(year),
                                                                                max_year=max(year)))
 
-selected_site_mainland <- nb_year_p_site[which(nb_year_p_site$nb_year > 4 &
-                                               nb_year_p_site$min_year < 2006 &
-                                               nb_year_p_site$max_year > 2014),]
+selected_site_mainland <- nb_year_p_site[which(nb_year_p_site$nb_year >= 5 &
+                                               nb_year_p_site$min_year <= 2011 &
+                                               nb_year_p_site$max_year >= 2012),]
 
 subsite_data_mainland_trend <- bird_data_mainland[which(bird_data_mainland$siteID %in% c(selected_site_mainland$siteID)),]
 
+saveRDS(subsite_data_mainland_trend,"output/subsite_data_mainland_trend.rds")
 
 ## get value per year per pressure
 
 press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.keep_all=TRUE), .(siteID,year),
-                            .fun = function(x){
-                              pop <- (x$pop2020-x$pop2000)/21*(x$year-2000)+x$pop2000
-                              impervious <- (x$impervious2018-x$impervious2006)/13*(x$year-2006)+x$impervious2006
-                              treedensity <- (x$treedensity2018-x$treedensity2012)/7*(x$year-2012)+x$treedensity2012
-                              lightpollution <- (x$lightpollution2013-x$lightpollution2000)/14*(x$year-2000)+x$lightpollution2000
-                              woodprod <- (x$woodprod2010-x$woodprod2000)/11*(x$year-2000)+x$woodprod2000
-                              drymatter <- (x$drymatter2018-x$drymatter2000)/19*(x$year-2000)+x$drymatter2000
-                              temp <- (x$temp2020-x$temp2000)/21*(x$year-2000)+x$temp2000
-                              tempspring <- (x$tempspring2020-x$tempspring2000)/21*(x$year-2000)+x$tempspring2000
-                              tempspringvar <- (x$tempspringvar2020-x$tempspringvar2000)/21*(x$year-2000)+x$tempspringvar2000
-                              prec <- (x$prec2020-x$prec2000)/21*(x$year-2000)+x$prec2000
-                              precspring <- (x$precspring2020-x$precspring2000)/21*(x$year-2000)+x$precspring2000
-                              precspringvar <- (x$precspringvar2020-x$precspringvar2000)/21*(x$year-2000)+x$precspringvar2000
-                              GDP_percap <- (x$GDP2015_percap-x$GDP2000_percap)/16*(x$year-2000)+x$GDP2000_percap
-                              GDP <- (x$GDP2015-x$GDP2000)/16*(x$year-2000)+x$GDP2000
-                              protectedarea <- x$protectedarea
-                              pesticide_nodu <- x$pesticide_nodu_kg
-                              smallwoodyfeatures <- x$smallwoodyfeatures
-                              fragmentation <- x$fragmentation
-                              forestintegrity_cat <- x$forestintegrity_cat
-                              shannon <- x$shannon
-                              eulandsystem_cat <- x$eulandsystem_cat
-                              biogeo_area <- x$biogeo_area
+                            .fun = function(x,pressure_data){
+                              
+                              pressure_subdata <- pressure_data[which(pressure_data$siteID == x$siteID),]
+                              
+                              pop <- (pressure_subdata$pop2020-pressure_subdata$pop2000)/21*(x$year-2000)+pressure_subdata$pop2000
+                              impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13*(x$year-2006)+pressure_subdata$impervious2006
+                              treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7*(x$year-2012)+pressure_subdata$treedensity2012
+                              lightpollution <- (pressure_subdata$lightpollution2013-pressure_subdata$lightpollution2000)/14*(x$year-2000)+pressure_subdata$lightpollution2000
+                              woodprod <- (pressure_subdata$woodprod2010-pressure_subdata$woodprod2000)/11*(x$year-2000)+pressure_subdata$woodprod2000
+                              drymatter <- (pressure_subdata$drymatter2018-pressure_subdata$drymatter2000)/19*(x$year-2000)+pressure_subdata$drymatter2000
+                              temp <- (pressure_subdata$temp2020-pressure_subdata$temp2000)/21*(x$year-2000)+pressure_subdata$temp2000
+                              tempspring <- (pressure_subdata$tempspring2020-pressure_subdata$tempspring2000)/21*(x$year-2000)+pressure_subdata$tempspring2000
+                              tempspringvar <- (pressure_subdata$tempspringvar2020-pressure_subdata$tempspringvar2000)/21*(x$year-2000)+pressure_subdata$tempspringvar2000
+                              prec <- (pressure_subdata$prec2020-pressure_subdata$prec2000)/21*(x$year-2000)+pressure_subdata$prec2000
+                              precspring <- (pressure_subdata$precspring2020-pressure_subdata$precspring2000)/21*(x$year-2000)+pressure_subdata$precspring2000
+                              precspringvar <- (pressure_subdata$precspringvar2020-pressure_subdata$precspringvar2000)/21*(x$year-2000)+pressure_subdata$precspringvar2000
+                              GDP_percap <- (pressure_subdata$GDP2015_percap-pressure_subdata$GDP2000_percap)/16*(x$year-2000)+pressure_subdata$GDP2000_percap
+                              GDP <- (pressure_subdata$GDP2015-pressure_subdata$GDP2000)/16*(x$year-2000)+pressure_subdata$GDP2000
+                              protectedarea <- pressure_subdata$protectedarea
+                              pesticide_nodu <- pressure_subdata$pesticide_nodu_kg
+                              smallwoodyfeatures <- pressure_subdata$smallwoodyfeatures
+                              fragmentation <- pressure_subdata$fragmentation
+                              forestintegrity_cat <- pressure_subdata$forestintegrity_cat
+                              shannon <- pressure_subdata$shannon
+                              eulandsystem_cat <- pressure_subdata$eulandsystem_cat
+                              biogeo_area <- pressure_subdata$biogeo_area
+                              
                               trend_result <- data.frame(pop,impervious,treedensity,lightpollution,woodprod,drymatter,
                                                          temp,tempspring,tempspringvar,prec,precspring,precspringvar,
                                                          GDP_percap,GDP,protectedarea,pesticide_nodu,smallwoodyfeatures,
                                                          fragmentation,forestintegrity_cat,shannon,eulandsystem_cat,biogeo_area)
                               return(trend_result)
-                            },
+                            },pressure_data = value_site_mainland,
                             .progress = "text")
 
 press_mainland_trend_scale <- press_mainland_trend
@@ -1029,14 +1038,104 @@ press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
                                                                                                                   "smallwoodyfeatures","fragmentation","shannon")])
 
 
+saveRDS(press_mainland_trend_scale,"output/press_mainland_trend_scale.rds") 
 
 
 
 
+subsite_data_mainland_trend <- readRDS("output/subsite_data_mainland_trend.rds")
+press_mainland_trend_scale <- readRDS("output/press_mainland_trend_scale.rds") 
 
 
+### find minimum nubmer of site for GLMP
+
+find_site_nubmer <- function(bird_data,pressure_data){
+  
+  species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","scheme_code","Long_LAEA","Lat_LAEA","pop","impervious","treedensity","lightpollution",
+                                                   "woodprod","drymatter","tempspring","tempspringvar",  
+                                                   "precspring","precspringvar",
+                                                   "protectedarea","pesticide_nodu","smallwoodyfeatures",
+                                                   "fragmentation","shannon","eulandsystem_cat","biogeo_area")])
+  
+  unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+  
+  result_site_number <- data.frame(unique_poisson_df %>% group_by(biogeo_area) %>% summarize(count=n()))
+  
+  return(result_site_number)
+}
+
+site_number_species_biogeo <- ddply(subsite_data_mainland_trend,
+                                    .(sci_name_out),.fun=find_site_nubmer,
+                                    pressure_data=press_mainland_trend_scale, .progress = "text")
+
+### GLM Poisson per biogeo area
+
+source("functions.R")
+
+res_mainland_species_biogeo <- ddply(subsite_data_mainland_trend,
+                                   .(sci_name_out),.fun=glm_species_biogeo,
+                                   pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                   formula_glmp= count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon+year:eulandsystem_cat,
+                                   formula_glmp_scheme=count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon+year:eulandsystem_cat + scheme_code,
+                                   min_site_number_per_species=40, .progress = "text")
 
 
+#saveRDS(res_mainland_species_biogeo,"output/res_mainland_species_biogeo.rds")
+res_mainland_species_biogeo <- readRDS("output/res_mainland_species_biogeo.rds")
+
+
+### Plot spatial by species 
+res_species_biogeo_df <- res_mainland_species_biogeo[which(res_mainland_species_biogeo$sci_name_out == unique(res_mainland_species_biogeo$sci_name_out)[12]),]
+
+res_species_biogeo_sf <- merge(grid_eu_mainland_biogeo,res_species_biogeo_df, by="biogeo_area",all.x=TRUE)
+ggplot() + geom_sf() +  geom_sf(data=res_species_biogeo_sf, aes(fill=exp(`year:treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
+
+
+### Plot estimate by pressure
+
+res_mainland_species_biogeo_long <- melt(res_mainland_species_biogeo, id.vars=c("sci_name_out","biogeo_area"))
+
+res_mainland_species_biogeo_long <- res_mainland_species_biogeo_long[which(res_mainland_species_biogeo_long$variable != "(Intercept)"),]
+
+ggplot(res_mainland_species_biogeo_long, aes(x = variable, y = exp(value))) + 
+  geom_point(position = position_jitterdodge(jitter.width=0.15,dodge.width = 0.6), 
+             alpha = 0.2, size = 3, stroke = 0, na.rm = TRUE, aes(col=variable)) +
+  geom_violin(width = 0.6, alpha = 0.1, na.rm = TRUE, aes(fill = variable)) +
+  geom_boxplot(width = 0.6, alpha = 0.1, na.rm = TRUE,outlier.shape = NA,aes(fill = variable)) + 
+  #scale_fill_manual(values = c("trees" = "#29c200","no_tree" = "#b1b1b1")) +
+  #scale_color_manual(values = c("trees" = "#29c200","no_tree" = "#b1b1b1")) +
+  #theme_ggstatsplot() +
+  labs(y="Naturalness scale") + theme(axis.title.x = element_blank(),
+                                      legend.position = "none")
+
+### GLMM Poisson per biogeo areas and sites
+
+source("functions.R")
+
+res_mainland_species_biogeo_glmm <- ddply(subsite_data_mainland_trend,
+                                     .(sci_name_out),.fun=glmm_species_biogeo,
+                                     pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                     formula_glmp= count~year+year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                       year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+                                       year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                       year:shannon+year:eulandsystem_cat + (1|siteID),
+                                     formula_glmp_scheme=count~year+year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                       year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+                                       year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                       year:shannon+year:eulandsystem_cat + (1|scheme_code) + (1|siteID),
+                                     min_site_number_per_species=40, .progress = "text")
+
+
+#saveRDS(res_mainland_species_biogeo,"output/res_mainland_species_biogeo.rds")
+res_mainland_species_biogeo <- readRDS("output/res_mainland_species_biogeo.rds")
 
 
 

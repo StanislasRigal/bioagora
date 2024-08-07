@@ -114,6 +114,8 @@ bird_data_distribution$selected <- "no"
 bird_data_distribution$selected[which(bird_data_distribution$frequency > 0.01)] <- "yes_freq_occurence"
 bird_data_distribution$selected[which(bird_data_distribution$distrib > 100 & bird_data_distribution$frequency <= 0.01)] <- "yes_abund_occurrence"
 
+write.csv(bird_data_distribution,"output/bird_data_distribution.csv", row.names = FALSE)
+
 ggplot() +
   geom_density(data=bird_data_frequency, aes(x=freq)) +
   xlim(0,100000) + theme_modern()
@@ -150,6 +152,13 @@ ggplot(time_period_bird_data, aes(x=year)) +
   scale_y_continuous(name = "Number of monitored sites", sec.axis = sec_axis(~./400, name="Number of countries")) +
   theme_modern() + xlab("") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+ggsave(
+  "output/site_country_time.png",
+  width = 7,
+  height = 5,
+  dpi = 300,
+)
 
 # more than 15 countries
 selected_year <- time_period_bird_data$year[which(time_period_bird_data$nb_country>=15)]
