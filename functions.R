@@ -253,7 +253,7 @@ gwpr_species_manual <- function(bird_data,pressure_data,site_data,bandwidth,band
     }else{
       if(length(unique(poisson_df$scheme_code)) > 1){
         global_mod <- glm(count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
-                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:humidityspring+
                             year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
                             year:shannon + scheme_code, family="poisson", data=poisson_df)
       }else{
@@ -471,19 +471,33 @@ gwpr_species_manual <- function(bird_data,pressure_data,site_data,bandwidth,band
 # Function to apply GMLP to bird species
 
 glm_species_biogeo <- function(bird_data,pressure_data,site_data,
-                               formula_glmp,formula_glmp_scheme,min_site_number_per_species,min_occurence_species=200){
+                               formula_glmp,formula_glmp_scheme,min_site_number_per_species,
+                               min_occurence_species=200,family){
   
   species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
   
-  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","scheme_code","Long_LAEA","Lat_LAEA","pop","impervious","treedensity","lightpollution",
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","time_effort","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
+                                                   "pop","impervious","treedensity","lightpollution",
                                                    "woodprod","drymatter","tempspring","tempspringvar",  
-                                                   "precspring","precspringvar",
+                                                   "precspring","precspringvar","humidityspring",
                                                    "protectedarea","pesticide_nodu","smallwoodyfeatures",
                                                    "fragmentation","shannon","eulandsystem_cat","biogeo_area")])
+  poisson_df$year <- poisson_df$year - 2000
   
-  col_names <- c("(Intercept)","year:treedensity","year:impervious","year:pop", 
+  if(length(table(poisson_df$time_effort)) > length(unique(poisson_df$scheme_code)) & length(table(poisson_df$area_sampled_m2)) > length(unique(poisson_df$scheme_code))){
+    one_scheme_time_area <- 0 
+    poisson_df$time_effort <- scale(poisson_df$time_effort)
+    poisson_df$area_sampled_m2 <- scale(poisson_df$area_sampled_m2)
+  }else{
+    one_scheme_time_area <- 1
+  }
+
+  poisson_df$count_scale_all <- scales::rescale(poisson_df$count)
+  
+  
+  col_names <- c("(Intercept)","year","year:treedensity","year:impervious","year:pop", 
                  "year:lightpollution","year:woodprod","year:drymatter","year:tempspring",
-                 "year:tempspringvar","year:precspring","year:precspringvar","year:protectedarea",
+                 "year:tempspringvar","year:precspring","year:precspringvar","year:humidityspring","year:protectedarea",
                  "year:pesticide_nodu","year:smallwoodyfeatures","year:fragmentation","year:shannon",
                  "year:eulandsystem_catlow_intensity","year:eulandsystem_catmedium_intensity",
                  "year:eulandsystem_cathigh_intensity")
@@ -493,22 +507,48 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
     ### global poisson model
     
     if(length(unique(poisson_df$eulandsystem_cat)) > 1){
-      if(length(unique(poisson_df$scheme_code)) > 1){
-        global_mod <- glm(formula_glmp_scheme, family="poisson", data=poisson_df)
-      }else{
-        global_mod <- glm(formula_glmp, family="poisson", data=poisson_df)
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+        global_mod <- glm(formula_glmp_scheme, family=family, data=poisson_df)
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+        global_mod <- glm(formula_glmp, family=family, data=poisson_df)
+      }
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+        global_mod <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat + scheme_code, family=family, data=poisson_df)
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+        global_mod <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat, family=family, data=poisson_df)
       }
     }else{
-      if(length(unique(poisson_df$scheme_code)) > 1){
-        global_mod <- glm(count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
-                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+        global_mod <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
                             year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
-                            year:shannon + scheme_code, family="poisson", data=poisson_df)
-      }else{
-        global_mod <- glm(count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
-                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+#year:GDP_percap+
+                            year:shannon + time_effort + area_sampled_m2 + scheme_code, family=family, data=poisson_df)
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+        global_mod <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
                             year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
-                            year:shannon, family="poisson", data=poisson_df)
+                            year:shannon + time_effort + area_sampled_m2, family=family, data=poisson_df)
+      }
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+        global_mod <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + scheme_code, family=family, data=poisson_df)
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+        global_mod <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon, family=family, data=poisson_df)
       }
     }
     
@@ -533,40 +573,87 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
           
           poisson_df_i <- poisson_df[which(poisson_df$biogeo_area == unique(x$biogeo_area)),]
           
-          site_scheme <- poisson_df_i %>% group_by(scheme_code,siteID) %>% summarize(count=n())
-          site_scheme <- site_scheme %>% group_by(scheme_code) %>% summarise(nb_site = n())
+          #poisson_df_i$count_scale_all <- scales::rescale(poisson_df_i$count)
+          
+          if(length(table(poisson_df_i$time_effort)) > length(unique(poisson_df_i$scheme_code)) & length(table(poisson_df_i$area_sampled_m2)) > length(unique(poisson_df_i$scheme_code))){
+            one_scheme_time_area <- 0 
+            poisson_df_i$time_effort <- scale(poisson_df_i$time_effort)
+            poisson_df_i$area_sampled_m2 <- scale(poisson_df_i$area_sampled_m2)
+          }else{
+            one_scheme_time_area <- 1
+          }
           
           if(length(unique(poisson_df_i$eulandsystem_cat)) > 1){
-            if(length(unique(poisson_df_i$scheme_code)) > 1 && nrow(site_scheme[which(site_scheme$nb_site==1),]) == 0){
-              res.poisson_i <- glm(formula_glmp_scheme, family="poisson",
+            if(length(unique(poisson_df_i$scheme_code)) > 1 && one_scheme_time_area == 0){
+              res.poisson_i <- glm(formula_glmp_scheme, family=family,
                                    data=poisson_df_i)
               result_i <- summary(res.poisson_i)$coefficients
-              result_i <- result_i[grep("scheme_code",row.names(result_i),invert = TRUE),]
-            }else{
-              res.poisson_i <- glm(formula_glmp, family="poisson",
+              result_i <- result_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
+            }
+            if(length(unique(poisson_df_i$scheme_code)) == 1 && one_scheme_time_area == 0){
+              res.poisson_i <- glm(formula_glmp, family=family,
                                    data=poisson_df_i)
               result_i <- summary(res.poisson_i)$coefficients
+              result_i <- result_i[grep("area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
+            }
+            if(length(unique(poisson_df_i$scheme_code)) > 1 && one_scheme_time_area == 1){
+              res.poisson_i <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon + year:eulandsystem_cat + scheme_code, family=family,
+                                   data=poisson_df_i)
+              result_i <- summary(res.poisson_i)$coefficients
+              result_i <- result_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
+            }
+            if(length(unique(poisson_df_i$scheme_code)) == 1 && one_scheme_time_area == 1){
+              res.poisson_i <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon + year:eulandsystem_cat, family=family,
+                                   data=poisson_df_i)
+              result_i <- summary(res.poisson_i)$coefficients
+              result_i <- result_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
             }
           }else{
-            if(length(unique(poisson_df_i$scheme_code)) > 1 && nrow(site_scheme[which(site_scheme$nb_site==1),]) == 0){
-              res.poisson_i <- glm(count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
-                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+            if(length(unique(poisson_df_i$scheme_code)) > 1 && one_scheme_time_area == 0){
+              res.poisson_i <- glm(count_scale_all~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
                                      year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
-                                     year:shannon + scheme_code, family="poisson",
+                                     year:shannon + time_effort + area_sampled_m2 + scheme_code, family=family,
                                    data=poisson_df_i)
               result_i <- summary(res.poisson_i)$coefficients
-              result_i <- result_i[grep("scheme_code",row.names(result_i),invert = TRUE),]
-            }else{
-              res.poisson_i <- glm(count~year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
-                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+
+              result_i <- result_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
+            }
+            if(length(unique(poisson_df_i$scheme_code)) == 1 && one_scheme_time_area == 0){
+              res.poisson_i <- glm(count_scale_all~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
                                      year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
-                                     year:shannon, family="poisson",
+                                     year:shannon + time_effort + area_sampled_m2, family=family,
                                    data=poisson_df_i)
               result_i <- summary(res.poisson_i)$coefficients
+              result_i <- result_i[grep("area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
+            }
+            if(length(unique(poisson_df_i$scheme_code)) > 1 && one_scheme_time_area == 1){
+              res.poisson_i <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon + scheme_code, family=family,
+                                   data=poisson_df_i)
+              result_i <- summary(res.poisson_i)$coefficients
+              result_i <- result_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
+            }
+            if(length(unique(poisson_df_i$scheme_code)) == 1 && one_scheme_time_area == 1){
+              res.poisson_i <- glm(count_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                     year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                     year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                     year:shannon, family=family,
+                                   data=poisson_df_i)
+              result_i <- summary(res.poisson_i)$coefficients
+              result_i <- result_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_i),invert = TRUE),]
             }
           }
           
-          if(nrow(result_i) == 19){
+          if(nrow(result_i) == length(col_names)){
             result_site <- result_i
           }else{
             row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(result_i)))), ncol=1)
@@ -577,7 +664,7 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
             result_site <- result_i_complet
           }
         }else{
-          result_site <- matrix(NA,nrow=19,ncol=4)
+          result_site <- matrix(NA,nrow=length(col_names),ncol=4)
         }
         
         return(result_site)
@@ -587,41 +674,33 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
       
       result_all_site <- aperm(result_all_site, c(2,3,1))
       
-      result_all_site_scale <- result_all_site
-      for(i in 1:dim(result_all_site_scale)[3]){
-        result_all_site_scale[-1,1,i] <- scale(result_all_site_scale[-1,1,i],center = FALSE)
-      }
-      
-      
-      ### Remove edge effect by keeping sites with enough neighbourg
-      
       if(dim(result_all_site)[3] > 1){
         res.poisson_df <- data.frame(result_all_site[1,1,],result_all_site[2,1,],result_all_site[3,1,],result_all_site[4,1,],
                                      result_all_site[5,1,],result_all_site[6,1,],result_all_site[7,1,],result_all_site[8,1,],
                                      result_all_site[9,1,],result_all_site[10,1,],result_all_site[11,1,],result_all_site[12,1,],
                                      result_all_site[13,1,],result_all_site[14,1,],result_all_site[15,1,],result_all_site[16,1,],
-                                     result_all_site[17,1,],result_all_site[18,1,],result_all_site[19,1,])
+                                     result_all_site[17,1,],result_all_site[18,1,],result_all_site[19,1,],result_all_site[20,1,],result_all_site[21,1,])
         res.poisson_pval <- data.frame(result_all_site[1,4,],result_all_site[2,4,],result_all_site[3,4,],result_all_site[4,4,],
                                        result_all_site[5,4,],result_all_site[6,4,],result_all_site[7,4,],result_all_site[8,4,],
                                        result_all_site[9,4,],result_all_site[10,4,],result_all_site[11,4,],result_all_site[12,4,],
                                        result_all_site[13,4,],result_all_site[14,4,],result_all_site[15,4,],result_all_site[16,4,],
-                                       result_all_site[17,4,],result_all_site[18,4,],result_all_site[19,4,])
+                                       result_all_site[17,4,],result_all_site[18,4,],result_all_site[19,4,],result_all_site[20,4,],result_all_site[21,4,])
       }
       if(dim(result_all_site)[3] == 1){
         res.poisson_df <- data.frame(result_all_site[1,1],result_all_site[2,1],result_all_site[3,1],result_all_site[4,1],
                                      result_all_site[5,1],result_all_site[6,1],result_all_site[7,1],result_all_site[8,1],
                                      result_all_site[9,1],result_all_site[10,1],result_all_site[11,1],result_all_site[12,1],
                                      result_all_site[13,1],result_all_site[14,1],result_all_site[15,1],result_all_site[16,1],
-                                     result_all_site[17,1],result_all_site[18,1],result_all_site[19,1])
+                                     result_all_site[17,1],result_all_site[18,1],result_all_site[19,1],result_all_site[20,1],result_all_site[21,1])
         res.poisson_pval <- data.frame(result_all_site[1,4],result_all_site[2,4],result_all_site[3,4],result_all_site[4,4],
                                        result_all_site[5,4],result_all_site[6,4],result_all_site[7,4],result_all_site[8,4],
                                        result_all_site[9,4],result_all_site[10,4],result_all_site[11,4],result_all_site[12,4],
                                        result_all_site[13,4],result_all_site[14,4],result_all_site[15,4],result_all_site[16,4],
-                                       result_all_site[17,4],result_all_site[18,4],result_all_site[19,4])
+                                       result_all_site[17,4],result_all_site[18,4],result_all_site[19,4],result_all_site[20,4],result_all_site[21,4])
       }
       if(dim(result_all_site)[3] == 0){
-        res.poisson_df <- data.frame(matrix(NA,nrow=1,ncol=19))
-        res.poisson_pval <- matrix(1,nrow=1,ncol=19)
+        res.poisson_df <- data.frame(matrix(NA,nrow=1,ncol=length(col_names)))
+        res.poisson_pval <- matrix(1,nrow=1,ncol=length(col_names))
       }
       
       
@@ -640,17 +719,36 @@ glm_species_biogeo <- function(bird_data,pressure_data,site_data,
         
       }
       
-      #res.poisson_sf <- merge(grid_eu_spafra_biogeo,res.poisson_df,by="biogeo_area")
+      global_mod_coef <- summary(global_mod)$coefficient[grep("scheme_code|area_sampled_m2|time_effort",row.names(summary(global_mod)$coefficient),invert = TRUE),]
+      
+      if(nrow(global_mod_coef) < length(col_names)){
+        row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(global_mod_coef)))), ncol=1)
+        row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(global_mod_coef)))]
+        global_mod_coef_complet <- merge(global_mod_coef,row_to_add,by="row.names",all=TRUE)
+        global_mod_coef_complet <- global_mod_coef_complet[match(col_names, global_mod_coef_complet$Row.names),]
+        global_mod_coef_complet <- as.matrix(global_mod_coef_complet[2:5])
+        global_mod_coef <- global_mod_coef_complet
+      }
+      
+      global_mod_coef1 <- global_mod_coef[,1]
+      global_mod_coef1[which(global_mod_coef[,4] > 0.05)] <- NA
+      global_mod_df <- data.frame(t(global_mod_coef1))
+      names(global_mod_df) <- col_names
+      global_mod_df$biogeo_area <- "europe"
+      
+      res.poisson_df <- rbind(res.poisson_df,global_mod_df)
+      
+      #res.poisson_sf <- merge(grid_eu_mainland_biogeo,res.poisson_df,by="biogeo_area")
       #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=exp(`year:treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
       
     }else{
-      res.poisson_df <- data.frame(t(rep(NA,19)))
+      res.poisson_df <- data.frame(t(rep(NA,length(col_names))))
       names(res.poisson_df) <- col_names
       res.poisson_df$biogeo_area <- NA
     }
     
   }else{
-    res.poisson_df <- data.frame(t(rep(NA,19)))
+    res.poisson_df <- data.frame(t(rep(NA,length(col_names))))
     names(res.poisson_df) <- col_names
     res.poisson_df$biogeo_area <- NA
   }
@@ -704,6 +802,7 @@ glmm_species_biogeo <- function(bird_data,pressure_data,site_data,
       }
     }
     
+    grep("failed to converge",global_mod@optinfo$conv$lme4$messages)
 
     poisson_sf <- SpatialPointsDataFrame(coords = as.matrix(poisson_df[,c("Long_LAEA","Lat_LAEA")]), data = poisson_df,
                                          proj4string = CRS(crs(site_data)))

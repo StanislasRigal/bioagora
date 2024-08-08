@@ -189,7 +189,7 @@ bird_data_preclean <- merge(bird_data_preclean, sites[,c("scheme", "scheme_code"
 bird_data_preclean$count[which(bird_data_preclean$count_unit %in% c("pairs","territories"))] <- 2*bird_data_preclean$count[which(bird_data_preclean$count_unit %in% c("pairs","territories"))]
 
 # remove records of large groups
-bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.9995)),]
+bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.99)),]
 
 bird_data_clean <- bird_data_preclean
 
