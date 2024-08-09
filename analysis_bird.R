@@ -1036,7 +1036,7 @@ saveRDS(press_mainland_trend,"output/press_mainland_trend.rds")
 press_mainland_trend_scale <- press_mainland_trend
 press_mainland_trend_scale$pesticide_nodu <- sqrt(press_mainland_trend_scale$pesticide_nodu)
 press_mainland_trend_scale$fragmentation <- sqrt(press_mainland_trend_scale$fragmentation)
-press_mainland_trend_scale$pop <- sqrt(press_mainland_trend_scale$pop)
+#press_mainland_trend_scale$pop <- sqrt(press_mainland_trend_scale$pop) ############### pb ici
 press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
                             "woodprod","drymatter","temp","tempspring","tempspringvar","prec",        
                             "precspring","precspringvar","humidityspring","GDP_percap","GDP","pesticide_nodu",
@@ -1149,12 +1149,77 @@ ggplot(res_mainland_species_biogeo_long, aes(x = variable, y = exp(value))) +
 
 
 
+###### Community analysis
+
+## specialisation index (SSI)
+
+SSI <- read.csv("raw_data/species_indices/SSI_10.1002.ece3.5419.csv")  # from https://doi.org/10.1002/ece3.5419 reused in DOI:10.1111/geb.13405
+
+
+## Species temperature index (STI)
+# https://royalsocietypublishing.org/doi/epdf/10.1098/rspb.2008.0878
+# https://onlinelibrary.wiley.com/doi/epdf/10.1111/j.1600-0587.2012.07799.x
+# get bird occurence from https://ebba2.info/data-request/
+# get climat data from https://surfobs.climate.copernicus.eu/dataaccess/access_eobs.php
+
+# species occurrence
+
+species_occ <- read.csv("raw_data/species_indices/ebba2_data_request_occurrence_50km/ebba2_data_occurrence_50km.csv", sep=";", header = T)
+
+# grid of occurrence
+
+grid_occ <- read_sf(dsn = "raw_data/species_indices/ebba2_grid50x50_v1/", layer = "ebba2_grid50x50_v1")
+
+# temperature by grid cell and by year
+
+for(i in 2000:2022){ 
+  print(i)
+  year <- paste0("temp_",i)
+  path <- paste0("output/temp_",i,".tif")
+
+  map_year <- assign(year, raster(path))
+  
+  mean_value_year <- exact_extract(map_year,grid_occ, "mean")
+
+  grid_occ$new_col <- mean_value_year
+  names(grid_occ)[which(names(grid_occ)=="new_col")] <- year
+  
+}
+
+ggplot(grid_occ) + 
+  geom_sf(aes(fill=temp_2000), col=NA)+
+  scale_fill_gradient2()
+
+grid_occ$temp_mean <- apply(grid_occ[,c(3:25)],1,function(x){return(mean(as.numeric(x), na.rm=T))})
+
+grid_mean <- grid_occ
+st_geometry(grid_mean) <- NULL
+
+# Merge species occurrence and temperature
+
+species_occ_temp <- merge(species_occ,data.frame(grid_mean),
+                          by = "cell50x50", all.x=TRUE)
+
+STI <- data.frame(species_occ_temp %>% group_by(birdlife_scientific_name) %>% summarise(STI = mean(temp_mean, na.rm=T),
+                                                                                                sd_STI = sd(temp_mean, na.rm=T)))
+#saveRDS(STI,"raw_data/species_indices/STI.rds")
+STI <- readRDS("raw_data/species_indices/STI.rds")
+
+SSI$Species[which(SSI$Species=="Carduelis chloris")] <- "Chloris chloris"
+SSI$Species[which(SSI$Species=="Parus caeruleus")] <- "Cyanistes caeruleus"
+SSI$Species[which(SSI$Species=="Miliaria calandra")] <- "Emberiza calandra"
+SSI$Species[which(SSI$Species=="Anas penelope")] <- "Mareca penelope"
+SSI$Species[which(SSI$Species=="Anas strepera")] <- "Mareca strepera"
+SSI$Species[which(SSI$Species=="Parus ater")] <- "Periparus ater"
+SSI$Species[which(SSI$Species=="Parus montanus")] <- "Poecile montanus"
+SSI$Species[which(SSI$Species=="Hirundo rupestris")] <- "Ptyonoprogne rupestris"
 
 
 
+SXI <- merge(STI,SSI,by.x="birdlife_scientific_name",by.y="Species", all.x=TRUE)
 
 
-
+community_data <- merge(subsite_data_mainland_trend,STI)
 
 
 
