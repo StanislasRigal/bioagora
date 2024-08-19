@@ -945,3 +945,235 @@ glmm_species_biogeo <- function(bird_data,pressure_data,site_data,
   
   return(res.poisson_df)
 }
+
+
+
+
+######## Community analysis functions
+
+CXI_data=community_data_SXI;pressure_data=press_mainland_trend_scale;site_data=site_mainland_sf_reproj;min_site_number=40
+
+lm_CXI_biogeo <- function(CXI_data,pressure_data,site_data,min_site_number=40){
+  
+  CXI_press_data_year <- merge(CXI_data, pressure_data[which(pressure_data$siteID %in% unique(CXI_data$siteID) & pressure_data$year %in% unique(CXI_data$year)),], by =c("siteID","year"), all.x=TRUE)
+  
+  model_df <- na.omit(CXI_press_data_year[,c("siteID","CTI","CSI","year","time_effort","area_sampled_m2","scheme_code",
+                                             "Long_LAEA","Lat_LAEA","pop","impervious","treedensity","lightpollution",
+                                             "woodprod","drymatter","tempspring","tempspringvar",  
+                                             "precspring","precspringvar","humidityspring",
+                                             "protectedarea","pesticide_nodu","smallwoodyfeatures",
+                                             "fragmentation","shannon","eulandsystem_cat","biogeo_area")])
+  model_df$year <- model_df$year - 2000
+  
+  model_df$CTI_scale_all <- scales::rescale(model_df$CTI)
+  model_df$CSI_scale_all <- scales::rescale(model_df$CSI)
+  
+  col_names <- c("(Intercept)","year","year:treedensity","year:impervious","year:pop", 
+                 "year:lightpollution","year:woodprod","year:drymatter","year:tempspring",
+                 "year:tempspringvar","year:precspring","year:precspringvar","year:humidityspring","year:protectedarea",
+                 "year:pesticide_nodu","year:smallwoodyfeatures","year:fragmentation","year:shannon",
+                 "year:eulandsystem_catlow_intensity","year:eulandsystem_catmedium_intensity",
+                 "year:eulandsystem_cathigh_intensity")
+  
+  ### global model
+  
+  global_mod_CTI <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                         year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                         year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                         year:shannon + year:eulandsystem_cat + time_effort + area_sampled_m2 + scheme_code, data=model_df)
+  global_mod_CSI <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                         year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                         year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                         year:shannon + year:eulandsystem_cat + time_effort + area_sampled_m2 + scheme_code, data=model_df)
+  
+  model_sf <- SpatialPointsDataFrame(coords = as.matrix(model_df[,c("Long_LAEA","Lat_LAEA")]), data = model_df,
+                                     proj4string = CRS(crs(site_data)))
+  
+  unique_model_df <- distinct(model_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+  
+  unique_model_sf <- SpatialPointsDataFrame(coords = as.matrix(unique_model_df[,c("Long_LAEA","Lat_LAEA")]), data = unique_model_df,
+                                            proj4string = CRS(crs(site_data)))
+  
+  result_all_site <- ddply(unique_model_df,.(biogeo_area),.fun=function(x,min_site_number,model_df){
+    
+    if(nrow(x) >= min_site_number){
+      
+      model_df_i <- model_df[which(model_df$biogeo_area == unique(x$biogeo_area)),]
+      
+      if(length(table(model_df_i$time_effort)) > length(unique(model_df_i$scheme_code)) & length(table(model_df_i$area_sampled_m2)) > length(unique(model_df_i$scheme_code))){
+        one_scheme_time_area <- 0 
+        model_df_i$time_effort <- scale(model_df_i$time_effort)
+        model_df_i$area_sampled_m2 <- scale(model_df_i$area_sampled_m2)
+      }else{
+        one_scheme_time_area <- 1
+      }
+      
+      if(length(unique(model_df_i$eulandsystem_cat)) > 1){
+        if(length(unique(model_df_i$scheme_code)) > 1 && one_scheme_time_area == 0){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat + time_effort + area_sampled_m2 + scheme_code, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat + time_effort + area_sampled_m2 + scheme_code, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+        if(length(unique(model_df_i$scheme_code)) == 1 && one_scheme_time_area == 0){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat + time_effort + area_sampled_m2, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat + time_effort + area_sampled_m2, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+        if(length(unique(model_df_i$scheme_code)) > 1 && one_scheme_time_area == 1){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat  + scheme_code, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat + scheme_code, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+        if(length(unique(model_df_i$scheme_code)) == 1 && one_scheme_time_area == 1){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + year:eulandsystem_cat, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+      }else{
+        if(length(unique(model_df_i$scheme_code)) > 1 && one_scheme_time_area == 0){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + time_effort + area_sampled_m2 + scheme_code, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + time_effort + area_sampled_m2 + scheme_code, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+        if(length(unique(model_df_i$scheme_code)) == 1 && one_scheme_time_area == 0){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + time_effort + area_sampled_m2, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + time_effort + area_sampled_m2, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+        if(length(unique(model_df_i$scheme_code)) > 1 && one_scheme_time_area == 1){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + scheme_code, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon + scheme_code, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+        if(length(unique(model_df_i$scheme_code)) == 1 && one_scheme_time_area == 1){
+          mod_CTI_i <- lm(CTI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon, data=model_df_i)
+          mod_CSI_i <- lm(CSI_scale_all~year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                            year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                            year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                            year:shannon, data=model_df_i)
+          result_CTI_i <- summary(mod_CTI_i)$coefficients
+          result_CTI_i <- result_CTI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CTI_i),invert = TRUE),]
+          result_CSI_i <- summary(mod_CSI_i)$coefficients
+          result_CSI_i <- result_CSI_i[grep("scheme_code|area_sampled_m2|time_effort",row.names(result_CSI_i),invert = TRUE),]
+        }
+      }
+      
+      if(nrow(result_CTI_i) == length(col_names)){
+        result_site_CTI <- result_CTI_i
+      }else{
+        row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(result_CTI_i)))), ncol=1)
+        row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(result_CTI_i)))]
+        result_CTI_i_complet <- merge(result_CTI_i,row_to_add,by="row.names",all=TRUE)
+        result_CTI_i_complet <- result_CTI_i_complet[match(col_names, result_CTI_i_complet$Row.names),]
+        result_CTI_i_complet <- as.matrix(result_CTI_i_complet[2:5])
+        result_site_CTI <- result_CTI_i_complet
+      }
+      
+      if(nrow(result_CSI_i) == length(col_names)){
+        result_site_CSI <- result_CSI_i
+      }else{
+        row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(result_CSI_i)))), ncol=1)
+        row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(result_CSI_i)))]
+        result_CSI_i_complet <- merge(result_CSI_i,row_to_add,by="row.names",all=TRUE)
+        result_CSI_i_complet <- result_CSI_i_complet[match(col_names, result_CSI_i_complet$Row.names),]
+        result_CSI_i_complet <- as.matrix(result_CSI_i_complet[2:5])
+        result_site_CSI <- result_CSI_i_complet
+      }
+      
+    }else{
+      result_site_CSI <- result_site_CTI <- matrix(NA,nrow=length(col_names),ncol=4)
+    }
+    
+    result_site <- rbind(data.frame(result_CTI_i,cxi="CTI"),data.frame(result_CSI_i,cxi="CSI"))
+    
+    result_site$variable <- col_names
+    
+    return(result_site)
+  },
+  min_site_number=min_site_number,model_df=model_df,
+  .progress="text")
+  
+  global_mod_coef_CTI <- summary(global_mod_CTI)$coefficient[grep("scheme_code|area_sampled_m2|time_effort",row.names(summary(global_mod_CTI)$coefficient),invert = TRUE),]
+  global_mod_coef_CSI <- summary(global_mod_CSI)$coefficient[grep("scheme_code|area_sampled_m2|time_effort",row.names(summary(global_mod_CSI)$coefficient),invert = TRUE),]
+  
+  result_site_all <- rbind(data.frame(global_mod_coef_CTI,cxi="CTI"),data.frame(global_mod_coef_CSI,cxi="CSI"))
+  
+  result_site_all$variable <- col_names
+  
+  result_site_all$biogeo_area <- "europe"
+  
+  res.model_df <- rbind(result_all_site,result_site_all)
+  
+  #res.model_df2 <- dcast(res.model_df[,c("Estimate","biogeo_area","cxi","variable")], biogeo_area + cxi ~ variable, value.var = "Estimate")
+  #res.model_sf <- merge(grid_eu_mainland_biogeo,res.model_df2[which(res.model_df2$cxi=="CTI"),],by="biogeo_area")
+  #ggplot() + geom_sf() +  geom_sf(data=res.model_sf, aes(fill=exp(`year:treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
+  
+  return(res.model_df)
+  
+}

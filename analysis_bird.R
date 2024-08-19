@@ -1215,11 +1215,59 @@ SSI$Species[which(SSI$Species=="Parus montanus")] <- "Poecile montanus"
 SSI$Species[which(SSI$Species=="Hirundo rupestris")] <- "Ptyonoprogne rupestris"
 
 
-
 SXI <- merge(STI,SSI,by.x="birdlife_scientific_name",by.y="Species", all.x=TRUE)
 
+#saveRDS(SXI,"raw_data/species_indices/SXI.rds")
+SXI <- readRDS("raw_data/species_indices/SXI.rds")
 
-community_data <- merge(subsite_data_mainland_trend,STI)
+
+
+community_data <- merge(subsite_data_mainland_trend,SXI,by.x="sci_name_out", by.y="birdlife_scientific_name", all.x=TRUE)
+
+community_data$count_STI <- community_data$count*community_data$STI
+
+community_data$count_SSI <- community_data$count*community_data$Specialism.index..overall.
+
+community_data_SXI <- data.frame(community_data %>% group_by(siteID,year,scheme_code,Long_WGS84,Lat_WGS84,Long_LAEA,Lat_LAEA,
+                                                             time_effort,area_sampled_m2) %>%
+                                   summarize(sum_count_STI = sum(count_STI, na.rm=TRUE), sum_count = sum(count, na.rm = TRUE),
+                                             sum_count_SSI = sum(count_SSI, na.rm=TRUE), sum_count2 = sum(count[which(!is.na(Specialism.index..overall.))])))
+
+community_data_SXI$CTI <- community_data_SXI$sum_count_STI/community_data_SXI$sum_count
+community_data_SXI$CSI <- community_data_SXI$sum_count_SSI/community_data_SXI$sum_count2
+
+
+res_mainland_cxi_biogeo <- lm_CXI_biogeo(community_data_SXI,press_mainland_trend_scale,site_mainland_sf_reproj)
+
+#saveRDS(res_mainland_cxi_biogeo,"output/res_mainland_cxi_biogeo.rds")
+res_mainland_cxi_biogeo <- readRDS("output/res_mainland_cxi_biogeo.rds")
+
+
+res_mainland_cxi_biogeo_CTI <- res_mainland_cxi_biogeo[which(res_mainland_cxi_biogeo$variable != "(Intercept)" & res_mainland_cxi_biogeo$cxi=="CTI"),]
+
+ggplot(res_mainland_cxi_biogeo_CTI, aes(x = variable, y = exp(Estimate))) + 
+  geom_point(position = position_jitterdodge(jitter.width=0.15,dodge.width = 0.6), 
+             alpha = 0.2, size = 3, stroke = 0, na.rm = TRUE, aes(col=variable)) +
+  geom_violin(width = 0.6, alpha = 0.1, na.rm = TRUE, aes(fill = variable)) +
+  geom_boxplot(width = 0.6, alpha = 0.1, na.rm = TRUE,outlier.shape = NA,aes(fill = variable)) + 
+  theme_ggstatsplot() +
+  labs(y="Estimate") + theme(axis.title.x = element_blank(),
+                             axis.text.x = element_text(angle=45, hjust = 1),
+                             legend.position = "none")
+
+
+res_mainland_cxi_biogeo_CSI <- res_mainland_cxi_biogeo[which(res_mainland_cxi_biogeo$variable != "(Intercept)" & res_mainland_cxi_biogeo$cxi=="CSI"),]
+
+ggplot(res_mainland_cxi_biogeo_CSI, aes(x = variable, y = exp(Estimate))) + 
+  geom_point(position = position_jitterdodge(jitter.width=0.15,dodge.width = 0.6), 
+             alpha = 0.2, size = 3, stroke = 0, na.rm = TRUE, aes(col=variable)) +
+  geom_violin(width = 0.6, alpha = 0.1, na.rm = TRUE, aes(fill = variable)) +
+  geom_boxplot(width = 0.6, alpha = 0.1, na.rm = TRUE,outlier.shape = NA,aes(fill = variable)) + 
+  theme_ggstatsplot() +
+  labs(y="Estimate") + theme(axis.title.x = element_blank(),
+                             axis.text.x = element_text(angle=45, hjust = 1),
+                             legend.position = "none")
+
 
 
 
