@@ -936,7 +936,7 @@ value_site_mainland <- as.data.frame(area_site_mainland) %>% group_by(siteID) %>
                                                                                         treedensity2012 = weighted.mean(treedensity2012,area), treedensity2018 = weighted.mean(treedensity2018,area), 
                                                                                         eulandsystem = eulandsystem[which.max(area)], protectedarea = protectedarea[which.max(area)],
                                                                                         lightpollution2000 = weighted.mean(lightpollution2000,area), lightpollution2013 = weighted.mean(lightpollution2013,area), 
-                                                                                        pesticide_kg = weighted.mean(pesticide_kg,area), pesticide_kg_ha = weighted.mean(pesticide_kg_ha,area), pesticide_nodu_kg = weighted.mean(pesticide_nodu_kg,area), 
+                                                                                        pesticide_kg = weighted.mean(pesticide_kg,area), pesticide_kg_ha = weighted.mean(pesticide_kg_ha,area), pesticide_nodu_ha = weighted.mean(pesticide_nodu_ha,area), 
                                                                                         woodprod2000 = weighted.mean(woodprod2000,area), woodprod2010 = weighted.mean(woodprod2010,area), woodprodaverage = weighted.mean(woodprodaverage,area),
                                                                                         drymatter2000 = weighted.mean(drymatter2000,area), drymatter2018 = weighted.mean(drymatter2018,area), declineproductivity = weighted.mean(declineproductivity,area),
                                                                                         smallwoodyfeatures = weighted.mean(smallwoodyfeatures,area), fragmentation = weighted.mean(fragmentation,area),
@@ -1014,7 +1014,7 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               GDP_percap <- (pressure_subdata$GDP2015_percap-pressure_subdata$GDP2000_percap)/16*(x$year-2000)+pressure_subdata$GDP2000_percap
                               GDP <- (pressure_subdata$GDP2015-pressure_subdata$GDP2000)/16*(x$year-2000)+pressure_subdata$GDP2000
                               protectedarea <- pressure_subdata$protectedarea
-                              pesticide_nodu <- pressure_subdata$pesticide_nodu_kg
+                              pesticide_nodu <- pressure_subdata$pesticide_nodu_ha
                               smallwoodyfeatures <- pressure_subdata$smallwoodyfeatures
                               fragmentation <- pressure_subdata$fragmentation
                               forestintegrity_cat <- pressure_subdata$forestintegrity_cat
