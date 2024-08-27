@@ -78,7 +78,7 @@ clc_land_cover <- raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raste
 #### Load geospatial data for NUTS-3 regions
 
 euro_nuts3_sf <- get_eurostat_geospatial(output_class = 'sf', 
-                                         resolution ='60', nuts_level = "3") %>%
+                                         resolution ='01', nuts_level = "3") %>%
   st_transform(crs = 3035)
 
 #### Get percentage of agricultural surface by NUTS3
@@ -584,18 +584,29 @@ pesticide_table <- merge(pesticide_table,euro_agri_surf, by.x="NUTS3",by.y="geo"
 pesticide_table$nodu_ha <- pesticide_table$nodu/pesticide_table$agri_surf
 pesticide_table$kg_ha <- pesticide_table$KG_TOT/pesticide_table$agri_surf
 
+pesticide_table$nodu_ha[which(pesticide_table$agri_surf==0)] <- NA
+pesticide_table$kg_ha[which(pesticide_table$agri_surf==0)] <- NA
+
 saveRDS(pesticide_table,"output/pesticide_table.rds")
 
 #### Plot pesticides quantity and NODU per ha
 
-pesticide_table_melt <- as.data.table(pesticide_table %>% group_by(COUNTRY,NUTS3,Categories_of_products) %>% summarize(total_kg=sum(kg_ha),total_nodu_ha=sum(nodu_ha)))
+pesticide_table_melt <- as.data.table(pesticide_table %>% group_by(COUNTRY,NUTS3,Categories_of_products) %>% summarize(total_kg=sum(kg_ha,na.rm=TRUE),total_nodu_ha=sum(nodu_ha,na.rm = TRUE)))
 pesticide_table_wide_kg <- dcast(pesticide_table_melt,COUNTRY + NUTS3 ~ Categories_of_products, value.var="total_kg")
 pesticide_table_wide_nodu <- dcast(pesticide_table_melt,COUNTRY + NUTS3 ~ Categories_of_products, value.var="total_nodu_ha")
 
-pesticide_table_melt <- as.data.table(pesticide_table %>% group_by(COUNTRY,NUTS3) %>% summarize(total_kg=sum(KG_TOT),total_kg_ha=sum(kg_ha),total_nodu_ha=sum(nodu_ha)))
+pesticide_table_melt <- as.data.table(pesticide_table %>% group_by(COUNTRY,NUTS3,value_ha) %>% summarize(total_kg=sum(KG_TOT),total_kg_ha=sum(kg_ha,na.rm=TRUE),total_nodu_ha=sum(nodu_ha,na.rm=TRUE)))
+pesticide_table_melt$value_ha[which(is.na(pesticide_table_melt$value_ha))] <- 0
+pesticide_table_melt$total_nodu_ha[which(pesticide_table_melt$total_kg_ha > 1000)] <- NA
+pesticide_table_melt$total_kg_ha[which(pesticide_table_melt$total_kg_ha > 1000)] <- NA
+pesticide_table_melt$total_nodu_ha[which(pesticide_table_melt$total_nodu_ha == 0 & pesticide_table_melt$total_kg>0)] <- NA
+pesticide_table_melt$total_kg_ha[which(pesticide_table_melt$total_kg_ha == 0 & pesticide_table_melt$total_kg>0)] <- NA
+pesticide_table_melt$total_nodu_ha[which(pesticide_table_melt$COUNTRY == "NO")] <- NA
+pesticide_table_melt$total_kg_ha[which(pesticide_table_melt$COUNTRY == "NO")] <- NA
+pesticide_table_melt <- data.frame(pesticide_table_melt)
 pesticide_table_melt$id <- pesticide_table_melt$NUTS3
 
-pesticide_sf <- merge(euro_nuts3_sf,pesticide_table_melt)
+pesticide_sf <- merge(euro_nuts3_sf,pesticide_table_melt[])
 
 ggplot(pesticide_sf) +
   geom_sf(aes(fill = log(total_kg_ha)))
@@ -603,6 +614,10 @@ ggplot(pesticide_sf) +
   geom_sf(aes(fill = log(total_nodu_ha)))
 
 st_write(pesticide_sf,"output/pesticide_sf.shp")
+pesticide_sf <- st_read("output/pesticide_sf.shp")
+names(pesticide_sf)[which(names(pesticide_sf)=="totl_kg")] <- "total_kg"
+names(pesticide_sf)[which(names(pesticide_sf)=="ttl_kg_")] <- "total_kg_ha"
+names(pesticide_sf)[which(names(pesticide_sf)=="ttl_nd_")] <- "total_nodu_ha"
 
 ## Wood production
 
@@ -1664,6 +1679,10 @@ write_stars(pesticide_rast,"output/pesticide_rast_nodu_ha.tif", layer = 3)
 pesticide_rast_kg <- rast(raster(x = "output/pesticide_rast_kg.tif"))
 pesticide_rast_kg_ha <- rast(raster(x = "output/pesticide_rast_kg_ha.tif"))
 pesticide_rast_nodu_ha <- rast(raster(x = "output/pesticide_rast_nodu_ha.tif"))
+
+ggplot() + tidyterra::geom_spatraster(data=pesticide_rast_kg,aes(fill=pesticide_rast_kg))
+ggplot() + tidyterra::geom_spatraster(data=pesticide_rast_kg_ha,aes(fill=pesticide_rast_kg_ha))
+ggplot() + tidyterra::geom_spatraster(data=pesticide_rast_nodu_ha,aes(fill=pesticide_rast_nodu_ha))
 
 temp1 <- exact_extract(pesticide_rast_kg,grid_eu, fun=c("sum","count"))
 temp2 <- exact_extract(pesticide_rast_kg_ha,grid_eu, fun=c("sum","count"))
