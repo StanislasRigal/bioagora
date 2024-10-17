@@ -25,7 +25,7 @@ library(eSDM)
 # EVA_bioregion
 library(alphahull)
 library(concaveman)
-library(sfhelpers)
+#library(sfhelpers)
 library(units)
 
 # analysis_bird

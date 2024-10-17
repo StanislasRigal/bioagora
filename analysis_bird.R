@@ -20,6 +20,8 @@ grid_eu_all$NUTS2016_2 <- NULL
 grid_eu_all$NUTS2016_1 <- NULL
 grid_eu_all$NUTS2016_0 <- NULL
 
+grid_eu_all$PLS <- column_to_add
+
 st_write(grid_eu_all,"output/grid_eu_all_clean.gpkg")
 grid_eu_all <- st_read("output/grid_eu_all_clean.gpkg")
 
@@ -595,10 +597,10 @@ area_site_spafra$area <- as.numeric(st_area(area_site_spafra))
 
 ## plot a zoom
 
-crop_factor <- st_bbox(c(xmin = 0, 
-                         xmax = 3, 
-                         ymax = 41, 
-                         ymin = 44),
+crop_factor <- st_bbox(c(xmin = 4.5, #0
+                         xmax = 5.3, #3
+                         ymax = 46.1, #44
+                         ymin = 45.3), #41
                        crs = st_crs(site_spafra_sf))
 
 grid_eu_spafra_cropped <- st_transform(grid_eu_spafra,st_crs(crop_factor))
@@ -612,11 +614,11 @@ ggplot(grid_eu_spafra_cropped) +
 
 ggplot(grid_eu_spafra_cropped) +
   geom_sf(aes(fill=impervious2006),col=NA) +
-  scale_fill_viridis_b()
+  scale_fill_viridis_b() + theme_minimal()
 
 ggplot(grid_eu_spafra_cropped) +
   geom_sf(aes(fill=treedensity2012),col=NA) +
-  scale_fill_viridis_b()
+  scale_fill_viridis_b() + theme_minimal()
 
 grid_eu_spafra_cropped$eulandsystem_spafra <- NA
 grid_eu_spafra_cropped$eulandsystem_spafra[which(grid_eu_spafra_cropped$eulandsystem %in% c(11,12,13,80,90))] <-"no_intensity"
@@ -628,7 +630,7 @@ grid_eu_spafra_cropped$eulandsystem <- NULL
 
 ggplot(grid_eu_spafra_cropped) +
   geom_sf(aes(fill=eulandsystem_spafra),col=NA) +
-  scale_fill_viridis_d()
+  scale_fill_viridis_d() + theme_minimal()
 
 ## summarize external variable for each site and format them
 
@@ -865,6 +867,7 @@ grid_eu_all <- st_read("output/grid_eu_all_clean.gpkg")
 
 grid_id_andorra <- readRDS("output/grid_id_andorra.rds")
 grid_eu_all$NUTS2021_0[which(grid_eu_all$GRD_ID %in% grid_id_andorra)] <- "AD" # add country id for Andorra
+grid_eu_all$PLS[which(grid_eu_all$GRD_ID %in% grid_id_andorra)] <- 18
 
 grid_eu_mainland <- grid_eu_all[grep("AL|CY|EL|IS|ME|MK|MT|PT|RS|SK|TR",grid_eu_all$NUTS2021_0,invert = TRUE),] # remove countries without data
 
@@ -881,10 +884,20 @@ grid_eu_mainland_outline <- grid_eu_mainland[,1] %>% summarise(id="europe")
 #st_write(grid_eu_mainland_outline,"output/grid_eu_mainland_outline.gpkg")
 grid_eu_mainland_outline <- st_read("output/grid_eu_mainland_outline.gpkg")
 
-grid_eu_mainland_biogeo <- grid_eu_mainland %>% group_by(biogeo_area) %>% summarise(id="biogeo") 
+grid_eu_mainland_biogeo <- grid_eu_mainland %>% group_by(PLS) %>% summarise(id="PLS_region")#grid_eu_mainland %>% group_by(biogeo_area) %>% summarise(id="biogeo") 
 
 #st_write(grid_eu_mainland_biogeo,"output/grid_eu_mainland_biogeo.gpkg")
 grid_eu_mainland_biogeo <- st_read("output/grid_eu_mainland_biogeo.gpkg")
+
+ggplot(grid_eu_mainland_biogeo) + geom_sf(aes(fill=as.character(PLS)),col=NA) + 
+  scale_fill_viridis_d()+theme_minimal() + theme(legend.position = "none") +
+  theme(text = element_text(colour = "white"),panel.grid = element_line(colour = "white"),axis.text =element_text(colour = "white"))
+
+ggsave("output/biogeo_area.png",
+       width = 8,
+       height = 10,
+       dpi = 300
+)
 
 
 bird_data_clean <- readRDS("output/bird_data_clean.rds")
@@ -909,11 +922,13 @@ site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
 site_mainland$Long_LAEA <- st_coordinates(site_mainland_sf_reproj)[,1]
 site_mainland$Lat_LAEA <- st_coordinates(site_mainland_sf_reproj)[,2]
 
+
 ## plot sites and area monitored
 
 ggplot(grid_eu_mainland_outline) +
   geom_sf() +
-  geom_sf(data=site_mainland_sf_reproj, size=1)
+  geom_sf(data=site_mainland_sf_reproj, size=1) +
+  theme_minimal()
 
 ggsave("output/PECBMS_site.png",
        width = 8,
@@ -947,7 +962,7 @@ value_site_mainland <- as.data.frame(area_site_mainland) %>% group_by(siteID) %>
                                                                                         precspringvar2000 = weighted.mean(precspringvar2000), precspringvar2020 = weighted.mean(precspringvar2020,area),
                                                                                         humidity2000 = weighted.mean(humidity2000,area), humidity2020 = weighted.mean(humidity2020,area), humidityspring2000 = weighted.mean(humidityspring2000,area),
                                                                                         humidityspring2020 = weighted.mean(humidityspring2020,area), humidityspringvar2000 = weighted.mean(humidityspringvar2000,area), humidityspringvar2020 = weighted.mean(humidityspringvar2020,area),
-                                                                                        shannon = weighted.mean(shannon,area), GDP2000 = weighted.mean(GDP2000,area), GDP2015 = weighted.mean(GDP2015,area), biogeo_area = biogeo_area[which.max(area)])
+                                                                                        shannon = weighted.mean(shannon,area), GDP2000 = weighted.mean(GDP2000,area), GDP2015 = weighted.mean(GDP2015,area), biogeo_area = biogeo_area[which.max(area)], PLS = PLS[which.max(area)])
 
 value_site_mainland$GDP2000_percap <- value_site_mainland$GDP2000/value_site_mainland$pop2000
 pop2015 <- (value_site_mainland$pop2020-value_site_mainland$pop2000)/20*(2015-2020)+value_site_mainland$pop2020
@@ -976,6 +991,9 @@ bird_data_mainland <- merge(wide_bird_data,site_mainland,by=c("siteID"), all.x=T
 
 #bird_data_mainland <- merge(bird_data_mainland,value_site_mainland, by="siteID", all.x=TRUE)
 
+saveRDS(bird_data_mainland,"output/bird_data_mainland.rds")
+
+
 ## remove site not followed enough
 
 nb_year_p_site <- data.frame(bird_data_mainland %>% group_by(siteID, year) %>% summarise(count=n()))
@@ -988,6 +1006,7 @@ selected_site_mainland <- nb_year_p_site[which(nb_year_p_site$nb_year >= 5 &
                                                nb_year_p_site$max_year >= 2012),]
 
 subsite_data_mainland_trend <- bird_data_mainland[which(bird_data_mainland$siteID %in% c(selected_site_mainland$siteID)),]
+
 
 saveRDS(subsite_data_mainland_trend,"output/subsite_data_mainland_trend.rds")
 
@@ -1021,11 +1040,12 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               shannon <- pressure_subdata$shannon
                               eulandsystem_cat <- pressure_subdata$eulandsystem_cat
                               biogeo_area <- pressure_subdata$biogeo_area
+                              PLS <- pressure_subdata$PLS
                               
                               trend_result <- data.frame(pop,impervious,treedensity,lightpollution,woodprod,drymatter,
                                                          temp,tempspring,tempspringvar,prec,precspring,precspringvar,humidityspring,
                                                          GDP_percap,GDP,protectedarea,pesticide_nodu,smallwoodyfeatures,
-                                                         fragmentation,forestintegrity_cat,shannon,eulandsystem_cat,biogeo_area)
+                                                         fragmentation,forestintegrity_cat,shannon,eulandsystem_cat,biogeo_area,PLS)
                               return(trend_result)
                             },pressure_data = value_site_mainland,
                             .progress = "text")
@@ -1050,10 +1070,16 @@ press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
 saveRDS(press_mainland_trend_scale,"output/press_mainland_trend_scale.rds") 
 
 
+###### Analysis
 
+### Load previously produced datasets
+
+bird_data_mainland <- readRDS("output/bird_data_mainland.rds")
+grid_eu_mainland_biogeo <- st_read("output/grid_eu_mainland_biogeo.gpkg")
+grid_eu_mainland_outline <- st_read("output/grid_eu_mainland_outline.gpkg")
+press_mainland_trend_scale <- readRDS("output/press_mainland_trend_scale.rds")
+site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
 subsite_data_mainland_trend <- readRDS("output/subsite_data_mainland_trend.rds")
-press_mainland_trend_scale <- readRDS("output/press_mainland_trend_scale.rds") 
-
 
 ### find minimum nubmer of site for GLMP
 
@@ -1065,11 +1091,11 @@ find_site_nubmer <- function(bird_data,pressure_data){
                                                    "woodprod","drymatter","tempspring","tempspringvar",  
                                                    "precspring","precspringvar",
                                                    "protectedarea","pesticide_nodu","smallwoodyfeatures",
-                                                   "fragmentation","shannon","eulandsystem_cat","biogeo_area")])
+                                                   "fragmentation","shannon","eulandsystem_cat","PLS")])
   
   unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
   
-  result_site_number <- data.frame(unique_poisson_df %>% group_by(biogeo_area) %>% summarize(count=n()))
+  result_site_number <- data.frame(unique_poisson_df %>% group_by(PLS) %>% summarize(count=n()))
   
   return(result_site_number)
 }
@@ -1116,26 +1142,100 @@ res_mainland_species_biogeo_quasi <- ddply(subsite_data_mainland_trend,
 #saveRDS(res_mainland_species_biogeo_quasi,"output/res_mainland_species_biogeo_quasi.rds")
 res_mainland_species_biogeo <- readRDS("output/res_mainland_species_biogeo_quasi.rds")
 
+### PLS intead of biogeo
+
+res_mainland_species_PLS_trend <- ddply(subsite_data_mainland_trend,
+                                  .(sci_name_out),.fun=glm_species_PLS_trend,
+                                  pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                  min_site_number_per_species=80, family="poisson", .progress = "text")
+
+#saveRDS(res_mainland_species_PLS_trend,"output/res_mainland_species_PLS_trend.rds")
+res_mainland_species_PLS_trend <- readRDS("output/res_mainland_species_PLS_trend.rds")
+
+res_mainland_species_PLS <- ddply(subsite_data_mainland_trend,
+                                     .(sci_name_out),.fun=glm_species_PLS,
+                                     pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                     formula_glmp = count_scale_all ~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                       year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                       year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                       year:shannon+year:eulandsystem_cat + time_effort + area_sampled_m2,
+                                     formula_glmp_scheme = count_scale_all ~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                       year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                       year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                       year:shannon+year:eulandsystem_cat + time_effort + area_sampled_m2 + scheme_code,
+                                     min_site_number_per_species=80, family="poisson", .progress = "text")
+
+
+#saveRDS(res_mainland_species_PLS,"output/res_mainland_species_PLS.rds")
+res_mainland_species_biogeo <- readRDS("output/res_mainland_species_PLS.rds")
+
+res_mainland_species_PLS_quasi <- ddply(subsite_data_mainland_trend,
+                                           .(sci_name_out),.fun=glm_species_PLS,
+                                           pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                           formula_glmp = count_scale_all ~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                             year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                             year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                             year:shannon+year:eulandsystem_cat + time_effort + area_sampled_m2,
+                                           formula_glmp_scheme = count_scale_all ~ year + year:treedensity+year:impervious+year:pop+year:lightpollution+year:woodprod+
+                                             year:drymatter+year:tempspring+year:tempspringvar+year:precspring+year:precspringvar+year:humidityspring+
+                                             year:protectedarea+year:pesticide_nodu+year:smallwoodyfeatures+year:fragmentation+
+                                             year:shannon+year:eulandsystem_cat + time_effort + area_sampled_m2 + scheme_code,
+                                           min_site_number_per_species=100, family="quasipoisson", .progress = "text")
+
+
+#saveRDS(res_mainland_species_PLS_quasi,"output/res_mainland_species_PLS_quasi.rds")
+res_mainland_species_biogeo <- readRDS("output/res_mainland_species_PLS_quasi.rds")
+
 
 ### Plot spatial by species 
 res_species_biogeo_df <- res_mainland_species_biogeo[which(res_mainland_species_biogeo$sci_name_out == unique(res_mainland_species_biogeo$sci_name_out)[12]),]
 
-res_species_biogeo_sf <- merge(grid_eu_mainland_biogeo,res_species_biogeo_df, by="biogeo_area",all.x=TRUE)
-ggplot() + geom_sf() +  geom_sf(data=res_species_biogeo_sf, aes(fill=exp(`year:treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
+res_species_biogeo_sf <- merge(grid_eu_mainland_biogeo,res_species_biogeo_df, by="PLS",all.x=TRUE)
+ggplot() + geom_sf(data=res_species_biogeo_sf, aes(fill=exp(`year:treedensity`))) +
+  scale_fill_gradientn(colors = sf.colors(20)) + theme_minimal() #+
+ # theme(text = element_text(colour = "white"),panel.grid = element_line(colour = "white"),axis.text =element_text(colour = "white"))
 
+ggsave("output/ALAARV_tree.png",
+       width = 8,
+       height = 10,
+       dpi = 300
+)
+
+res_species_biogeo_df <- data.frame(res_mainland_species_PLS_trend %>% group_by(PLS) %>% summarise(mean_trend=mean(year,na.rm=TRUE),nb_neg=as.numeric(table(sign(year))[1]),nb_pos=as.numeric(table(sign(year))[2])))
+res_species_biogeo_df$perc_neg <- res_species_biogeo_df$nb_neg / (res_species_biogeo_df$nb_neg+res_species_biogeo_df$nb_pos)
+res_species_biogeo_sf <- merge(grid_eu_mainland_biogeo,res_species_biogeo_df, by="PLS",all.x=TRUE)
+ggplot() + geom_sf(data=res_species_biogeo_sf, aes(fill=perc_neg)) +
+  scale_fill_gradientn(colors = sf.colors(20)) + theme_minimal() #+
+# theme(text = element_text(colour = "white"),panel.grid = element_line(colour = "white"),axis.text =element_text(colour = "white"))
+
+ggsave("output/percentage_declining_sp.png",
+       width = 8,
+       height = 10,
+       dpi = 300
+)
 
 ### Plot estimate by pressure
 
-res_mainland_species_eu <- res_mainland_species_biogeo[which(res_mainland_species_biogeo$biogeo_area=="europe"),]
-increasing_sp <- res_mainland_species_eu$sci_name_out[which(res_mainland_species_eu$year>0)]
-decreasing_sp <- res_mainland_species_eu$sci_name_out[which(res_mainland_species_eu$year<0)]
+res_mainland_species_eu_trend <- res_mainland_species_PLS_trend[which(res_mainland_species_PLS_trend$PLS=="europe"),]
+increasing_sp <- res_mainland_species_eu_trend$sci_name_out[which(res_mainland_species_eu_trend$year>0)]
+decreasing_sp <- res_mainland_species_eu_trend$sci_name_out[which(res_mainland_species_eu_trend$year<0)]
 
+sp_habitat <- read.csv2("raw_data/Habitat_class_PECBMS.csv")
 
-res_mainland_species_biogeo_long <- melt(res_mainland_species_eu, id.vars=c("sci_name_out","biogeo_area"))
+res_mainland_species_eu <- res_mainland_species_biogeo[which(res_mainland_species_biogeo$PLS=="europe"),]
+
+res_mainland_species_biogeo_long <- melt(res_mainland_species_eu, id.vars=c("sci_name_out","PLS"))
 
 res_mainland_species_biogeo_long <- res_mainland_species_biogeo_long[which(res_mainland_species_biogeo_long$variable != "(Intercept)"),]
 
-ggplot(res_mainland_species_biogeo_long, aes(x = variable, y = exp(value))) + 
+res_mainland_species_biogeo_long <- res_mainland_species_biogeo_long %>% group_by(variable) %>% mutate(mean_var=mean(value, na.rm=TRUE), sd_var=sd(value, na.rm=TRUE))
+res_mainland_species_biogeo_long$signif_mean1 <- sign(res_mainland_species_biogeo_long$mean_var + 0.2*res_mainland_species_biogeo_long$sd_var)
+res_mainland_species_biogeo_long$signif_mean2 <- sign(res_mainland_species_biogeo_long$mean_var - 0.2*res_mainland_species_biogeo_long$sd_var)
+res_mainland_species_biogeo_long$sign_mean <- sign(res_mainland_species_biogeo_long$mean_var)
+res_mainland_species_biogeo_long$sign_mean[which(res_mainland_species_biogeo_long$signif_mean1 != res_mainland_species_biogeo_long$signif_mean2)] <- 0
+res_mainland_species_biogeo_long$sign_mean <- as.character(res_mainland_species_biogeo_long$sign_mean)
+
+ggplot(res_mainland_species_biogeo_long[which(res_mainland_species_biogeo_long$sci_name_out %in% sp_habitat$Species[which(sp_habitat$Habitat=="Farmland")]  ),], aes(x = variable, y = exp(value))) + 
   geom_point(position = position_jitterdodge(jitter.width=0.15,dodge.width = 0.6), 
              alpha = 0.2, size = 3, stroke = 0, na.rm = TRUE, aes(col=variable)) +
   geom_violin(width = 0.6, alpha = 0.1, na.rm = TRUE, aes(fill = variable)) +
@@ -1147,7 +1247,27 @@ ggplot(res_mainland_species_biogeo_long, aes(x = variable, y = exp(value))) +
                              axis.text.x = element_text(angle=45, hjust = 1),
                              legend.position = "none")
 
+ggsave("output/all_pressure_effects.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
+ggplot(res_mainland_species_biogeo_long[which(res_mainland_species_biogeo_long$sci_name_out %in% sp_habitat$Species[which(sp_habitat$Habitat=="Farmland")]  ),],
+       aes(x = variable, y = exp(value))) + 
+  geom_violin(width = 0.6, alpha = 0.5, na.rm = TRUE, aes(fill = sign_mean)) +
+  scale_fill_manual(values = c("-1" = "red","0" = "#b1b1b1","1"="green")) +
+  #scale_color_manual(values = c("trees" = "#29c200","no_tree" = "#b1b1b1")) +
+  theme_ggstatsplot() +
+  labs(y="Estimate") + theme(axis.title.x = element_blank(),
+                             axis.text.x = element_text(angle=45, hjust = 1),
+                             legend.position = "none")
+
+ggsave("output/all_pressure_effects_farm.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 ###### Community analysis
 

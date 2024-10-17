@@ -1138,3 +1138,81 @@ ggplot(grid_eu_1km) +
   )
 
 st_write(grid_eu_1km,"output/grid_eu_bioregion.gpkg")
+
+
+######## SDM
+
+## Test from https://rspatial.org/raster/sdm/6_sdm_methods.html
+
+library(dismo)
+library(maptools)
+data(wrld_simpl)
+predictors <- stack(list.files(file.path(system.file(package="dismo"), 'ex'), pattern='grd$', full.names=TRUE ))
+file <- file.path(system.file(package="dismo"), "ex/bradypus.csv")
+bradypus <- read.table(file,  header=TRUE,  sep=',')
+bradypus <- bradypus[,-1]
+presvals <- extract(predictors, bradypus)
+set.seed(0)
+backgr <- randomPoints(predictors, 500)
+absvals <- extract(predictors, backgr)
+pb <- c(rep(1, nrow(presvals)), rep(0, nrow(absvals)))
+sdmdata <- data.frame(cbind(pb, rbind(presvals, absvals)))
+sdmdata[,'biome'] <- as.factor(sdmdata[,'biome'])
+
+pred_nf <- dropLayer(predictors, 'biome')
+
+set.seed(0)
+group <- kfold(bradypus, 5)
+pres_train <- bradypus[group != 1, ]
+pres_test <- bradypus[group == 1, ]
+ext <- extent(-90, -32, -33, 23)
+
+set.seed(10)
+backg <- randomPoints(pred_nf, n=1000, ext=ext, extf = 1.25)
+colnames(backg) = c('lon', 'lat')
+group <- kfold(backg, 5)
+backg_train <- backg[group != 1, ]
+backg_test <- backg[group == 1, ]
+
+maxent()
+xm <- maxent(predictors, pres_train, factors='biome')
+plot(xm)
+response(xm)
+
+e <- evaluate(pres_test, backg_test, xm, predictors)
+px <- predict(predictors, xm, ext=ext, progress='')
+par(mfrow=c(1,2))
+plot(px, main='Maxent, raw values')
+plot(wrld_simpl, add=TRUE, border='dark grey')
+tr <- threshold(e, 'spec_sens')
+plot(px > tr, main='presence/absence')
+plot(wrld_simpl, add=TRUE, border='dark grey')
+points(pres_train, pch='+')
+
+## Do the same with EVA
+
+
+
+
+
+
+### using bioclimatic regions (Primaru Landscape Structure) from A Spatial Regional Reference Framework for Sustainability Assessment in Europe Renetzeder
+
+
+grid_eu_1km <- st_read("raw_data/grid_eu/grid_1km_surf.gpkg")
+NUTS3_PLS <- read.csv("raw_data/biogeography/map_bioclimatic_data_long.csv", header=TRUE)
+
+NUTS3_PLS$NUTS3[which(!(NUTS3_PLS$NUTS3 %in% unique(grid_eu_1km$NUTS2021_3)))]
+
+grid_eu_1km$PLS <- NA
+
+for(i in 1:25){
+  grid_eu_1km$PLS[which(substr(grid_eu_1km$NUTS2021_3,1,5) %in% NUTS3_PLS$NUTS3[which(NUTS3_PLS$PLS_region==i)])] <- i
+}
+
+grid_eu_1km_biogeo <- grid_eu_1km %>% group_by(PLS) %>% summarise(id="PLS_region") 
+st_write(grid_eu_1km_biogeo,"output/grid_eu_1km_biogeo.gpkg")
+
+column_to_add <- grid_eu_1km$PLS
+write.csv(column_to_add,"output/column_to_add.csv",row.names = FALSE)
+saveRDS(column_to_add,"output/column_to_add.rds")
