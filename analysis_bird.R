@@ -1431,6 +1431,26 @@ library(INLA)
 bird_data = subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out=="Alauda arvensis"),]
 pressure_data = press_mainland_trend_scale
 site_data = site_mainland_sf_reproj
+site_data$Long_LAEA <- st_coordinates(site_data)[,1]
+site_data$Lat_LAEA <- st_coordinates(site_data)[,2]
+
+coords = cbind(site_data$Long_LAEA, site_data$Lat_LAEA)
+bdry <- inla.sp2segment(site_data)
+bdry$loc <- inla.mesh.map(bdry$loc)
+
+#mesh0 <- inla.mesh.2d(loc = coords, boundary = bdry, max.edge=c(0.5))
+mesh1 <- inla.mesh.2d(loc = coords, boundary = bdry, max.edge=c(0.5, 1))
+mesh2 <- inla.mesh.2d(loc = coords, boundary = bdry, max.edge=c(0.5, 1),
+                      offset = c(0.5,1))
+mesh3 <- inla.mesh.2d(loc = coords, boundary = bdry, max.edge=c(0.5,1), 
+                      offset = c(0.5, 1),
+                      cutoff = 0.3)
+
+non_convex_bdry <- inla.nonconvex.hull(coords, -0.03, -0.05, resolution = c(100, 100))
+mesh4 <- inla.mesh.2d(boundary = non_convex_bdry, max.edge=c(0.5,1), 
+                      offset = c(0.5, 1),
+                      cutoff = 0.3)
+
 
 species_press_data_year <- merge(bird_data,
                                  pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),],
