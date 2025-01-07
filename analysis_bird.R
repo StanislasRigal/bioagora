@@ -994,13 +994,13 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                grassland = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,72))]) /  sum(eulandsystem$biogeo_surface)
                                farmland = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,61,62,63,31,32,731,732,733))]) /  sum(eulandsystem$biogeo_surface)
                                if(farmland > 0){
-                                 low_farmland <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(53,63,32,733))]) / sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,61,62,63,31,32,731,732,733))])
-                                 high_farmland <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,61,31,731))]) / sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,61,62,63,31,32,731,732,733))])
+                                 high_farmland <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(53,63,32,733))]) / sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,61,62,63,31,32,731,732,733))])
+                                 low_farmland <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,61,31,731))]) / sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,61,62,63,31,32,731,732,733))])
                                }else{
                                  low_farmland <- high_farmland <- NA
                                }
-                               low_farmland_tot <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(53,63,32,733))]) / sum(eulandsystem$biogeo_surface)
-                               high_farmland_tot <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,61,31,731))]) / sum(eulandsystem$biogeo_surface)
+                               high_farmland_tot <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(53,63,32,733))]) / sum(eulandsystem$biogeo_surface)
+                               low_farmland_tot <- sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,61,31,731))]) / sum(eulandsystem$biogeo_surface)
                                
                                protectedarea = data.frame(x %>% group_by(protectedarea) %>% summarise(biogeo_surface=sum(area)))
                                if(nrow(protectedarea[!is.na(protectedarea$protectedarea),]) > 0){
@@ -1422,6 +1422,93 @@ ggsave("output/all_pressure_effects_farm.png",
        height = 8,
        dpi = 300
 )
+
+
+### GAMM
+
+
+res_gam_mainland_species_PLS_trend <- ddply(subsite_data_mainland_trend,
+                                      .(sci_name_out),.fun=gam_species_PLS,
+                                      pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                      pressure_name="year",
+                                      .progress = "text")
+
+#saveRDS(res_gam_mainland_species_PLS_trend,"output/res_gam_mainland_species_PLS_trend.rds")
+#res_gam_mainland_species_PLS_trend <- readRDS("output/res_gam_mainland_species_PLS_trend.rds")
+
+res_gam_mainland_species_PLS <- ddply(subsite_data_mainland_trend,
+                                  .(sci_name_out),.fun=gam_species_PLS,
+                                  pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                  .progress = "text")
+
+#saveRDS(res_gam_mainland_species_PLS,"output/res_gam_mainland_species_PLS.rds")
+#res_gam_mainland_species_PLS <- readRDS("output/res_gam_mainland_species_PLS.rds")
+
+
+
+res_gam_mainland_species_PLS_trend <- res_mainland_species_PLS_trend[which(res_mainland_species_PLS_trend$PLS=="europe"),]
+increasing_sp <- res_gam_mainland_species_PLS_trend$sci_name_out[which(res_gam_mainland_species_PLS_trend$year>0)]
+decreasing_sp <- res_gam_mainland_species_PLS_trend$sci_name_out[which(res_gam_mainland_species_PLS_trend$year<0)]
+
+sp_habitat <- read.csv2("raw_data/Habitat_class_PECBMS.csv")
+
+res_gam_mainland_species_PLS_eu <- res_gam_mainland_species_PLS[which(res_gam_mainland_species_PLS$PLS=="europe"),]
+
+res_gam_mainland_species_PLS_long <- melt(res_gam_mainland_species_PLS_eu, id.vars=c("sci_name_out","PLS"))
+
+res_gam_mainland_species_PLS_long <- res_gam_mainland_species_PLS_long[which(res_gam_mainland_species_PLS_long$variable != "(Intercept)"),]
+
+res_gam_mainland_species_PLS_long <- res_gam_mainland_species_PLS_long %>% group_by(variable) %>% mutate(mean_var=mean(value, na.rm=TRUE), sd_var=sd(value, na.rm=TRUE))
+res_gam_mainland_species_PLS_long$signif_mean1 <- sign(res_gam_mainland_species_PLS_long$mean_var + 0.2*res_gam_mainland_species_PLS_long$sd_var)
+res_gam_mainland_species_PLS_long$signif_mean2 <- sign(res_gam_mainland_species_PLS_long$mean_var - 0.2*res_gam_mainland_species_PLS_long$sd_var)
+res_gam_mainland_species_PLS_long$sign_mean <- sign(res_gam_mainland_species_PLS_long$mean_var)
+res_gam_mainland_species_PLS_long$sign_mean[which(res_gam_mainland_species_PLS_long$signif_mean1 != res_gam_mainland_species_PLS_long$signif_mean2)] <- 0
+res_gam_mainland_species_PLS_long$sign_mean <- as.character(res_gam_mainland_species_PLS_long$sign_mean)
+
+ggplot(res_gam_mainland_species_PLS_long[which(res_gam_mainland_species_PLS_long$sci_name_out %in% sp_habitat$Species[which(sp_habitat$Habitat=="Farmland")]  ),], aes(x = variable, y = exp(value))) + 
+  geom_point(position = position_jitterdodge(jitter.width=0.15,dodge.width = 0.6), 
+             alpha = 0.2, size = 3, stroke = 0, na.rm = TRUE, aes(col=variable)) +
+  geom_violin(width = 0.6, alpha = 0.1, na.rm = TRUE, aes(fill = variable)) +
+  geom_boxplot(width = 0.6, alpha = 0.1, na.rm = TRUE,outlier.shape = NA,aes(fill = variable)) + 
+  #scale_fill_manual(values = c("trees" = "#29c200","no_tree" = "#b1b1b1")) +
+  #scale_color_manual(values = c("trees" = "#29c200","no_tree" = "#b1b1b1")) +
+  theme_ggstatsplot() +
+  labs(y="Estimate") + theme(axis.title.x = element_blank(),
+                             axis.text.x = element_text(angle=45, hjust = 1),
+                             legend.position = "none")
+
+ggsave("output/all_pressure_effects.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+ggplot(res_gam_mainland_species_PLS_long[which(res_gam_mainland_species_PLS_long$sci_name_out %in% sp_habitat$Species[which(sp_habitat$Habitat=="Farmland")]  ),],
+       aes(x = variable, y = exp(value))) + 
+  geom_violin(width = 0.6, alpha = 0.5, na.rm = TRUE, aes(fill = sign_mean)) +
+  scale_fill_manual(values = c("-1" = "red","0" = "#b1b1b1","1"="green")) +
+  #scale_color_manual(values = c("trees" = "#29c200","no_tree" = "#b1b1b1")) +
+  theme_ggstatsplot() + scale_x_discrete(labels=c("year" = "Trend", "year:treedensity" = "Tree density","year:impervious"="Imperviousness","year:pop" = "Population density",
+                                                  "year:lightpollution"="Light pollution","year:woodproduction"="Wood production","year:drymatter"="Productivity","year:tempspring"="Temperature",
+                                                  "year:tempspringvar"="Temp variation","year:precspring"="Precipitation","year:precspringvar"="Prec variation","year:humidityspring"="Humidity",
+                                                  "year:protectedarea"="Protected area","year:pesticide_nodu"="Pesticides","year:smallwoodyfeatures"="Hedges","year:fragmentation"="Fragmentation",
+                                                  "year:shannon"="Landscape diversity","year:eulandsystem_catlow_intensity"="Low intensity","year:eulandsystem_catmedium_intensity"="Mid intensity","year:eulandsystem_cathigh_intensity"="High intensity")) +
+  labs(y="Estimate") + theme(axis.title.x = element_blank(),
+                             axis.text.x = element_text(angle=45, hjust = 1),
+                             legend.position = "none")
+
+ggsave("output/all_pressure_effects_farm.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+
+
+
+
+
+
 
 
 ### INLA instead of frequentist #https://punama.github.io/BDI_INLA/
