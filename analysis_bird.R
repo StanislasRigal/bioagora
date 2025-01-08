@@ -869,7 +869,10 @@ grid_id_andorra <- readRDS("output/grid_id_andorra.rds")
 grid_eu_all$NUTS2021_0[which(grid_eu_all$GRD_ID %in% grid_id_andorra)] <- "AD" # add country id for Andorra
 grid_eu_all$PLS[which(grid_eu_all$GRD_ID %in% grid_id_andorra)] <- 18
 
-grid_eu_mainland <- grid_eu_all[grep("AL|CY|EL|IS|ME|MK|MT|PT|RS|SK|TR|HR",grid_eu_all$NUTS2021_0,invert = TRUE),] # remove countries without data
+grid_eu_all$PLS[grep("HR061|HR063|HR021|HR022|HR023|HR024|HR025|HR026",grid_eu_all$NUTS2021_3)] <- 16
+grid_eu_all$PLS[grep("HR062|HR064|HR065|HR050|HR027|HR028|HR031|HR032|HR033|HR034|HR035|HR036|HR037",grid_eu_all$NUTS2021_3)] <- 12
+
+grid_eu_mainland <- grid_eu_all[grep("AL|CY|EL|IS|ME|MK|MT|PT|RS|SK|TR",grid_eu_all$NUTS2021_0,invert = TRUE),] # remove countries without data
 
 grid_eu_mainland <- grid_eu_mainland[grep("ES7|FRY",grid_eu_mainland$NUTS2021_1,invert = TRUE),] # remove oversea territories
 
@@ -878,10 +881,10 @@ grid_eu_mainland <- grid_eu_mainland[which(!(grid_eu_mainland$NUTS2021_0 == ""))
 #st_write(grid_eu_mainland,"output/grid_eu_mainland.gpkg")
 grid_eu_mainland <- st_read("output/grid_eu_mainland.gpkg")
 
-grid_eu_mainland2 <- grid_eu_all[grep("CY|IS|TR|MT|AL|EL|ME|MK|RS|HR",grid_eu_all$NUTS2021_0,invert = TRUE),]
+grid_eu_mainland2 <- grid_eu_all[grep("CY|IS|TR|MT|AL|EL|ME|MK|RS",grid_eu_all$NUTS2021_0,invert = TRUE),]
 grid_eu_mainland2 <- grid_eu_mainland2[grep("ES7|FRY|PT2|PT3",grid_eu_mainland2$NUTS2021_1,invert = TRUE),] # remove oversea territories
 grid_eu_mainland2 <- grid_eu_mainland2[which(!(grid_eu_mainland2$NUTS2021_0 == "")),]
-#grid_eu_mainland2$PLS[grep("AL|EL|ME|MK|RS|HR",grid_eu_mainland2$NUTS2021_0)] <- 30
+#grid_eu_mainland2$PLS[grep("AL|EL|ME|MK|RS",grid_eu_mainland2$NUTS2021_0)] <- 30
 
 #st_write(grid_eu_mainland2,"output/grid_eu_mainland2.gpkg")
 grid_eu_mainland2 <- st_read("output/grid_eu_mainland2.gpkg")
@@ -893,7 +896,7 @@ grid_eu_mainland_biogeo <- grid_eu_mainland2 %>% group_by(PLS) %>% summarise(id=
 #st_write(grid_eu_mainland_biogeo,"output/grid_eu_mainland_biogeo.gpkg")
 grid_eu_mainland_biogeo <- st_read("output/grid_eu_mainland_biogeo.gpkg")
 
-grid_eu_mainland_outline <- grid_eu_mainland[,1] %>% summarise(id="europe")
+grid_eu_mainland_outline <- grid_eu_mainland_biogeo[,1] %>% summarise(id="europe")
 
 #st_write(grid_eu_mainland_outline,"output/grid_eu_mainland_outline.gpkg")
 grid_eu_mainland_outline <- st_read("output/grid_eu_mainland_outline.gpkg")
@@ -1077,8 +1080,8 @@ nb_year_p_site <- data.frame(nb_year_p_site %>% group_by(siteID) %>% summarise(n
                                                                                max_year=max(year)))
 
 selected_site_mainland <- nb_year_p_site[which(nb_year_p_site$nb_year >= 5 &
-                                               nb_year_p_site$min_year <= 2011 &
-                                               nb_year_p_site$max_year >= 2012),]
+                                               #nb_year_p_site$min_year <= 2011 &
+                                               nb_year_p_site$max_year >= 2011),]
 
 subsite_data_mainland_trend <- bird_data_mainland[which(bird_data_mainland$siteID %in% c(selected_site_mainland$siteID)),]
 
