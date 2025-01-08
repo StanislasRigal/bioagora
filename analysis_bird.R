@@ -869,7 +869,7 @@ grid_id_andorra <- readRDS("output/grid_id_andorra.rds")
 grid_eu_all$NUTS2021_0[which(grid_eu_all$GRD_ID %in% grid_id_andorra)] <- "AD" # add country id for Andorra
 grid_eu_all$PLS[which(grid_eu_all$GRD_ID %in% grid_id_andorra)] <- 18
 
-grid_eu_mainland <- grid_eu_all[grep("AL|CY|EL|IS|ME|MK|MT|PT|RS|SK|TR",grid_eu_all$NUTS2021_0,invert = TRUE),] # remove countries without data
+grid_eu_mainland <- grid_eu_all[grep("AL|CY|EL|IS|ME|MK|MT|PT|RS|SK|TR|HR",grid_eu_all$NUTS2021_0,invert = TRUE),] # remove countries without data
 
 grid_eu_mainland <- grid_eu_mainland[grep("ES7|FRY",grid_eu_mainland$NUTS2021_1,invert = TRUE),] # remove oversea territories
 
@@ -878,16 +878,25 @@ grid_eu_mainland <- grid_eu_mainland[which(!(grid_eu_mainland$NUTS2021_0 == ""))
 #st_write(grid_eu_mainland,"output/grid_eu_mainland.gpkg")
 grid_eu_mainland <- st_read("output/grid_eu_mainland.gpkg")
 
+grid_eu_mainland2 <- grid_eu_all[grep("CY|IS|TR|MT|AL|EL|ME|MK|RS|HR",grid_eu_all$NUTS2021_0,invert = TRUE),]
+grid_eu_mainland2 <- grid_eu_mainland2[grep("ES7|FRY|PT2|PT3",grid_eu_mainland2$NUTS2021_1,invert = TRUE),] # remove oversea territories
+grid_eu_mainland2 <- grid_eu_mainland2[which(!(grid_eu_mainland2$NUTS2021_0 == "")),]
+#grid_eu_mainland2$PLS[grep("AL|EL|ME|MK|RS|HR",grid_eu_mainland2$NUTS2021_0)] <- 30
+
+#st_write(grid_eu_mainland2,"output/grid_eu_mainland2.gpkg")
+grid_eu_mainland2 <- st_read("output/grid_eu_mainland2.gpkg")
+
 sf_use_s2(FALSE)
+
+grid_eu_mainland_biogeo <- grid_eu_mainland2 %>% group_by(PLS) %>% summarise(id="PLS_region")#grid_eu_mainland %>% group_by(biogeo_area) %>% summarise(id="biogeo") 
+
+#st_write(grid_eu_mainland_biogeo,"output/grid_eu_mainland_biogeo.gpkg")
+grid_eu_mainland_biogeo <- st_read("output/grid_eu_mainland_biogeo.gpkg")
+
 grid_eu_mainland_outline <- grid_eu_mainland[,1] %>% summarise(id="europe")
 
 #st_write(grid_eu_mainland_outline,"output/grid_eu_mainland_outline.gpkg")
 grid_eu_mainland_outline <- st_read("output/grid_eu_mainland_outline.gpkg")
-
-grid_eu_mainland_biogeo <- grid_eu_mainland %>% group_by(PLS) %>% summarise(id="PLS_region")#grid_eu_mainland %>% group_by(biogeo_area) %>% summarise(id="biogeo") 
-
-#st_write(grid_eu_mainland_biogeo,"output/grid_eu_mainland_biogeo.gpkg")
-grid_eu_mainland_biogeo <- st_read("output/grid_eu_mainland_biogeo.gpkg")
 
 ggplot(grid_eu_mainland_biogeo) + geom_sf(aes(fill=as.character(PLS)),col=NA) + 
   scale_fill_viridis_d()+theme_minimal() + theme(legend.position = "none") +
@@ -1443,6 +1452,84 @@ res_gam_mainland_species_PLS <- ddply(subsite_data_mainland_trend,
 
 #saveRDS(res_gam_mainland_species_PLS,"output/res_gam_mainland_species_PLS.rds")
 #res_gam_mainland_species_PLS <- readRDS("output/res_gam_mainland_species_PLS.rds")
+
+
+#### Declining species per PLS
+
+dec_species_PLS <- res_gam_mainland_species_PLS_trend
+dec_species_PLS$year[which(is.na(dec_species_PLS$year))] <- 0
+dec_species_PLS <- dec_species_PLS %>% group_by(PLS) %>% summarise(nb_pos = length(which(year > 0)),
+                                                                   nb_neg = length(which(year < 0)),
+                                                                   nb_stable = length(which(year == 0)),
+                                                                   nb_tot = length(year))
+dec_species_PLS$perc_species_neg <- dec_species_PLS$nb_neg/dec_species_PLS$nb_tot
+dec_species_PLS$perc_species_pos <- dec_species_PLS$nb_pos/dec_species_PLS$nb_tot
+
+
+dec_species_PLS_sf <- merge(grid_eu_mainland_biogeo,dec_species_PLS,by="PLS")
+ggplot() + geom_sf() +  
+  geom_sf(data=dec_species_PLS_sf, aes(fill=perc_species_neg)) + scale_fill_gradientn(colors = paletteer_c("ggthemes::Classic Area Red", 30))
+ggplot() + geom_sf() +  
+  geom_sf(data=dec_species_PLS_sf, aes(fill=perc_species_pos)) + scale_fill_gradientn(colors = paletteer_c("ggthemes::Classic Blue", 30))
+
+
+#### Pressure by PLS
+
+##### All species
+
+pressure_PLS <- res_gam_mainland_species_PLS
+pressure_PLS <- pressure_PLS %>% group_by(PLS) %>% summarise(impervious_pos = length(which(impervious > 0)), impervious_neg = length(which(impervious < 0)),
+                                                             treedensity_pos = length(which(treedensity > 0)), treedensity_neg = length(which(treedensity < 0)),
+                                                             woodprod_pos = length(which(woodprod > 0)), woodprod_neg = length(which(woodprod < 0)),
+                                                             drymatter_pos = length(which(drymatter > 0)), drymatter_neg = length(which(drymatter < 0)),
+                                                             tempspring_pos = length(which(tempspring > 0)), tempspring_neg = length(which(tempspring < 0)),
+                                                             tempspringvar_pos = length(which(tempspringvar > 0)), tempspringvar_neg = length(which(tempspringvar < 0)),
+                                                             precspring_pos = length(which(precspring > 0)), precspring_neg = length(which(precspring < 0)),
+                                                             precspringvar_pos = length(which(precspringvar > 0)), precspringvar_neg = length(which(precspringvar < 0)),
+                                                             humidityspring_pos = length(which(humidityspring > 0)), humidityspring_neg = length(which(humidityspring < 0)),
+                                                             protectedarea_perc_pos = length(which(protectedarea_perc > 0)), protectedarea_perc_neg = length(which(protectedarea_perc < 0)),
+                                                             pesticide_nodu_pos = length(which(pesticide_nodu > 0)), pesticide_nodu_neg = length(which(pesticide_nodu < 0)),
+                                                             smallwoodyfeatures_pos = length(which(smallwoodyfeatures > 0)), smallwoodyfeatures_neg = length(which(smallwoodyfeatures < 0)),
+                                                             shannon_pos = length(which(shannon > 0)), shannon_neg = length(which(shannon < 0)),
+                                                             grassland_pos = length(which(grassland > 0)), grassland_neg = length(which(grassland < 0)),
+                                                             farmland_pos = length(which(farmland > 0)), farmland_neg = length(which(farmland < 0)),
+                                                             low_farmland_pos = length(which(low_farmland > 0)), low_farmland_neg = length(which(low_farmland < 0)),
+                                                             high_farmland_pos = length(which(high_farmland > 0)), high_farmland_neg = length(which(high_farmland < 0)))
+
+pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,pressure_PLS,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=pressure_PLS_sf, aes(fill=impervious_neg)) + scale_fill_gradientn(colors = paletteer_c("ggthemes::Classic Area Red", 30))
+
+##### Declining species
+
+dec_species_pressure_PLS <- merge(res_gam_mainland_species_PLS,res_gam_mainland_species_PLS_trend[,c("sci_name_out","year","PLS")],by=c("sci_name_out","PLS"), all.x=TRUE)
+dec_species_pressure_PLS <- dec_species_pressure_PLS[which(dec_species_pressure_PLS$year < 0),]
+
+dec_species_pressure_PLS <- dec_species_pressure_PLS %>% group_by(PLS) %>% summarise(impervious_pos = length(which(impervious > 0)), impervious_neg = length(which(impervious < 0)),
+                                                             treedensity_pos = length(which(treedensity > 0)), treedensity_neg = length(which(treedensity < 0)),
+                                                             woodprod_pos = length(which(woodprod > 0)), woodprod_neg = length(which(woodprod < 0)),
+                                                             drymatter_pos = length(which(drymatter > 0)), drymatter_neg = length(which(drymatter < 0)),
+                                                             tempspring_pos = length(which(tempspring > 0)), tempspring_neg = length(which(tempspring < 0)),
+                                                             tempspringvar_pos = length(which(tempspringvar > 0)), tempspringvar_neg = length(which(tempspringvar < 0)),
+                                                             precspring_pos = length(which(precspring > 0)), precspring_neg = length(which(precspring < 0)),
+                                                             precspringvar_pos = length(which(precspringvar > 0)), precspringvar_neg = length(which(precspringvar < 0)),
+                                                             humidityspring_pos = length(which(humidityspring > 0)), humidityspring_neg = length(which(humidityspring < 0)),
+                                                             protectedarea_perc_pos = length(which(protectedarea_perc > 0)), protectedarea_perc_neg = length(which(protectedarea_perc < 0)),
+                                                             pesticide_nodu_pos = length(which(pesticide_nodu > 0)), pesticide_nodu_neg = length(which(pesticide_nodu < 0)),
+                                                             smallwoodyfeatures_pos = length(which(smallwoodyfeatures > 0)), smallwoodyfeatures_neg = length(which(smallwoodyfeatures < 0)),
+                                                             shannon_pos = length(which(shannon > 0)), shannon_neg = length(which(shannon < 0)),
+                                                             grassland_pos = length(which(grassland > 0)), grassland_neg = length(which(grassland < 0)),
+                                                             farmland_pos = length(which(farmland > 0)), farmland_neg = length(which(farmland < 0)),
+                                                             low_farmland_pos = length(which(low_farmland > 0)), low_farmland_neg = length(which(low_farmland < 0)),
+                                                             high_farmland_pos = length(which(high_farmland > 0)), high_farmland_neg = length(which(high_farmland < 0)),
+                                                             nb_tot = length(year))
+
+dec_species_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,dec_species_pressure_PLS,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=dec_species_pressure_PLS_sf, aes(fill=impervious_neg)) + scale_fill_gradientn(colors = paletteer_c("ggthemes::Classic Area Red", 30))
+
+
+
 
 
 
