@@ -1210,11 +1210,13 @@ ggsave("output/cor_heatmap.png",
        dpi = 300
 )
 
-test_multicor <- press_mainland_trend_scale[which(press_mainland_trend_scale$year==2010),c("impervious","treedensity","lightpollution",
+test_multicor <- press_mainland_trend_scale[which(press_mainland_trend_scale$year==2010),c("impervious","treedensity",#"lightpollution",
                                                                                            "woodprod","drymatter","tempspring","tempspringvar",  
-                                                                                           "precspring","precspringvar","humidityspring",
-                                                                                           "protectedarea_cat","protectedarea_perc","protectedarea_strong_perc",
-                                                                                           "pesticide_nodu","smallwoodyfeatures",
+                                                                                           "precspring",#"precspringvar","humidityspring",
+                                                                                           #"protectedarea_cat",
+                                                                                           "protectedarea_perc",#"protectedarea_strong_perc",
+                                                                                           #"pesticide_nodu",
+                                                                                           "smallwoodyfeatures",
                                                                                            "shannon","eulandsystem_cat",
                                                                                            "grassland","farmland","low_farmland","high_farmland")]
 test_multicor$eulandsystem_cat <- as.numeric(test_multicor$eulandsystem_cat)
