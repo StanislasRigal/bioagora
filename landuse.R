@@ -25,11 +25,20 @@ eu_land_system <- rast(raster(x = "raw_data/land_system/EU_landSystem.tif"))
 ## Protected areas 
 
 protected_area_shp0 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_0/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
-protected_area_shp0 <- protected_area_shp0[,c("IUCN_CAT")]
+protected_area_shp0 <- protected_area_shp0[,c("IUCN_CAT","PARENT_ISO","GIS_AREA","DESIG_TYPE","DESIG_ENG")]
+protected_area_shp0 <- protected_area_shp0[which(protected_area_shp0$PARENT_ISO %in% c("AND","AUT","BEL","BGR","HRV","CZE","DNK","EST","FIN","FRA",
+                                                                        "DEU","GRC","HUN","IRL","ITA","LVA","LIE","LTU","LUX","MLT",
+                                                                        "MCO","NDL","NOR","POL","PRT","ROU","SVK","SVN","ESP","SWE","CHE","GBR")),]
 protected_area_shp1 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_1/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
-protected_area_shp1 <- protected_area_shp1[,c("IUCN_CAT")]
+protected_area_shp1 <- protected_area_shp1[,c("IUCN_CAT","PARENT_ISO","GIS_AREA","DESIG_TYPE","DESIG_ENG")]
+protected_area_shp1 <- protected_area_shp1[which(protected_area_shp1$PARENT_ISO %in% c("AND","AUT","BEL","BGR","HRV","CZE","DNK","EST","FIN","FRA",
+                                                                                       "DEU","GRC","HUN","IRL","ITA","LVA","LIE","LTU","LUX","MLT",
+                                                                                       "MCO","NDL","NOR","POL","PRT","ROU","SVK","SVN","ESP","SWE","CHE","GBR")),]
 protected_area_shp2 <- read_sf(dsn = "raw_data/protected_area/WDPA_shp_2/", layer = "WDPA_WDOECM_Jan2024_Public_EU_shp-polygons")
-protected_area_shp2 <- protected_area_shp2[,c("IUCN_CAT")]
+protected_area_shp2 <- protected_area_shp2[,c("IUCN_CAT","PARENT_ISO","GIS_AREA","DESIG_TYPE","DESIG_ENG")]
+protected_area_shp2 <- protected_area_shp2[which(protected_area_shp2$PARENT_ISO %in% c("AND","AUT","BEL","BGR","HRV","CZE","DNK","EST","FIN","FRA",
+                                                                                       "DEU","GRC","HUN","IRL","ITA","LVA","LIE","LTU","LUX","MLT",
+                                                                                       "MCO","NDL","NOR","POL","PRT","ROU","SVK","SVN","ESP","SWE","CHE","GBR")),]
 protected_area <- rbind(protected_area_shp0, protected_area_shp1)
 protected_area <- rbind(protected_area, protected_area_shp2)
 
@@ -1640,27 +1649,57 @@ sf::sf_use_s2(FALSE)
 
 protected_area_reproj <- st_crop(protected_area, xmin = -25, xmax = 45, ymin = 26, ymax = 76)
 
-protected_area_reproj <- st_transform(protected_area, crs(grid_eu))
+saveRDS(protected_area_reproj,"output/protected_area_reproj.rds")
 
-raster_template <- rast(raster(x = "output/eu_land_system.tif"))
+protected_area_reproj <- st_transform(protected_area_reproj, crs(grid_eu))
+
+raster_template <- rast(raster(x = "output/eu_land_system_reproj.tif"))
 
 grid_eu_test <- grid_eu[which(grid_eu$NUTS2021_1=="FR1"),]
 raster_template_test <- crop(raster_template,ext(grid_eu_test))
 raster_template_test[] <- NA
 test <-  st_intersection(grid_eu_test, protected_area_reproj)
-test$IUCN_CAT<- as.numeric(as.factor(test$IUCN_CAT))
-test_rast <- st_rasterize(test %>% dplyr::select(IUCN_CAT, geom), template=st_as_stars(raster_template_test), field = "IUCN_CAT")
+test$IUCN_CAT <- as.numeric(as.factor(test$IUCN_CAT))
+test$TYPE_AREA <- "0Other"
+test$TYPE_AREA[which(test$DESIG_ENG %in% c("Special Areas of Conservation (Habitats Directive)","Special Protection Area (Birds Directive)",
+                                                                             "Natura 2000 SCI","Sites of Community Importance (Habitats Directive)","Natura 2000 SPA","Natura 2000",
+                                                                             "ZSC - Natura 2000","Special Areas of Conservation - International Importance",'Special Protection Areas',
+                                                                             "ZPS - Natura 2000","Special Areas of Conservation - National Importance","National Nature Reserve, Wetland of International Importance, Site of Community Importance, Special Protection Area Site of Community Importance",
+                                                                             "Area of Special Protection for Birds under Wildlife Act 1990"))] <- "2Natura2000"
+test$TYPE_AREA <- as.numeric(as.factor(test$TYPE_AREA))
+test_rast <- st_rasterize(test %>% dplyr::select(IUCN_CAT, geometry), template=st_as_stars(raster_template_test), field = "IUCN_CAT")
+test_rast <- st_rasterize(test %>% dplyr::select(TYPE_AREA, geometry), template=st_as_stars(raster_template_test), field = "TYPE_AREA")
+test_rast <- st_rasterize(test %>% dplyr::select(GIS_AREA, geometry), template=st_as_stars(raster_template_test), field = "GIS_AREA")
 
 raster_template[] <- NA
-protected_area_reproj$IUCN_CAT<- as.numeric(as.factor(protected_area_reproj$IUCN_CAT))
+# levels(as.factor(protected_area_reproj$IUCN_CAT))  "Ia","Ib","II","III","IV","Not Applicable","Not Assigned","Not Reported","V","VI"
+protected_area_reproj$TYPE_AREA <- "0Other"
+protected_area_reproj$TYPE_AREA[which(protected_area_reproj$DESIG_ENG %in% c("Special Areas of Conservation (Habitats Directive)","Special Protection Area (Birds Directive)",
+                                                                             "Natura 2000 SCI","Sites of Community Importance (Habitats Directive)","Natura 2000 SPA","Natura 2000",
+                                                                             "ZSC - Natura 2000","Special Areas of Conservation - International Importance",'Special Protection Areas',
+                                                                             "ZPS - Natura 2000","Special Areas of Conservation - National Importance","National Nature Reserve, Wetland of International Importance, Site of Community Importance, Special Protection Area Site of Community Importance",
+                                                                             "Area of Special Protection for Birds under Wildlife Act 1990"))] <- "2Natura2000"
+# levels(as.factor(protected_area_reproj$TYPE_AREA))
+protected_area_reproj$IUCN_CAT <- as.numeric(as.factor(protected_area_reproj$IUCN_CAT))
+protected_area_reproj$TYPE_AREA <- as.numeric(as.factor(protected_area_reproj$TYPE_AREA))
 protected_area_rast <- st_rasterize(protected_area_reproj %>% dplyr::select(IUCN_CAT, geometry), template=st_as_stars(raster_template), field = "IUCN_CAT")
+protected_area_rast2 <- st_rasterize(protected_area_reproj %>% dplyr::select(TYPE_AREA, geometry), template=st_as_stars(raster_template), field = "TYPE_AREA")
+protected_area_rast3 <- st_rasterize(protected_area_reproj %>% dplyr::select(GIS_AREA, geometry), template=st_as_stars(raster_template), field = "GIS_AREA")
 
-write_stars(protected_area_rast,"output/protected_area_rast.tif")
+write_stars(protected_area_rast,layer="IUCN_CAT","output/protected_area_rast.tif")
+write_stars(protected_area_rast2, layer="TYPE_AREA","output/protected_area_rast2.tif")
+write_stars(protected_area_rast3,layer="GIS_AREA","output/protected_area_rast3.tif")
 
 protected_area_rast_reproj <- rast(raster(x = "output/protected_area_rast.tif"))
+protected_area_rast_reproj2 <- rast(raster(x = "output/protected_area_rast2.tif"))
+protected_area_rast_reproj3 <- rast(raster(x = "output/protected_area_rast3.tif"))
 temp1 <- exact_extract(protected_area_rast_reproj,grid_eu, fun=c("mode"))
+temp2 <- exact_extract(protected_area_rast_reproj2,grid_eu, fun=c("mode"))
+temp3 <- exact_extract(protected_area_rast_reproj3,grid_eu, fun=c("mode"))
 
 grid_eu$protectedarea <- temp1
+grid_eu$protectedarea_type <- temp2
+grid_eu$protectedarea_size <- temp3
 
 st_write(grid_eu,"output/grid_eu_protectedarea.gpkg")
 

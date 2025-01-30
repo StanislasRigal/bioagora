@@ -1692,13 +1692,13 @@ min_occurence_species <- 200
 family <- "quasipoisson"
 pressure_name <- c("impervious","treedensity","drymatter",
                    "tempspring","tempspringvar","precspring",
-                   "protectedarea_perc","shannon",
+                   "protectedarea_perc","protectedarea_type","shannon",
                    "eulandsystem_cat","farmland")
 
 gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
                             pressure_name = c("impervious","treedensity","drymatter",
                                               "tempspring","tempspringvar","precspring",
-                                              "protectedarea_perc","shannon",
+                                              "protectedarea_perc","protectedarea_type","shannon",
                                               "eulandsystem_cat","farmland"),
                             min_site_number_per_species = 80,
                             min_occurence_species=200,
@@ -1708,7 +1708,6 @@ gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
   
   poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","time_effort","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
                                                    pressure_name,"PLS")])
-  
   
   poisson_df$year <- poisson_df$year - 2000
   
@@ -1724,14 +1723,14 @@ gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
   
   if(length(pressure_name) > 1){
     formula_gam <- "count_scale_all ~ year:impervious + year:impervious:eulandsystem_cat + year:treedensity + year:treedensity:eulandsystem_cat + 
-    year:drymatter + year:tempspring + year:tempspringvar + year:precspring + year:protectedarea_perc + year:shannon +
+    year:drymatter + year:tempspring + year:tempspringvar + year:precspring + year:protectedarea_perc + year:protectedarea_perc:protectedarea_type + year:shannon +
     year:farmland + year:farmland:eulandsystem_cat"
   }else{
     formula_gam <- paste("count_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
   }
   
   col_names <- c("(Intercept)","year:impervious","year:treedensity","year:drymatter","year:tempspring","year:tempspringvar",
-                 "year:precspring","year:protectedarea_perc","year:shannon",                                     
+                 "year:precspring","year:protectedarea_perc","year:protectedarea_perc:protectedarea_type","year:shannon",                                     
                  "year:farmland","year:impervious:eulandsystem_catmedium_intensity","year:impervious:eulandsystem_cathigh_intensity",
                  "year:treedensity:eulandsystem_catmedium_intensity","year:treedensity:eulandsystem_cathigh_intensity",
                  "year:farmland:eulandsystem_catmedium_intensity","year:farmland:eulandsystem_cathigh_intensity")
