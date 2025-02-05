@@ -1730,9 +1730,9 @@ gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
   }
   
   col_names <- c("(Intercept)","year:impervious","year:treedensity","year:drymatter","year:tempspring","year:tempspringvar",
-                 "year:precspring","year:protectedarea_perc","year:protectedarea_perc:protectedarea_type","year:shannon",                                     
+                 "year:precspring","year:protectedarea_perc","year:shannon",                                     
                  "year:farmland","year:impervious:eulandsystem_catmedium_intensity","year:impervious:eulandsystem_cathigh_intensity",
-                 "year:treedensity:eulandsystem_catmedium_intensity","year:treedensity:eulandsystem_cathigh_intensity",
+                 "year:treedensity:eulandsystem_catmedium_intensity","year:treedensity:eulandsystem_cathigh_intensity","year:protectedarea_perc:protectedarea_type",
                  "year:farmland:eulandsystem_catmedium_intensity","year:farmland:eulandsystem_cathigh_intensity")
   
   if(nrow(poisson_df) >= min_occurence_species & length(table(poisson_df$eulandsystem_cat)) > 1){
@@ -1913,7 +1913,7 @@ min_occurence_species <- 200
 family <- "quasipoisson"
 pressure_name <- c("impervious","treedensity","drymatter",
                    "tempspring","tempspringvar","precspring",
-                   "protectedarea_perc","shannon",
+                   "protectedarea_perc","protectedarea_type","shannon",
                    "eulandsystem_cat","farmland")
 
 
@@ -2133,7 +2133,7 @@ gam_species_PLS1b <- function(butterfly_data,pressure_data,site_data,
 gam_species_PLS2b <- function(butterfly_data,pressure_data,site_data,
                              pressure_name = c("impervious","treedensity","drymatter",
                                                "tempspring","tempspringvar","precspring",
-                                               "protectedarea_perc","shannon",
+                                               "protectedarea_perc","protectedarea_type","shannon",
                                                "eulandsystem_cat","farmland"),
                              min_site_number_per_species = 80,
                              min_occurence_species=200,
@@ -2158,12 +2158,12 @@ gam_species_PLS2b <- function(butterfly_data,pressure_data,site_data,
   
   if(length(pressure_name) > 1){
     formula_gam <- "count_scale_all ~ year:impervious + year:impervious:eulandsystem_cat + year:treedensity + year:treedensity:eulandsystem_cat + 
-    year:drymatter + year:tempspring + year:tempspringvar + year:precspring + year:protectedarea_perc + year:shannon +
+    year:drymatter + year:tempspring + year:tempspringvar + year:precspring + year:protectedarea_perc + year:protectedarea_perc:protectedarea_type + year:shannon +
     year:farmland + year:farmland:eulandsystem_cat"
     col_names <- c("(Intercept)","year:impervious","year:treedensity","year:drymatter","year:tempspring","year:tempspringvar",
                    "year:precspring","year:protectedarea_perc","year:shannon",                                     
                    "year:farmland","year:impervious:eulandsystem_catmedium_intensity","year:impervious:eulandsystem_cathigh_intensity",
-                   "year:treedensity:eulandsystem_catmedium_intensity","year:treedensity:eulandsystem_cathigh_intensity",
+                   "year:treedensity:eulandsystem_catmedium_intensity","year:treedensity:eulandsystem_cathigh_intensity","year:protectedarea_perc:protectedarea_type",
                    "year:farmland:eulandsystem_catmedium_intensity","year:farmland:eulandsystem_cathigh_intensity")
   }else{
     formula_gam <- paste("count_scale_all ~", paste(pressure_name,sep="", collapse = " + "))

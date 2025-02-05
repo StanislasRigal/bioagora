@@ -1649,6 +1649,7 @@ matrix_pressure_PLS_bird <- matrix_pressure_PLS_bird %>% group_by(PLS) %>% summa
                                                                                                tempspringvar_effect = (length(which(`year:tempspringvar` > 0)) - length(which(`year:tempspringvar` < 0)))/length(`year:drymatter`),
                                                                                                precspring_effect = (length(which(`year:precspring` > 0)) - length(which(`year:precspring` < 0)))/length(`year:drymatter`),
                                                                                                protectedarea_perc_effect = (length(which(`year:protectedarea_perc` > 0)) - length(which(`year:protectedarea_perc` < 0)))/length(`year:drymatter`),
+                                                                                               protectedarea_type_effect = (length(which(`year:protectedarea_perc:protectedarea_type` > 0)) - length(which(`year:protectedarea_perc:protectedarea_type` < 0)))/length(`year:drymatter`),
                                                                                                #smallwoodyfeatures_effect = (length(which(`year:smallwoodyfeatures` > 0)) - length(which(`year:smallwoodyfeatures` < 0)))/length(`year:drymatter`),
                                                                                                shannon_effect = (length(which(`year:shannon` > 0)) - length(which(`year:shannon` < 0)))/length(`year:drymatter`),
                                                                                                impervious_effect = (length(which(`year:impervious` > 0)) - length(which(`year:impervious` < 0)))/length(`year:drymatter`),
@@ -1691,6 +1692,7 @@ matrix_pressure_PLS_neg_bird <- matrix_pressure_PLS_neg_bird %>% group_by(PLS) %
                                                                                                        tempspringvar_effect = (length(which(`year:tempspringvar` < 0)))/length(`year:drymatter`),
                                                                                                        precspring_effect = (length(which(`year:precspring` < 0)))/length(`year:drymatter`),
                                                                                                        protectedarea_perc_effect = (length(which(`year:protectedarea_perc` < 0)))/length(`year:drymatter`),
+                                                                                                       protectedarea_type_effect = (length(which(`year:protectedarea_perc:protectedarea_type` < 0)))/length(`year:drymatter`),
                                                                                                        #smallwoodyfeatures_effect = (length(which(`year:smallwoodyfeatures` < 0)))/length(`year:drymatter`),
                                                                                                        shannon_effect = (length(which(`year:shannon` < 0)))/length(`year:drymatter`),
                                                                                                        impervious_effect = (length(which(`year:impervious` < 0)))/length(`year:drymatter`),
@@ -1750,6 +1752,7 @@ matrix_pressure_PLS_pos_bird <- matrix_pressure_PLS_pos_bird %>% group_by(PLS) %
                                                                                                        tempspringvar_effect = (length(which(`year:tempspringvar` > 0)))/length(`year:drymatter`),
                                                                                                        precspring_effect = (length(which(`year:precspring` > 0)))/length(`year:drymatter`),
                                                                                                        protectedarea_perc_effect = (length(which(`year:protectedarea_perc` > 0)))/length(`year:drymatter`),
+                                                                                                       protectedarea_type_effect = (length(which(`year:protectedarea_perc:protectedarea_type` > 0)))/length(`year:drymatter`),
                                                                                                        #smallwoodyfeatures_effect = (length(which(`year:smallwoodyfeatures` > 0)))/length(`year:drymatter`),
                                                                                                        shannon_effect = (length(which(`year:shannon` > 0)))/length(`year:drymatter`),
                                                                                                        impervious_effect = (length(which(`year:impervious` > 0)))/length(`year:drymatter`),
@@ -1845,7 +1848,7 @@ ggplot(df_pressure_EU_bird, aes(x = variable, y = value, fill = sign)) +
                             "treedensity_high_effect" = "Tree density in high-instensity area","impervious_high_effect" = "Impervious in high-intensity area","farmland_med_effect" = "Medium-intensity farmland","impervious_med_effect" = "Impervious in medium-intensity area",
                             "treedensity_effect" = "Tree density in low-instensity area","tempspringvar_effect" = "Spring temperature variation","treedensity_med_effect" = "Tree density in medium-instensity area",
                             "shannon_effect" = "Landscape shannon diversity","impervious_effect" = "Impervious in low-instensity area","drymatter_effect" = "Vegetation productivity",
-                            "farmland_effect" = "Low-intensity farmland","protectedarea_perc_effect" = "Protected area")) +
+                            "farmland_effect" = "Low-intensity farmland","protectedarea_perc_effect" = "Protected area","protectedarea_type_effect" = "Protected area type")) +
   xlab("Pressures") + ylab("% of species impacted") +
   theme_minimal() + coord_flip() +
   theme(legend.position = "non")
