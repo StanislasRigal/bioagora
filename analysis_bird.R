@@ -1130,6 +1130,18 @@ subsite_data_mainland_trend <- bird_data_mainland[which(bird_data_mainland$siteI
 
 saveRDS(subsite_data_mainland_trend,"output/subsite_data_mainland_trend.rds")
 
+
+ggplot(grid_eu_mainland_outline) +
+  geom_sf() +
+  geom_sf(data=site_mainland_sf_reproj[which(site_mainland_sf_reproj$siteID %in% unique(subsite_data_mainland_trend$siteID)),], size=1) +
+  theme_minimal()
+
+ggsave("output/PECBMS_site_selected.png",
+       width = 8,
+       height = 10,
+       dpi = 300
+)
+
 ## get value per year per pressure
 
 press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.keep_all=TRUE), .(siteID,year),
