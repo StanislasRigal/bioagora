@@ -1006,7 +1006,7 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                eulandsystem_forest = eulandsystem[which(eulandsystem$eulandsystem %in% c(41:43)),]
                                eulandsystem_max_forest = eulandsystem_forest$eulandsystem[which.max(eulandsystem_forest$biogeo_surface)]
                                eulandsystem_cat_forest <- "no_forest"
-                               if(length(eulandsystem_max_forest) > 1){
+                               if(length(eulandsystem_max_forest) > 0){
                                  eulandsystem_cat_forest <-"low_intensity"
                                  if(eulandsystem_max_forest == 42){
                                    eulandsystem_cat_forest <- "medium_intensity"
@@ -1014,7 +1014,15 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                  if(eulandsystem_max_forest == 43){
                                    eulandsystem_cat_forest <- "high_intensity"
                                  }
-                                }
+                               }
+                               
+                               if(length(eulandsystem_max_forest) > 0){
+                                 eulandsystem_forest_lowmedium = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(41:42))])/sum(eulandsystem_forest$biogeo_surface)
+                                 eulandsystem_forest_high = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(43))])/sum(eulandsystem_forest$biogeo_surface)
+                               }else{
+                                 eulandsystem_forest_lowmedium <- eulandsystem_forest_high <- 0
+                               }
+                               
                                
                                eulandsystem_urban = eulandsystem[which(eulandsystem$eulandsystem %in% c(21:23)),]
                                eulandsystem_max_urban = eulandsystem_urban$eulandsystem[which.max(eulandsystem_urban$biogeo_surface)]
@@ -1033,6 +1041,7 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                eulandsystem_farmland_low = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,61,31,731))])
                                eulandsystem_farmland_medium = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(52,62,732))])
                                eulandsystem_farmland_high = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(53,63,32,733))])
+                              
                                eulandsystem_cat_farmland <- "no_farmland"
                                if(nrow(eulandsystem_farmland) > 0){
                                  eulandsystem_cat_farmland <- "low_intensity"
@@ -1042,6 +1051,14 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                  if(eulandsystem_farmland_high > eulandsystem_farmland_medium & eulandsystem_farmland_high > eulandsystem_farmland_low){
                                    eulandsystem_cat_farmland <- "high_intensity"
                                  }
+                               }
+                               
+                               if(nrow(eulandsystem_farmland) > 0){
+                                 eulandsystem_farmland_low <- eulandsystem_farmland_low/sum(eulandsystem_farmland$biogeo_surface)
+                                 eulandsystem_farmland_medium <- eulandsystem_farmland_medium/sum(eulandsystem_farmland$biogeo_surface)
+                                 eulandsystem_farmland_high <- eulandsystem_farmland_high/sum(eulandsystem_farmland$biogeo_surface)
+                               }else{
+                                 eulandsystem_farmland_low <- eulandsystem_farmland_medium <- eulandsystem_farmland_high <- 0
                                }
 
                                grassland = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,72))]) /  sum(eulandsystem$biogeo_surface)
@@ -1080,7 +1097,9 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                         humidityspringvar2000,humidityspringvar2020,shannon,GDP2000,GDP2015,
                                         biogeo_area,PLS,forestintegrity_cat,eulandsystem_max,grassland,farmland,
                                         low_farmland,high_farmland,low_farmland_tot,high_farmland_tot,protectedarea_cat,
-                                        protectedarea_perc,protectedarea_type,protectedarea_size,eulandsystem_cat_forest,eulandsystem_cat_urban,eulandsystem_cat_farmland))
+                                        protectedarea_perc,protectedarea_type,protectedarea_size,eulandsystem_cat_forest,eulandsystem_cat_urban,eulandsystem_cat_farmland,
+                                        eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
+                                        eulandsystem_forest_lowmedium,eulandsystem_forest_high))
                                
                              },.progress = "text")
 
@@ -1096,6 +1115,9 @@ value_site_mainland$eulandsystem_cat[which(value_site_mainland$eulandsystem_max 
 value_site_mainland$eulandsystem_cat[which(value_site_mainland$eulandsystem_max %in% c(22,32,42,52,62,732))] <-"medium_intensity"
 value_site_mainland$eulandsystem_cat[which(value_site_mainland$eulandsystem_max %in% c(23,43,53,63,733))] <-"high_intensity"
 value_site_mainland$eulandsystem_cat <- factor(value_site_mainland$eulandsystem_cat, levels = c("no_intensity","low_intensity","medium_intensity","high_intensity")) 
+value_site_mainland$eulandsystem_cat_urban <- factor(value_site_mainland$eulandsystem_cat_urban, levels = c("low_intensity","medium_intensity","high_intensity","no_urban")) 
+value_site_mainland$eulandsystem_cat_forest <- factor(value_site_mainland$eulandsystem_cat_forest, levels = c("low_intensity","medium_intensity","high_intensity","no_forest")) 
+value_site_mainland$eulandsystem_cat_farmland <- factor(value_site_mainland$eulandsystem_cat_farmland, levels = c("low_intensity","medium_intensity","high_intensity","no_farmland")) 
 
 value_site_mainland$protectedarea_size_cor <- value_site_mainland$protectedarea_size
 value_site_mainland$protectedarea_size_cor[which(value_site_mainland$protectedarea_size>500)] <- 500
@@ -1174,6 +1196,14 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               forestintegrity_cat <- pressure_subdata$forestintegrity_cat
                               shannon <- pressure_subdata$shannon
                               eulandsystem_cat <- pressure_subdata$eulandsystem_cat
+                              eulandsystem_cat_urban <- pressure_subdata$eulandsystem_cat_urban
+                              eulandsystem_cat_forest <- pressure_subdata$eulandsystem_cat_forest
+                              eulandsystem_cat_farmland <- pressure_subdata$eulandsystem_cat_farmland
+                              eulandsystem_farmland_low <- pressure_subdata$eulandsystem_farmland_low
+                              eulandsystem_farmland_medium <- pressure_subdata$eulandsystem_farmland_medium
+                              eulandsystem_farmland_high <- pressure_subdata$eulandsystem_farmland_high
+                              eulandsystem_forest_lowmedium <- pressure_subdata$eulandsystem_forest_lowmedium
+                              eulandsystem_forest_high <- pressure_subdata$eulandsystem_forest_high
                               grassland <- pressure_subdata$grassland
                               farmland <- pressure_subdata$farmland
                               low_farmland <- pressure_subdata$low_farmland
@@ -1187,7 +1217,10 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                                                          temp,tempspring,tempspringvar,prec,precspring,precspringvar,humidityspring,
                                                          GDP_percap,GDP,protectedarea_cat,protectedarea_perc,protectedarea_type,protectedarea_size_cor,
                                                          pesticide_nodu,smallwoodyfeatures,fragmentation,forestintegrity_cat,shannon,
-                                                         eulandsystem_cat,grassland,farmland,low_farmland,high_farmland,low_farmland_tot,
+                                                         eulandsystem_cat,eulandsystem_cat_urban,eulandsystem_cat_forest,eulandsystem_cat_farmland,
+                                                         eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
+                                                         eulandsystem_forest_lowmedium,eulandsystem_forest_high,
+                                                         grassland,farmland,low_farmland,high_farmland,low_farmland_tot,
                                                          high_farmland_tot,biogeo_area,PLS)
                               return(trend_result)
                             },pressure_data = value_site_mainland,
@@ -1198,6 +1231,9 @@ saveRDS(press_mainland_trend,"output/press_mainland_trend.rds")
 
 press_mainland_trend_scale <- press_mainland_trend
 press_mainland_trend_scale$eulandsystem_cat <- droplevels(press_mainland_trend_scale$eulandsystem_cat)
+press_mainland_trend_scale$eulandsystem_cat_urban <- droplevels(press_mainland_trend_scale$eulandsystem_cat_urban)
+press_mainland_trend_scale$eulandsystem_cat_forest <- droplevels(press_mainland_trend_scale$eulandsystem_cat_forest)
+press_mainland_trend_scale$eulandsystem_cat_farmland <- droplevels(press_mainland_trend_scale$eulandsystem_cat_farmland)
 press_mainland_trend_scale$pesticide_nodu <- sqrt(press_mainland_trend_scale$pesticide_nodu)
 press_mainland_trend_scale$fragmentation <- sqrt(press_mainland_trend_scale$fragmentation)
 #press_mainland_trend_scale$pop <- sqrt(press_mainland_trend_scale$pop) ############### pb ici
@@ -1206,12 +1242,16 @@ press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
                             "precspring","precspringvar","humidityspring","GDP_percap","GDP",
                             "pesticide_nodu","smallwoodyfeatures","fragmentation","shannon",
                             "protectedarea_perc","protectedarea_size_cor","grassland","farmland",
-                            "low_farmland","high_farmland","low_farmland_tot","high_farmland_tot")] <- scale(press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
+                            "low_farmland","high_farmland","low_farmland_tot","high_farmland_tot",
+                            "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                            "eulandsystem_forest_lowmedium","eulandsystem_forest_high")] <- scale(press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
                                                                                                                                            "woodprod","drymatter","temp","tempspring","tempspringvar","prec",        
                                                                                                                                            "precspring","precspringvar","humidityspring","GDP_percap","GDP",
                                                                                                                                            "pesticide_nodu","smallwoodyfeatures","fragmentation","shannon",
                                                                                                                                            "protectedarea_perc","protectedarea_size_cor","grassland","farmland",
-                                                                                                                                           "low_farmland","high_farmland","low_farmland_tot","high_farmland_tot")])
+                                                                                                                                           "low_farmland","high_farmland","low_farmland_tot","high_farmland_tot",
+                                                                                                                                "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                                                                                                                "eulandsystem_forest_lowmedium","eulandsystem_forest_high")])
 
 
 
@@ -1238,7 +1278,9 @@ test_multicor <- press_mainland_trend_scale[which(press_mainland_trend_scale$yea
                                                                                            "protectedarea_cat","protectedarea_perc","protectedarea_type","protectedarea_size_cor",
                                                                                            "pesticide_nodu","smallwoodyfeatures",
                                                                                            "fragmentation","shannon","eulandsystem_cat",
-                                                                                           "grassland","farmland","low_farmland","high_farmland","low_farmland_tot","high_farmland_tot")]
+                                                                                           "grassland","farmland","low_farmland","high_farmland","low_farmland_tot","high_farmland_tot",
+                                                                                           "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                                                                           "eulandsystem_forest_lowmedium","eulandsystem_forest_high")]
 test_multicor$eulandsystem_cat <- as.numeric(test_multicor$eulandsystem_cat)
 test_multicor <- round(cor(na.omit(test_multicor)),2)
 get_upper_tri <- function(test_multicor){
@@ -1512,7 +1554,10 @@ res_gam_mainland_species_PLS <- ddply(subsite_data_mainland_trend,
 #res_gam_mainland_species_PLS <- readRDS("output/res_gam_mainland_species_PLS.rds")
 res_gam_mainland_species_PLS <- res_gam_mainland_species_PLS[which(!is.na(res_gam_mainland_species_PLS$PLS)),]
 
-
+res_gam_mainland_species_PLS_cat <- ddply(subsite_data_mainland_trend,
+                                      .(sci_name_out),.fun=gam_species_PLS3,
+                                      pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                                      .progress = "text")
 
 #### Declining species per PLS
 
@@ -1721,6 +1766,23 @@ matrix_pressure_PLS_neg_bird <- matrix_pressure_PLS_neg_bird %>% group_by(PLS) %
                                                                                                        farmland_high_effect = (length(which(`year:farmland:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
                                                                                                        nb_sp = length(`year:drymatter`))
 
+matrix_pressure_PLS_neg_bird <- matrix_pressure_PLS_neg_bird %>% group_by(PLS) %>% summarise(drymatter_effect = (length(which(`year:drymatter` < 0)))/length(`year:drymatter`),
+                                                                                             tempspring_effect = (length(which(`year:tempspring` < 0)))/length(`year:drymatter`),
+                                                                                             tempspringvar_effect = (length(which(`year:tempspringvar` < 0)))/length(`year:drymatter`),
+                                                                                             precspring_effect = (length(which(`year:precspring` < 0)))/length(`year:drymatter`),
+                                                                                             protectedarea_perc_effect = (length(which(`year:protectedarea_perc` < 0)))/length(`year:drymatter`),
+                                                                                             protectedarea_type_effect = (length(which(`year:protectedarea_perc:protectedarea_type` < 0)))/length(`year:drymatter`),
+                                                                                             shannon_effect = (length(which(`year:shannon` < 0)))/length(`year:drymatter`),
+                                                                                             impervious_effect = (length(which(`year:impervious` < 0)))/length(`year:drymatter`),
+                                                                                             treedensity_effect = (length(which(`year:treedensity` < 0)))/length(`year:drymatter`),
+                                                                                             forest_lowmedium = (length(which(`year:treedensity:eulandsystem_forest_lowmedium` < 0)))/length(`year:drymatter`),
+                                                                                             forest_high = (length(which(`year:treedensity:eulandsystem_forest_high` < 0)))/length(`year:drymatter`),
+                                                                                             farmland = (length(which(`year:farmland` < 0)))/length(`year:drymatter`),
+                                                                                             farmland_low = (length(which(`year:farmland:eulandsystem_farmland_low` < 0)))/length(`year:drymatter`),
+                                                                                             farmland_medium = (length(which(`year:farmland:eulandsystem_farmland_medium` < 0)))/length(`year:drymatter`),
+                                                                                             farmland_high = (length(which(`year:farmland:eulandsystem_farmland_high` < 0)))/length(`year:drymatter`),
+                                                                                             nb_sp = length(`year:drymatter`))
+
 
 matrix_pressure_PLS_neg_bird_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS_neg_bird,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
@@ -1781,6 +1843,22 @@ matrix_pressure_PLS_pos_bird <- matrix_pressure_PLS_pos_bird %>% group_by(PLS) %
                                                                                                        farmland_high_effect = (length(which(`year:farmland:eulandsystem_cathigh_intensity` > 0)))/length(`year:drymatter`),
                                                                                                        nb_sp = length(`year:drymatter`))
 
+matrix_pressure_PLS_pos_bird <- matrix_pressure_PLS_pos_bird %>% group_by(PLS) %>% summarise(drymatter_effect = (length(which(`year:drymatter` > 0)))/length(`year:drymatter`),
+                                                                                             tempspring_effect = (length(which(`year:tempspring` > 0)))/length(`year:drymatter`),
+                                                                                             tempspringvar_effect = (length(which(`year:tempspringvar` > 0)))/length(`year:drymatter`),
+                                                                                             precspring_effect = (length(which(`year:precspring` > 0)))/length(`year:drymatter`),
+                                                                                             protectedarea_perc_effect = (length(which(`year:protectedarea_perc` > 0)))/length(`year:drymatter`),
+                                                                                             protectedarea_type_effect = (length(which(`year:protectedarea_perc:protectedarea_type` > 0)))/length(`year:drymatter`),
+                                                                                             shannon_effect = (length(which(`year:shannon` > 0)))/length(`year:drymatter`),
+                                                                                             impervious_effect = (length(which(`year:impervious` > 0)))/length(`year:drymatter`),
+                                                                                             treedensity_effect = (length(which(`year:treedensity` > 0)))/length(`year:drymatter`),
+                                                                                             forest_lowmedium = (length(which(`year:treedensity:eulandsystem_forest_lowmedium` > 0)))/length(`year:drymatter`),
+                                                                                             forest_high = (length(which(`year:treedensity:eulandsystem_forest_high` > 0)))/length(`year:drymatter`),
+                                                                                             farmland = (length(which(`year:farmland` > 0)))/length(`year:drymatter`),
+                                                                                             farmland_low = (length(which(`year:farmland:eulandsystem_farmland_low` > 0)))/length(`year:drymatter`),
+                                                                                             farmland_medium = (length(which(`year:farmland:eulandsystem_farmland_medium` > 0)))/length(`year:drymatter`),
+                                                                                             farmland_high = (length(which(`year:farmland:eulandsystem_farmland_high` > 0)))/length(`year:drymatter`),
+                                                                                             nb_sp = length(`year:drymatter`))
 
 matrix_pressure_PLS_pos_bird_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS_pos_bird,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
