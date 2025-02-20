@@ -1777,10 +1777,10 @@ matrix_pressure_PLS_neg_bird <- matrix_pressure_PLS_neg_bird %>% group_by(PLS) %
                                                                                              treedensity_effect = (length(which(`year:treedensity` < 0)))/length(`year:drymatter`),
                                                                                              forest_lowmedium = (length(which(`year:treedensity:eulandsystem_forest_lowmedium` < 0)))/length(`year:drymatter`),
                                                                                              forest_high = (length(which(`year:treedensity:eulandsystem_forest_high` < 0)))/length(`year:drymatter`),
-                                                                                             farmland = (length(which(`year:farmland` < 0)))/length(`year:drymatter`),
-                                                                                             farmland_low = (length(which(`year:farmland:eulandsystem_farmland_low` < 0)))/length(`year:drymatter`),
-                                                                                             farmland_medium = (length(which(`year:farmland:eulandsystem_farmland_medium` < 0)))/length(`year:drymatter`),
-                                                                                             farmland_high = (length(which(`year:farmland:eulandsystem_farmland_high` < 0)))/length(`year:drymatter`),
+                                                                                             #farmland = (length(which(`year:farmland` < 0)))/length(`year:drymatter`),
+                                                                                             farmland_low = (length(which(`year:eulandsystem_farmland_low` < 0)))/length(`year:drymatter`),
+                                                                                             farmland_medium = (length(which(`year:eulandsystem_farmland_medium` < 0)))/length(`year:drymatter`),
+                                                                                             farmland_high = (length(which(`year:eulandsystem_farmland_high` < 0)))/length(`year:drymatter`),
                                                                                              nb_sp = length(`year:drymatter`))
 
 
@@ -1854,10 +1854,10 @@ matrix_pressure_PLS_pos_bird <- matrix_pressure_PLS_pos_bird %>% group_by(PLS) %
                                                                                              treedensity_effect = (length(which(`year:treedensity` > 0)))/length(`year:drymatter`),
                                                                                              forest_lowmedium = (length(which(`year:treedensity:eulandsystem_forest_lowmedium` > 0)))/length(`year:drymatter`),
                                                                                              forest_high = (length(which(`year:treedensity:eulandsystem_forest_high` > 0)))/length(`year:drymatter`),
-                                                                                             farmland = (length(which(`year:farmland` > 0)))/length(`year:drymatter`),
-                                                                                             farmland_low = (length(which(`year:farmland:eulandsystem_farmland_low` > 0)))/length(`year:drymatter`),
-                                                                                             farmland_medium = (length(which(`year:farmland:eulandsystem_farmland_medium` > 0)))/length(`year:drymatter`),
-                                                                                             farmland_high = (length(which(`year:farmland:eulandsystem_farmland_high` > 0)))/length(`year:drymatter`),
+                                                                                             #farmland = (length(which(`year:farmland` > 0)))/length(`year:drymatter`),
+                                                                                             farmland_low = (length(which(`year:eulandsystem_farmland_low` > 0)))/length(`year:drymatter`),
+                                                                                             farmland_medium = (length(which(`year:eulandsystem_farmland_medium` > 0)))/length(`year:drymatter`),
+                                                                                             farmland_high = (length(which(`year:eulandsystem_farmland_high` > 0)))/length(`year:drymatter`),
                                                                                              nb_sp = length(`year:drymatter`))
 
 matrix_pressure_PLS_pos_bird_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS_pos_bird,by="PLS",all.x=TRUE)
@@ -1941,7 +1941,7 @@ ggplot(df_pressure_EU_bird, aes(x = variable, y = value, fill = sign)) +
                             "farmland_effect" = "Low-intensity farmland","protectedarea_perc_effect" = "Protected area","protectedarea_type_effect" = "Protected area type")) +
   xlab("Pressures") + ylab("% of species impacted") +
   theme_minimal() + coord_flip() +
-  theme(legend.position = "non")
+  theme(legend.position = "none")
 
 
 ggsave("output/pressure_bird_eu.png",

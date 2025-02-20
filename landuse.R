@@ -646,6 +646,7 @@ woodprod_average <- rast(raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodp
 ## Habitat diversity (simpson diversity of habitat proportion)
 
 clc_land_cover <- raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+clc_land_cover_2000 <- raster(x = "raw_data/land_cover/u2006_clc2000_v2020_20u1_raster100m/DATA/U2006_CLC2000_V2020_20u1.tif")
 
 
 # Productivity
@@ -2149,6 +2150,15 @@ clc_land_cover2 <- classify(rast(clc_land_cover),cbind(c(1:44,48),
 writeRaster(clc_land_cover2,'raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/clc_land_cover2.tif')
 clc_land_cover2 <- rast(raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/clc_land_cover2.tif"))
 
+
+clc_land_cover_20002 <- classify(rast(clc_land_cover_2000),cbind(c(1:44,48),
+                                                       c(rep(11,2),rep(12,4),rep(13,3),rep(14,2),
+                                                         rep(21,3),rep(22,3),rep(23,1),rep(24,4),
+                                                         rep(31,3),rep(32,4),rep(33,5),rep(41,2),
+                                                         rep(42,3),rep(51,2),rep(52,3),NA)))
+writeRaster(clc_land_cover_20002,'raw_data/land_cover/u2006_clc2000_v2020_20u1_raster100m/DATA/clc_land_cover_20002.tif')
+clc_land_cover_20002 <- rast(raster(x = "raw_data/land_cover/u2006_clc2000_v2020_20u1_raster100m/DATA/clc_land_cover_20002.tif"))
+
 ### test
 
 grid_eu_test <- grid_eu[which(grid_eu$NUTS2021_1=="FRD"),]
@@ -2186,8 +2196,21 @@ temp2$shannon <- apply(temp2,1,
                          shannon_i <- -sum(x_nnull*log(x_nnull))
                          return(shannon_i)
                        })
+temp2$agri <- temp2$frac_21 + temp2$frac_22 + temp2$frac_23 + temp2$frac_24 + temp2$frac_32
 
-grid_eu$shannon <- temp2$shannon
+
+temp3 <- exact_extract(clc_land_cover_20002,grid_eu,fun="frac")
+temp3$shannon <- apply(temp3,1,
+                       function(x){
+                         x_nnull <- x[which(x>0)]
+                         shannon_i <- -sum(x_nnull*log(x_nnull))
+                         return(shannon_i)
+                       })
+temp3$agri <- temp3$frac_21 + temp3$frac_22 + temp3$frac_23 + temp3$frac_24 + temp3$frac_32
+
+grid_eu$shannon_2018 <- temp2$shannon
+grid_eu$shannon_2000 <- temp3$shannon
+
 grid_eu$DIST_BORD <- grid_eu$TOT_P_2011 <- grid_eu$TOT_P_2018 <-
   grid_eu$Y_LLC <- grid_eu$X_LLC <- NULL
 

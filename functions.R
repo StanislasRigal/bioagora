@@ -1933,9 +1933,9 @@ gam_species_PLS3 <- function(bird_data,pressure_data,site_data,
   poisson_df$count_scale_all <- scales::rescale(poisson_df$count)
   
   if(length(pressure_name) > 1){
-    formula_gam <- "count_scale_all ~ year:impervious + year:treedensity + year:treedensity:eulandsystem_forest_lowmedium + year:treedensity:eulandsystem_forest_high +
-    year:eulandsystem_farmland_low + year:eulandsystem_farmland_medium + year:eulandsystem_farmland_high +
-    year:drymatter + year:tempspring + year:tempspringvar + year:precspring + year:protectedarea_perc + year:protectedarea_perc:protectedarea_type + year:shannon"
+    formula_gam <- "count_scale_all ~ year + year:d_impervious + year:d_treedensity:eulandsystem_cat_forest + year:d_agri: eulandsystem_cat_farmland +
+    year:d_temperature + year:d_temperature_var + year:d_precipitation + year:d_shannon + year:protectedarea_perc + year:protectedarea_perc:protectedarea_type +
+    milieu + temperature + precipitation + shannon + drymatter"
   }else{
     formula_gam <- paste("count_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
   }
