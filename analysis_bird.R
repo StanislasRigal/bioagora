@@ -971,16 +971,18 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                lightpollution2000 = weighted.mean(x$lightpollution2000,x$area); lightpollution2013 = weighted.mean(x$lightpollution2013,x$area)
                                pesticide_kg = weighted.mean(x$pesticide_kg,x$area); pesticide_kg_ha = weighted.mean(x$pesticide_kg_ha,x$area); pesticide_nodu_ha = weighted.mean(x$pesticide_nodu_ha,x$area)
                                woodprod2000 = weighted.mean(x$woodprod2000,x$area); woodprod2010 = weighted.mean(x$woodprod2010,x$area); woodprodaverage = weighted.mean(x$woodprodaverage,x$area)
-                               drymatter2000 = weighted.mean(x$drymatter2000,x$area); drymatter2018 = weighted.mean(x$drymatter2018,x$area); declineproductivity = weighted.mean(x$declineproductivity,x$area,na.rm=TRUE)
+                               drymatter2000 = weighted.mean(x$drymatter2000,x$area); drymatter2018 = weighted.mean(x$drymatter2018,x$area)
                                smallwoodyfeatures = weighted.mean(x$smallwoodyfeatures,x$area); fragmentation = weighted.mean(x$fragmentation,x$area)
-                               forestintegrity = weighted.mean(x$forestintegrity,x$area,na.rm=TRUE); 
+                               forestintegrity = weighted.mean(x$forestintegrity,x$area,na.rm=TRUE)
                                temp2000 = weighted.mean(x$temp2000,x$area); temp2020 = weighted.mean(x$temp2020,x$area); tempspring2000 = weighted.mean(x$tempspring2000,x$area); tempspring2020 = weighted.mean(x$tempspring2020,x$area)
                                tempspringvar2000 = weighted.mean(x$tempspringvar2000,x$area); tempspringvar2020 = weighted.mean(x$tempspringvar2020,x$area)
                                prec2000 = weighted.mean(x$prec2000,x$area); prec2020 = weighted.mean(x$prec2020,x$area); precspring2000 = weighted.mean(x$precspring2000,x$area); precspring2020 = weighted.mean(x$precspring2020,x$area)
                                precspringvar2000 = weighted.mean(x$precspringvar2000); precspringvar2020 = weighted.mean(x$precspringvar2020,x$area)
                                humidity2000 = weighted.mean(x$humidity2000,x$area); humidity2020 = weighted.mean(x$humidity2020,x$area); humidityspring2000 = weighted.mean(x$humidityspring2000,x$area)
                                humidityspring2020 = weighted.mean(x$humidityspring2020,x$area); humidityspringvar2000 = weighted.mean(x$humidityspringvar2000,x$area); humidityspringvar2020 = weighted.mean(x$humidityspringvar2020,x$area)
-                               shannon = weighted.mean(x$shannon,x$area); GDP2000 = weighted.mean(x$GDP2000,x$area); GDP2015 = weighted.mean(x$GDP2015,x$area)
+                               shannon2000 = weighted.mean(x$shannon_2000,x$area); shannon2018 = weighted.mean(x$shannon_2018,x$area)
+                               agri2000 = weighted.mean(x$agri_2000,x$area); agri2018 = weighted.mean(x$agri_2018,x$area)
+                               GDP2000 = weighted.mean(x$GDP2000,x$area); GDP2015 = weighted.mean(x$GDP2015,x$area)
                                
                                biogeo_area = data.frame(x %>% group_by(biogeo_area) %>% summarise(biogeo_surface=sum(area)))
                                biogeo_area = biogeo_area$biogeo_area[which.max(biogeo_area$biogeo_surface)]
@@ -1090,11 +1092,11 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                
                                return(data.frame(pop2000,pop2020,impervious2006,impervious2018,treedensity2012,treedensity2018,
                                         lightpollution2000,lightpollution2013,pesticide_kg,pesticide_kg_ha,pesticide_nodu_ha,
-                                        woodprod2000,woodprod2010,woodprodaverage,drymatter2000,drymatter2018,declineproductivity,
+                                        woodprod2000,woodprod2010,woodprodaverage,drymatter2000,drymatter2018,
                                         smallwoodyfeatures,fragmentation,forestintegrity,temp2000,temp2020,tempspring2000,tempspring2020,
                                         tempspringvar2000,tempspringvar2020,prec2000,prec2020,precspring2000,precspring2020,
                                         precspringvar2000,precspringvar2020,humidity2000,humidity2020,humidityspring2000,humidityspring2020,
-                                        humidityspringvar2000,humidityspringvar2020,shannon,GDP2000,GDP2015,
+                                        humidityspringvar2000,humidityspringvar2020,shannon2000,shannon2018,agri2000,agri2018,GDP2000,GDP2015,
                                         biogeo_area,PLS,forestintegrity_cat,eulandsystem_max,grassland,farmland,
                                         low_farmland,high_farmland,low_farmland_tot,high_farmland_tot,protectedarea_cat,
                                         protectedarea_perc,protectedarea_type,protectedarea_size,eulandsystem_cat_forest,eulandsystem_cat_urban,eulandsystem_cat_farmland,
@@ -1171,60 +1173,68 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               
                               pressure_subdata <- pressure_data[which(pressure_data$siteID == x$siteID),]
                               
-                              pop <- (pressure_subdata$pop2020-pressure_subdata$pop2000)/21*(x$year-2000)+pressure_subdata$pop2000
-                              impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13*(x$year-2006)+pressure_subdata$impervious2006
-                              treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7*(x$year-2012)+pressure_subdata$treedensity2012
-                              lightpollution <- (pressure_subdata$lightpollution2013-pressure_subdata$lightpollution2000)/14*(x$year-2000)+pressure_subdata$lightpollution2000
-                              woodprod <- (pressure_subdata$woodprod2010-pressure_subdata$woodprod2000)/11*(x$year-2000)+pressure_subdata$woodprod2000
-                              drymatter <- (pressure_subdata$drymatter2018-pressure_subdata$drymatter2000)/19*(x$year-2000)+pressure_subdata$drymatter2000
-                              temp <- (pressure_subdata$temp2020-pressure_subdata$temp2000)/21*(x$year-2000)+pressure_subdata$temp2000
-                              tempspring <- (pressure_subdata$tempspring2020-pressure_subdata$tempspring2000)/21*(x$year-2000)+pressure_subdata$tempspring2000
-                              tempspringvar <- (pressure_subdata$tempspringvar2020-pressure_subdata$tempspringvar2000)/21*(x$year-2000)+pressure_subdata$tempspringvar2000
-                              prec <- (pressure_subdata$prec2020-pressure_subdata$prec2000)/21*(x$year-2000)+pressure_subdata$prec2000
-                              precspring <- (pressure_subdata$precspring2020-pressure_subdata$precspring2000)/21*(x$year-2000)+pressure_subdata$precspring2000
-                              precspringvar <- (pressure_subdata$precspringvar2020-pressure_subdata$precspringvar2000)/21*(x$year-2000)+pressure_subdata$precspringvar2000
-                              humidityspring <- (pressure_subdata$humidityspring2020-pressure_subdata$humidityspring2000)/21*(x$year-2000)+pressure_subdata$humidityspring2000
-                              GDP_percap <- (pressure_subdata$GDP2015_percap-pressure_subdata$GDP2000_percap)/16*(x$year-2000)+pressure_subdata$GDP2000_percap
-                              GDP <- (pressure_subdata$GDP2015-pressure_subdata$GDP2000)/16*(x$year-2000)+pressure_subdata$GDP2000
-                              protectedarea_cat <- pressure_subdata$protectedarea_cat
+                              #pop <- (pressure_subdata$pop2020-pressure_subdata$pop2000)/21*(x$year-2000)+pressure_subdata$pop2000
+                              #impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13*(x$year-2006)+pressure_subdata$impervious2006
+                              #treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7*(x$year-2012)+pressure_subdata$treedensity2012
+                              #lightpollution <- (pressure_subdata$lightpollution2013-pressure_subdata$lightpollution2000)/14*(x$year-2000)+pressure_subdata$lightpollution2000
+                              #woodprod <- (pressure_subdata$woodprod2010-pressure_subdata$woodprod2000)/11*(x$year-2000)+pressure_subdata$woodprod2000
+                              #drymatter <- (pressure_subdata$drymatter2018-pressure_subdata$drymatter2000)/19*(x$year-2000)+pressure_subdata$drymatter2000
+                              #temp <- (pressure_subdata$temp2020-pressure_subdata$temp2000)/21*(x$year-2000)+pressure_subdata$temp2000
+                              #tempspring <- (pressure_subdata$tempspring2020-pressure_subdata$tempspring2000)/21*(x$year-2000)+pressure_subdata$tempspring2000
+                              #tempspringvar <- (pressure_subdata$tempspringvar2020-pressure_subdata$tempspringvar2000)/21*(x$year-2000)+pressure_subdata$tempspringvar2000
+                              #prec <- (pressure_subdata$prec2020-pressure_subdata$prec2000)/21*(x$year-2000)+pressure_subdata$prec2000
+                              #precspring <- (pressure_subdata$precspring2020-pressure_subdata$precspring2000)/21*(x$year-2000)+pressure_subdata$precspring2000
+                              #precspringvar <- (pressure_subdata$precspringvar2020-pressure_subdata$precspringvar2000)/21*(x$year-2000)+pressure_subdata$precspringvar2000
+                              #humidityspring <- (pressure_subdata$humidityspring2020-pressure_subdata$humidityspring2000)/21*(x$year-2000)+pressure_subdata$humidityspring2000
+                              #GDP_percap <- (pressure_subdata$GDP2015_percap-pressure_subdata$GDP2000_percap)/16*(x$year-2000)+pressure_subdata$GDP2000_percap
+                              #GDP <- (pressure_subdata$GDP2015-pressure_subdata$GDP2000)/16*(x$year-2000)+pressure_subdata$GDP2000
+                              #protectedarea_cat <- pressure_subdata$protectedarea_cat
+                              #protectedarea_size_cor <- pressure_subdata$protectedarea_size_cor
+                              #pesticide_nodu <- pressure_subdata$pesticide_nodu_ha
+                              #smallwoodyfeatures <- pressure_subdata$smallwoodyfeatures
+                              #fragmentation <- pressure_subdata$fragmentation
+                              #forestintegrity_cat <- pressure_subdata$forestintegrity_cat
+                              
+                              d_impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13
+                              d_treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7
+                              d_agri <- (pressure_subdata$agri2018-pressure_subdata$agri2000)/19
+                              d_tempsrping <- (pressure_subdata$tempspring2020-pressure_subdata$tempspring2000)/21
+                              tempsrping <- pressure_subdata$tempspring2000
+                              d_tempsrpingvar <- (pressure_subdata$tempspringvar2020-pressure_subdata$tempspringvar2000)/21
+                              d_precspring <- (pressure_subdata$precspring2020-pressure_subdata$precspring2000)/21
+                              precspring <- pressure_subdata$precspring2000
+                              d_shannon <- (pressure_subdata$shannon2018-pressure_subdata$shannon2000)/19
+                              shannon <- pressure_subdata$shannon2000
+                              
+                              milieu <- pressure_subdata$eulandsystem_max
+                              
+                              drymatter <- sum(pressure_subdata$drymatter2000,pressure_subdata$drymatter2018, na.rm = TRUE)/2
+                              
                               protectedarea_perc <- pressure_subdata$protectedarea_perc
                               protectedarea_type <- pressure_subdata$protectedarea_type
-                              protectedarea_size_cor <- pressure_subdata$protectedarea_size_cor
-                              pesticide_nodu <- pressure_subdata$pesticide_nodu_ha
-                              smallwoodyfeatures <- pressure_subdata$smallwoodyfeatures
-                              fragmentation <- pressure_subdata$fragmentation
-                              forestintegrity_cat <- pressure_subdata$forestintegrity_cat
-                              shannon <- pressure_subdata$shannon
+                              
                               eulandsystem_cat <- pressure_subdata$eulandsystem_cat
-                              eulandsystem_cat_urban <- pressure_subdata$eulandsystem_cat_urban
-                              eulandsystem_cat_forest <- pressure_subdata$eulandsystem_cat_forest
-                              eulandsystem_cat_farmland <- pressure_subdata$eulandsystem_cat_farmland
                               eulandsystem_farmland_low <- pressure_subdata$eulandsystem_farmland_low
                               eulandsystem_farmland_medium <- pressure_subdata$eulandsystem_farmland_medium
                               eulandsystem_farmland_high <- pressure_subdata$eulandsystem_farmland_high
                               eulandsystem_forest_lowmedium <- pressure_subdata$eulandsystem_forest_lowmedium
                               eulandsystem_forest_high <- pressure_subdata$eulandsystem_forest_high
-                              grassland <- pressure_subdata$grassland
-                              farmland <- pressure_subdata$farmland
-                              low_farmland <- pressure_subdata$low_farmland
-                              high_farmland <- pressure_subdata$high_farmland
-                              low_farmland_tot <- pressure_subdata$low_farmland_tot
-                              high_farmland_tot <- pressure_subdata$high_farmland_tot
-                              biogeo_area <- pressure_subdata$biogeo_area
+                              
                               PLS <- pressure_subdata$PLS
                               
-                              trend_result <- data.frame(pop,impervious,treedensity,lightpollution,woodprod,drymatter,
-                                                         temp,tempspring,tempspringvar,prec,precspring,precspringvar,humidityspring,
-                                                         GDP_percap,GDP,protectedarea_cat,protectedarea_perc,protectedarea_type,protectedarea_size_cor,
-                                                         pesticide_nodu,smallwoodyfeatures,fragmentation,forestintegrity_cat,shannon,
-                                                         eulandsystem_cat,eulandsystem_cat_urban,eulandsystem_cat_forest,eulandsystem_cat_farmland,
-                                                         eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
-                                                         eulandsystem_forest_lowmedium,eulandsystem_forest_high,
-                                                         grassland,farmland,low_farmland,high_farmland,low_farmland_tot,
-                                                         high_farmland_tot,biogeo_area,PLS)
+                              trend_result <- data.frame(d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
+                                                         d_shannon,shannon,milieu,drymatter,protectedarea_perc,protectedarea_type,
+                                                         eulandsystem_cat,eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
+                                                         eulandsystem_forest_lowmedium,eulandsystem_forest_high,PLS)
                               return(trend_result)
                             },pressure_data = value_site_mainland,
                             .progress = "text")
+
+press_mainland_trend$milieu_cat <- NA
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(21,22,23))] <- "urban"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(41,42,43,71,72,74,75))] <- "forest and shrub"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(31,32,51,52,53,61,62,63,731,732,733))] <- "openland"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(0,11,12,13,80,90))] <- "others"
 
 
 saveRDS(press_mainland_trend,"output/press_mainland_trend.rds") 
