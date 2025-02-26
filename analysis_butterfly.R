@@ -50,7 +50,8 @@ area_site_mainland$area <- as.numeric(st_area(area_site_mainland))
 area_site_mainland_df <- area_site_mainland
 st_geometry(area_site_mainland_df) <- NULL
 
-value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
+
+value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                              .fun = function(x){
                                
                                pop2000 = weighted.mean(x$pop2000,x$area); pop2020 = weighted.mean(x$pop2020,x$area)
@@ -59,16 +60,18 @@ value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
                                lightpollution2000 = weighted.mean(x$lightpollution2000,x$area); lightpollution2013 = weighted.mean(x$lightpollution2013,x$area)
                                pesticide_kg = weighted.mean(x$pesticide_kg,x$area); pesticide_kg_ha = weighted.mean(x$pesticide_kg_ha,x$area); pesticide_nodu_ha = weighted.mean(x$pesticide_nodu_ha,x$area)
                                woodprod2000 = weighted.mean(x$woodprod2000,x$area); woodprod2010 = weighted.mean(x$woodprod2010,x$area); woodprodaverage = weighted.mean(x$woodprodaverage,x$area)
-                               drymatter2000 = weighted.mean(x$drymatter2000,x$area); drymatter2018 = weighted.mean(x$drymatter2018,x$area); declineproductivity = weighted.mean(x$declineproductivity,x$area,na.rm=TRUE)
+                               drymatter2000 = weighted.mean(x$drymatter2000,x$area); drymatter2018 = weighted.mean(x$drymatter2018,x$area)
                                smallwoodyfeatures = weighted.mean(x$smallwoodyfeatures,x$area); fragmentation = weighted.mean(x$fragmentation,x$area)
-                               forestintegrity = weighted.mean(x$forestintegrity,x$area,na.rm=TRUE); 
+                               forestintegrity = weighted.mean(x$forestintegrity,x$area,na.rm=TRUE)
                                temp2000 = weighted.mean(x$temp2000,x$area); temp2020 = weighted.mean(x$temp2020,x$area); tempspring2000 = weighted.mean(x$tempspring2000,x$area); tempspring2020 = weighted.mean(x$tempspring2020,x$area)
                                tempspringvar2000 = weighted.mean(x$tempspringvar2000,x$area); tempspringvar2020 = weighted.mean(x$tempspringvar2020,x$area)
                                prec2000 = weighted.mean(x$prec2000,x$area); prec2020 = weighted.mean(x$prec2020,x$area); precspring2000 = weighted.mean(x$precspring2000,x$area); precspring2020 = weighted.mean(x$precspring2020,x$area)
                                precspringvar2000 = weighted.mean(x$precspringvar2000); precspringvar2020 = weighted.mean(x$precspringvar2020,x$area)
                                humidity2000 = weighted.mean(x$humidity2000,x$area); humidity2020 = weighted.mean(x$humidity2020,x$area); humidityspring2000 = weighted.mean(x$humidityspring2000,x$area)
                                humidityspring2020 = weighted.mean(x$humidityspring2020,x$area); humidityspringvar2000 = weighted.mean(x$humidityspringvar2000,x$area); humidityspringvar2020 = weighted.mean(x$humidityspringvar2020,x$area)
-                               shannon = weighted.mean(x$shannon,x$area); GDP2000 = weighted.mean(x$GDP2000,x$area); GDP2015 = weighted.mean(x$GDP2015,x$area)
+                               shannon2000 = weighted.mean(x$shannon_2000,x$area); shannon2018 = weighted.mean(x$shannon_2018,x$area)
+                               agri2000 = weighted.mean(x$agri_2000,x$area); agri2018 = weighted.mean(x$agri_2018,x$area)
+                               GDP2000 = weighted.mean(x$GDP2000,x$area); GDP2015 = weighted.mean(x$GDP2015,x$area)
                                
                                biogeo_area = data.frame(x %>% group_by(biogeo_area) %>% summarise(biogeo_surface=sum(area)))
                                biogeo_area = biogeo_area$biogeo_area[which.max(biogeo_area$biogeo_surface)]
@@ -94,7 +97,7 @@ value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
                                eulandsystem_forest = eulandsystem[which(eulandsystem$eulandsystem %in% c(41:43)),]
                                eulandsystem_max_forest = eulandsystem_forest$eulandsystem[which.max(eulandsystem_forest$biogeo_surface)]
                                eulandsystem_cat_forest <- "no_forest"
-                               if(length(eulandsystem_max_forest) > 1){
+                               if(length(eulandsystem_max_forest) > 0){
                                  eulandsystem_cat_forest <-"low_intensity"
                                  if(eulandsystem_max_forest == 42){
                                    eulandsystem_cat_forest <- "medium_intensity"
@@ -103,6 +106,14 @@ value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
                                    eulandsystem_cat_forest <- "high_intensity"
                                  }
                                }
+                               
+                               if(length(eulandsystem_max_forest) > 0){
+                                 eulandsystem_forest_lowmedium = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(41:42))])/sum(eulandsystem_forest$biogeo_surface)
+                                 eulandsystem_forest_high = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(43))])/sum(eulandsystem_forest$biogeo_surface)
+                               }else{
+                                 eulandsystem_forest_lowmedium <- eulandsystem_forest_high <- 0
+                               }
+                               
                                
                                eulandsystem_urban = eulandsystem[which(eulandsystem$eulandsystem %in% c(21:23)),]
                                eulandsystem_max_urban = eulandsystem_urban$eulandsystem[which.max(eulandsystem_urban$biogeo_surface)]
@@ -121,6 +132,7 @@ value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
                                eulandsystem_farmland_low = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,61,31,731))])
                                eulandsystem_farmland_medium = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(52,62,732))])
                                eulandsystem_farmland_high = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(53,63,32,733))])
+                               
                                eulandsystem_cat_farmland <- "no_farmland"
                                if(nrow(eulandsystem_farmland) > 0){
                                  eulandsystem_cat_farmland <- "low_intensity"
@@ -130,6 +142,14 @@ value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
                                  if(eulandsystem_farmland_high > eulandsystem_farmland_medium & eulandsystem_farmland_high > eulandsystem_farmland_low){
                                    eulandsystem_cat_farmland <- "high_intensity"
                                  }
+                               }
+                               
+                               if(nrow(eulandsystem_farmland) > 0){
+                                 eulandsystem_farmland_low <- eulandsystem_farmland_low/sum(eulandsystem_farmland$biogeo_surface)
+                                 eulandsystem_farmland_medium <- eulandsystem_farmland_medium/sum(eulandsystem_farmland$biogeo_surface)
+                                 eulandsystem_farmland_high <- eulandsystem_farmland_high/sum(eulandsystem_farmland$biogeo_surface)
+                               }else{
+                                 eulandsystem_farmland_low <- eulandsystem_farmland_medium <- eulandsystem_farmland_high <- 0
                                }
                                
                                grassland = sum(eulandsystem$biogeo_surface[which(eulandsystem$eulandsystem %in% c(51,52,53,72))]) /  sum(eulandsystem$biogeo_surface)
@@ -161,16 +181,19 @@ value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
                                
                                return(data.frame(pop2000,pop2020,impervious2006,impervious2018,treedensity2012,treedensity2018,
                                                  lightpollution2000,lightpollution2013,pesticide_kg,pesticide_kg_ha,pesticide_nodu_ha,
-                                                 woodprod2000,woodprod2010,woodprodaverage,drymatter2000,drymatter2018,declineproductivity,
+                                                 woodprod2000,woodprod2010,woodprodaverage,drymatter2000,drymatter2018,
                                                  smallwoodyfeatures,fragmentation,forestintegrity,temp2000,temp2020,tempspring2000,tempspring2020,
                                                  tempspringvar2000,tempspringvar2020,prec2000,prec2020,precspring2000,precspring2020,
                                                  precspringvar2000,precspringvar2020,humidity2000,humidity2020,humidityspring2000,humidityspring2020,
-                                                 humidityspringvar2000,humidityspringvar2020,shannon,GDP2000,GDP2015,
+                                                 humidityspringvar2000,humidityspringvar2020,shannon2000,shannon2018,agri2000,agri2018,GDP2000,GDP2015,
                                                  biogeo_area,PLS,forestintegrity_cat,eulandsystem_max,grassland,farmland,
                                                  low_farmland,high_farmland,low_farmland_tot,high_farmland_tot,protectedarea_cat,
-                                                 protectedarea_perc,protectedarea_type,protectedarea_size,eulandsystem_cat_forest,eulandsystem_cat_urban,eulandsystem_cat_farmland))
+                                                 protectedarea_perc,protectedarea_type,protectedarea_size,eulandsystem_cat_forest,eulandsystem_cat_urban,eulandsystem_cat_farmland,
+                                                 eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
+                                                 eulandsystem_forest_lowmedium,eulandsystem_forest_high))
                                
                              },.progress = "text")
+
 
 
 value_site_mainland$GDP2000_percap <- value_site_mainland$GDP2000/value_site_mainland$pop2000
@@ -184,6 +207,10 @@ value_site_mainland$eulandsystem_cat[which(value_site_mainland$eulandsystem_max 
 value_site_mainland$eulandsystem_cat[which(value_site_mainland$eulandsystem_max %in% c(22,32,42,52,62,732))] <-"medium_intensity"
 value_site_mainland$eulandsystem_cat[which(value_site_mainland$eulandsystem_max %in% c(23,43,53,63,733))] <-"high_intensity"
 value_site_mainland$eulandsystem_cat <- factor(value_site_mainland$eulandsystem_cat, levels = c("no_intensity","low_intensity","medium_intensity","high_intensity")) 
+value_site_mainland$eulandsystem_cat_urban <- factor(value_site_mainland$eulandsystem_cat_urban, levels = c("low_intensity","medium_intensity","high_intensity","no_urban")) 
+value_site_mainland$eulandsystem_cat_forest <- factor(value_site_mainland$eulandsystem_cat_forest, levels = c("low_intensity","medium_intensity","high_intensity","no_forest")) 
+value_site_mainland$eulandsystem_cat_farmland <- factor(value_site_mainland$eulandsystem_cat_farmland, levels = c("low_intensity","medium_intensity","high_intensity","no_farmland")) 
+
 value_site_mainland$protectedarea_size_cor <- value_site_mainland$protectedarea_size
 value_site_mainland$protectedarea_size_cor[which(value_site_mainland$protectedarea_size>500)] <- 500
 
