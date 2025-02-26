@@ -25,7 +25,7 @@ site_mainland$Long_LAEA <- st_coordinates(site_mainland_sf_reproj)[,1]
 site_mainland$Lat_LAEA <- st_coordinates(site_mainland_sf_reproj)[,2]
 
 site_mainland_sf_reproj_butterfly <- site_mainland_sf_reproj
-saveRDS(site_mainland_sf_reproj_butterfly,"output/site_mainland_sf_reproj_butterfly.rds")
+#saveRDS(site_mainland_sf_reproj_butterfly,"output/site_mainland_sf_reproj_butterfly.rds")
 
 ## plot sites and area monitored
 
@@ -40,8 +40,8 @@ ggsave("output/EBMS_site.png",
        dpi = 300
 )
 
-radius_buffer <- sqrt(median(site_mainland_sf_reproj$transect_length,na.rm=TRUE)/pi)
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj, dist = 2500)
+radius_buffer <- sqrt(median(site_mainland_sf_reproj_butterfly$transect_length,na.rm=TRUE)/pi)
+site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_butterfly, dist = 2500)
 area_site_mainland <-  st_intersection(site_mainland_buffer, grid_eu_mainland)
 area_site_mainland$area <- as.numeric(st_area(area_site_mainland))
 
@@ -51,7 +51,7 @@ area_site_mainland_df <- area_site_mainland
 st_geometry(area_site_mainland_df) <- NULL
 
 
-value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
+value_site_mainland <- ddply(area_site_mainland_df,.(transect_id),
                              .fun = function(x){
                                
                                pop2000 = weighted.mean(x$pop2000,x$area); pop2020 = weighted.mean(x$pop2020,x$area)
@@ -240,6 +240,9 @@ nb_year_p_site <- data.frame(nb_year_p_site %>% group_by(transect_id) %>% summar
 selected_site_mainland <- nb_year_p_site[which(nb_year_p_site$nb_year >= 5 & nb_year_p_site$max_year >= 2011),]
 
 subsite_data_mainland_trend <- butterfly_data_mainland[which(butterfly_data_mainland$transect_id %in% c(selected_site_mainland$transect_id)),]
+
+subsite_data_mainland_trend <- subsite_data_mainland_trend[which(subsite_data_mainland_trend$transect_id %in% unique(value_site_mainland_butterfly$transect_id)),] # remove some island site no longer in grid_eu_mainland
+
 subsite_data_mainland_trend_butterfly <- subsite_data_mainland_trend
 
 saveRDS(subsite_data_mainland_trend_butterfly,"output/subsite_data_mainland_trend_butterfly.rds")
@@ -257,74 +260,68 @@ ggsave("output/EBMS_site_selected.png",
 
 ## get value per year per pressure
 
-press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,transect_id,year,.keep_all=TRUE), .(transect_id,year),
+press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend_butterfly,transect_id,year,.keep_all=TRUE), .(transect_id,year),
                               .fun = function(x,pressure_data){
                                 
                                 pressure_subdata <- pressure_data[which(pressure_data$transect_id == x$transect_id),]
                                 
-                                pop <- (pressure_subdata$pop2020-pressure_subdata$pop2000)/21*(x$year-2000)+pressure_subdata$pop2000
-                                impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13*(x$year-2006)+pressure_subdata$impervious2006
-                                treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7*(x$year-2012)+pressure_subdata$treedensity2012
-                                lightpollution <- (pressure_subdata$lightpollution2013-pressure_subdata$lightpollution2000)/14*(x$year-2000)+pressure_subdata$lightpollution2000
-                                woodprod <- (pressure_subdata$woodprod2010-pressure_subdata$woodprod2000)/11*(x$year-2000)+pressure_subdata$woodprod2000
-                                drymatter <- (pressure_subdata$drymatter2018-pressure_subdata$drymatter2000)/19*(x$year-2000)+pressure_subdata$drymatter2000
-                                temp <- (pressure_subdata$temp2020-pressure_subdata$temp2000)/21*(x$year-2000)+pressure_subdata$temp2000
-                                tempspring <- (pressure_subdata$tempspring2020-pressure_subdata$tempspring2000)/21*(x$year-2000)+pressure_subdata$tempspring2000
-                                tempspringvar <- (pressure_subdata$tempspringvar2020-pressure_subdata$tempspringvar2000)/21*(x$year-2000)+pressure_subdata$tempspringvar2000
-                                prec <- (pressure_subdata$prec2020-pressure_subdata$prec2000)/21*(x$year-2000)+pressure_subdata$prec2000
-                                precspring <- (pressure_subdata$precspring2020-pressure_subdata$precspring2000)/21*(x$year-2000)+pressure_subdata$precspring2000
-                                precspringvar <- (pressure_subdata$precspringvar2020-pressure_subdata$precspringvar2000)/21*(x$year-2000)+pressure_subdata$precspringvar2000
-                                humidityspring <- (pressure_subdata$humidityspring2020-pressure_subdata$humidityspring2000)/21*(x$year-2000)+pressure_subdata$humidityspring2000
-                                GDP_percap <- (pressure_subdata$GDP2015_percap-pressure_subdata$GDP2000_percap)/16*(x$year-2000)+pressure_subdata$GDP2000_percap
-                                GDP <- (pressure_subdata$GDP2015-pressure_subdata$GDP2000)/16*(x$year-2000)+pressure_subdata$GDP2000
-                                protectedarea_cat <- pressure_subdata$protectedarea_cat
+                                d_impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13
+                                d_treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7
+                                d_agri <- (pressure_subdata$agri2018-pressure_subdata$agri2000)/19
+                                d_tempsrping <- (pressure_subdata$tempspring2020-pressure_subdata$tempspring2000)/21
+                                tempsrping <- pressure_subdata$tempspring2000
+                                d_tempsrpingvar <- (pressure_subdata$tempspringvar2020-pressure_subdata$tempspringvar2000)/21
+                                d_precspring <- (pressure_subdata$precspring2020-pressure_subdata$precspring2000)/21
+                                precspring <- pressure_subdata$precspring2000
+                                d_shannon <- (pressure_subdata$shannon2018-pressure_subdata$shannon2000)/19
+                                shannon <- pressure_subdata$shannon2000
+                                
+                                milieu <- pressure_subdata$eulandsystem_max
+                                
+                                drymatter <- sum(pressure_subdata$drymatter2000,pressure_subdata$drymatter2018, na.rm = TRUE)/2
+                                
                                 protectedarea_perc <- pressure_subdata$protectedarea_perc
                                 protectedarea_type <- pressure_subdata$protectedarea_type
-                                protectedarea_size_cor <- pressure_subdata$protectedarea_size_cor
-                                pesticide_nodu <- pressure_subdata$pesticide_nodu_ha
-                                smallwoodyfeatures <- pressure_subdata$smallwoodyfeatures
-                                fragmentation <- pressure_subdata$fragmentation
-                                forestintegrity_cat <- pressure_subdata$forestintegrity_cat
-                                shannon <- pressure_subdata$shannon
+                                
                                 eulandsystem_cat <- pressure_subdata$eulandsystem_cat
-                                grassland <- pressure_subdata$grassland
-                                farmland <- pressure_subdata$farmland
-                                low_farmland <- pressure_subdata$low_farmland
-                                high_farmland <- pressure_subdata$high_farmland
-                                low_farmland_tot <- pressure_subdata$low_farmland_tot
-                                high_farmland_tot <- pressure_subdata$high_farmland_tot
-                                biogeo_area <- pressure_subdata$biogeo_area
+                                eulandsystem_farmland_low <- pressure_subdata$eulandsystem_farmland_low
+                                eulandsystem_farmland_medium <- pressure_subdata$eulandsystem_farmland_medium
+                                eulandsystem_farmland_high <- pressure_subdata$eulandsystem_farmland_high
+                                eulandsystem_forest_lowmedium <- pressure_subdata$eulandsystem_forest_lowmedium
+                                eulandsystem_forest_high <- pressure_subdata$eulandsystem_forest_high
+                                
                                 PLS <- pressure_subdata$PLS
                                 
-                                trend_result <- data.frame(pop,impervious,treedensity,lightpollution,woodprod,drymatter,
-                                                           temp,tempspring,tempspringvar,prec,precspring,precspringvar,humidityspring,
-                                                           GDP_percap,GDP,protectedarea_cat,protectedarea_perc,protectedarea_type,protectedarea_size_cor,
-                                                           pesticide_nodu,smallwoodyfeatures,fragmentation,forestintegrity_cat,shannon,
-                                                           eulandsystem_cat,grassland,farmland,low_farmland,high_farmland,low_farmland_tot,
-                                                           high_farmland_tot,biogeo_area,PLS)
+                                trend_result <- data.frame(d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
+                                                           d_shannon,shannon,milieu,drymatter,protectedarea_perc,protectedarea_type,
+                                                           eulandsystem_cat,eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
+                                                           eulandsystem_forest_lowmedium,eulandsystem_forest_high,PLS)
                                 return(trend_result)
-                              },pressure_data = value_site_mainland,
+                              },pressure_data = value_site_mainland_butterfly,
                               .progress = "text")
+
+press_mainland_trend$milieu_cat <- NA
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(21,22,23))] <- "urban"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(41,42,43,71,72,74,75))] <- "forest and shrub"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(31,32,51,52,53,61,62,63,731,732,733))] <- "openland"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(0,11,12,13,80,90))] <- "others"
 
 press_mainland_trend_butterfly <- press_mainland_trend
 saveRDS(press_mainland_trend_butterfly,"output/press_mainland_trend_butterfly.rds") 
 
-press_mainland_trend_scale <- press_mainland_trend
+
+press_mainland_trend_scale <- press_mainland_trend_butterfly
 press_mainland_trend_scale$eulandsystem_cat <- droplevels(press_mainland_trend_scale$eulandsystem_cat)
-press_mainland_trend_scale$pesticide_nodu <- sqrt(press_mainland_trend_scale$pesticide_nodu)
-press_mainland_trend_scale$fragmentation <- sqrt(press_mainland_trend_scale$fragmentation)
-#press_mainland_trend_scale$pop <- sqrt(press_mainland_trend_scale$pop) ############### pb ici
-press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
-                              "woodprod","drymatter","temp","tempspring","tempspringvar","prec",        
-                              "precspring","precspringvar","humidityspring","GDP_percap","GDP",
-                              "pesticide_nodu","smallwoodyfeatures","fragmentation","shannon",
-                              "protectedarea_perc","protectedarea_size_cor","grassland","farmland",
-                              "low_farmland","high_farmland","low_farmland_tot","high_farmland_tot")] <- scale(press_mainland_trend_scale[,c("pop","impervious","treedensity","lightpollution",
-                                                                                                                                             "woodprod","drymatter","temp","tempspring","tempspringvar","prec",        
-                                                                                                                                             "precspring","precspringvar","humidityspring","GDP_percap","GDP",
-                                                                                                                                             "pesticide_nodu","smallwoodyfeatures","fragmentation","shannon",
-                                                                                                                                             "protectedarea_perc","protectedarea_size_cor","grassland","farmland",
-                                                                                                                                             "low_farmland","high_farmland","low_farmland_tot","high_farmland_tot")])
+press_mainland_trend_scale[,c("d_impervious","d_treedensity","d_agri",
+                              "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                              "d_shannon","shannon","drymatter","protectedarea_perc",
+                              "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",   
+                              "eulandsystem_forest_lowmedium","eulandsystem_forest_high")] <- scale(press_mainland_trend_scale[,c("d_impervious","d_treedensity","d_agri",
+                                                                                                                                  "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                                                                                                                  "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                                                                                                  "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",   
+                                                                                                                                  "eulandsystem_forest_lowmedium","eulandsystem_forest_high")])
+
 
 
 press_mainland_trend_butterfly_scale <- press_mainland_trend_scale
@@ -345,13 +342,12 @@ subsite_data_mainland_trend_butterfly <- readRDS("output/subsite_data_mainland_t
 
 ### correlation between covariables
 
-test_multicor <- press_mainland_trend_butterfly_scale[which(press_mainland_trend_butterfly_scale$year==2010),c("pop","impervious","treedensity","lightpollution",
-                                                                                           "woodprod","drymatter","tempspring","tempspringvar",  
-                                                                                           "precspring","precspringvar","humidityspring",
-                                                                                           "protectedarea_cat","protectedarea_perc","protectedarea_strong_perc",
-                                                                                           "pesticide_nodu","smallwoodyfeatures",
-                                                                                           "fragmentation","shannon","eulandsystem_cat",
-                                                                                           "grassland","farmland","low_farmland","high_farmland","low_farmland_tot","high_farmland_tot")]
+test_multicor <- press_mainland_trend_butterfly_scale[which(press_mainland_trend_butterfly_scale$year==2010),c("d_impervious","d_treedensity","d_agri",
+                                                                                           "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                                                                           "d_shannon","shannon","drymatter","protectedarea_perc","protectedarea_type",
+                                                                                           "eulandsystem_cat","eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                                                                           "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat")]
+test_multicor$milieu_cat <- as.numeric(as.factor(test_multicor$milieu_cat))
 test_multicor$eulandsystem_cat <- as.numeric(test_multicor$eulandsystem_cat)
 test_multicor <- round(cor(na.omit(test_multicor)),2)
 get_upper_tri <- function(test_multicor){
@@ -372,34 +368,11 @@ ggplot(data = test_multicor, aes(Var2, Var1, fill = value))+
   geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
   coord_fixed()
 
-ggsave("output/cor_heatmap.png",
+ggsave("output/cor_heatmap_butterfly.png",
        width = 15,
        height = 15,
        dpi = 300
 )
-
-test_multicor <- press_mainland_trend_scale[which(press_mainland_trend_scale$year==2010),c("impervious","treedensity","drymatter","tempspring","tempspringvar",  
-                                                                                           "precspring","protectedarea_perc","smallwoodyfeatures",
-                                                                                           "shannon","eulandsystem_cat","grassland","farmland")]
-test_multicor$eulandsystem_cat <- as.numeric(test_multicor$eulandsystem_cat)
-test_multicor <- round(cor(na.omit(test_multicor)),2)
-get_upper_tri <- function(test_multicor){
-  test_multicor[lower.tri(test_multicor)]<- NA
-  return(test_multicor)
-}
-test_multicor <- get_upper_tri(test_multicor)
-test_multicor <- melt(test_multicor, na.rm = TRUE)
-ggplot(data = test_multicor, aes(Var2, Var1, fill = value))+
-  geom_tile(color = "white")+
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation") +
-  theme_minimal()+ 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
-                                   size = 12, hjust = 1),
-        axis.title = element_blank())+
-  geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
-  coord_fixed()
 
 ### find minimum nubmer of site for GLMP
 
@@ -427,23 +400,15 @@ saveRDS(site_number_species_biogeo_butterfly,"output/site_number_species_biogeo_
 
 
 
-res_gam_mainland_species_PLS_trend_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
-                                            .(species_name),.fun=gam_species_PLS1b,
-                                            pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly,
-                                            pressure_name="year",
-                                            .progress = "text")
+source("functions.R")
 
-#saveRDS(res_gam_mainland_species_PLS_trend_butterfly,"output/res_gam_mainland_species_PLS_trend_butterfly.rds")
-#res_gam_mainland_species_PLS_trend_butterfly <- readRDS("output/res_gam_mainland_species_PLS_trend_butterfly.rds")
+res_gam_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
+                      .(species_name),.fun=gam_species_PLS3b,
+                      pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly,
+                      .progress = "text")
+res_gam_butterfly <- res_gam_butterfly[which(!is.na(res_gam_butterfly$PLS)),]
 
-res_gam_mainland_species_PLS_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
-                                      .(species_name),.fun=gam_species_PLS2b,
-                                      pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly,
-                                      .progress = "text")
-
-#saveRDS(res_gam_mainland_species_PLS_butterfly,"output/res_gam_mainland_species_PLS_butterfly.rds")
-#res_gam_mainland_species_PLS_butterfly <- readRDS("output/res_gam_mainland_species_PLS_butterfly.rds")
-res_gam_mainland_species_PLS_butterfly <- res_gam_mainland_species_PLS_butterfly[which(!is.na(res_gam_mainland_species_PLS_butterfly$PLS)),]
+saveRDS(res_gam_butterfly,"output/res_gam_butterfly.rds")
 
 
 dec_species_PLS <- res_gam_mainland_species_PLS_trend_butterfly
@@ -465,204 +430,61 @@ ggplot() + geom_sf() +
 
 ##### All species
 
-res_gam_mainland_species_PLS_interaction_butterfly <- res_gam_mainland_species_PLS_butterfly
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:impervious:eulandsystem_catmedium_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:impervious` + res_gam_mainland_species_PLS_interaction_butterfly$`year:impervious:eulandsystem_catmedium_intensity`
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:impervious:eulandsystem_cathigh_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:impervious` + res_gam_mainland_species_PLS_interaction_butterfly$`year:impervious:eulandsystem_cathigh_intensity`
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:treedensity:eulandsystem_catmedium_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:treedensity` + res_gam_mainland_species_PLS_interaction_butterfly$`year:treedensity:eulandsystem_catmedium_intensity`
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:treedensity:eulandsystem_cathigh_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:treedensity` + res_gam_mainland_species_PLS_interaction_butterfly$`year:treedensity:eulandsystem_cathigh_intensity`
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:farmland:eulandsystem_catmedium_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:farmland` + res_gam_mainland_species_PLS_interaction_butterfly$`year:farmland:eulandsystem_catmedium_intensity`
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:farmland:eulandsystem_cathigh_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:farmland` + res_gam_mainland_species_PLS_interaction_butterfly$`year:farmland:eulandsystem_cathigh_intensity`
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:grassland:eulandsystem_catmedium_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:grassland` + res_gam_mainland_species_PLS_interaction_butterfly$`year:grassland:eulandsystem_catmedium_intensity`
-#res_gam_mainland_species_PLS_interaction_butterfly$`year:grassland:eulandsystem_cathigh_intensity` <- res_gam_mainland_species_PLS_interaction_butterfly$`year:grassland` + res_gam_mainland_species_PLS_interaction_butterfly$`year:grassland:eulandsystem_cathigh_intensity`
-
-pressure_PLS_butterfly <- res_gam_mainland_species_PLS_interaction_butterfly
-pressure_PLS_butterfly <- pressure_PLS_butterfly %>% group_by(PLS) %>% summarise(drymatter_pos = length(which(`year:drymatter` > 0)), drymatter_neg = length(which(`year:drymatter` < 0)),
-                                                             tempspring_pos = length(which(`year:tempspring` > 0)), tempspring_neg = length(which(`year:tempspring` < 0)),
-                                                             tempspringvar_pos = length(which(`year:tempspringvar` > 0)), tempspringvar_neg = length(which(`year:tempspringvar` < 0)),
-                                                             precspring_pos = length(which(`year:precspring` > 0)), precspring_neg = length(which(`year:precspring` < 0)),
-                                                             protectedarea_perc_pos = length(which(`year:protectedarea_perc` > 0)), protectedarea_perc_neg = length(which(`year:protectedarea_perc` < 0)),
-                                                             #smallwoodyfeatures_pos = length(which(`year:smallwoodyfeatures` > 0)), smallwoodyfeatures_neg = length(which(`year:smallwoodyfeatures` < 0)),
-                                                             shannon_pos = length(which(`year:shannon` > 0)), shannon_neg = length(which(`year:shannon` < 0)),
-                                                             impervious_pos = length(which(`year:impervious` > 0)), impervious_neg = length(which(`year:impervious` < 0)),
-                                                             impervious_med_pos = length(which(`year:impervious:eulandsystem_catmedium_intensity` > 0)), impervious_med_neg = length(which(`year:impervious:eulandsystem_catmedium_intensity` < 0)),
-                                                             impervious_high_pos = length(which(`year:impervious:eulandsystem_cathigh_intensity` > 0)), impervious_high_neg = length(which(`year:impervious:eulandsystem_cathigh_intensity` < 0)),
-                                                             treedensity_pos = length(which(`year:treedensity` > 0)), treedensity_neg = length(which(`year:treedensity` < 0)),
-                                                             treedensity_med_pos = length(which(`year:treedensity:eulandsystem_catmedium_intensity` > 0)), treedensity_med_neg = length(which(`year:treedensity:eulandsystem_catmedium_intensity` < 0)),
-                                                             treedensity_high_pos = length(which(`year:treedensity:eulandsystem_cathigh_intensity` > 0)), treedensity_high_neg = length(which(`year:treedensity:eulandsystem_cathigh_intensity` < 0)),
-                                                             #grassland_pos = length(which(`year:grassland` > 0)), grassland_neg = length(which(`year:grassland` < 0)),
-                                                             #grassland_med_pos = length(which(`year:grassland:eulandsystem_catmedium_intensity` > 0)), grassland_med_neg = length(which(`year:grassland:eulandsystem_catmedium_intensity` < 0)),
-                                                             #grassland_high_pos = length(which(`year:grassland:eulandsystem_cathigh_intensity` > 0)), grassland_high_neg = length(which(`year:grassland:eulandsystem_cathigh_intensity` < 0)),
-                                                             farmland_pos = length(which(`year:farmland` > 0)), farmland_neg = length(which(`year:farmland` < 0)),
-                                                             farmland_med_pos = length(which(`year:farmland:eulandsystem_catmedium_intensity` > 0)), farmland_med_neg = length(which(`year:farmland:eulandsystem_catmedium_intensity` < 0)),
-                                                             farmland_high_pos = length(which(`year:farmland:eulandsystem_cathigh_intensity` > 0)), farmland_high_neg = length(which(`year:farmland:eulandsystem_cathigh_intensity` < 0)))
-
-pressure_PLS_butterfly_sf <- merge(grid_eu_mainland_biogeo,pressure_PLS_butterfly,by="PLS",all.x=TRUE)
-ggplot() + geom_sf() +  
-  geom_sf(data=pressure_PLS_butterfly_sf, aes(fill=impervious_neg)) + scale_fill_gradientn(colors = paletteer_c("ggthemes::Classic Area Red", 30))
+matrix_pressure_PLS_neg_butterfly <- res_gam_butterfly
+#matrix_pressure_PLS_neg_butterfly <- res_gam_butterfly_grassland
+#matrix_pressure_PLS_neg_butterfly <- res_gam_butterfly_woodland
+#matrix_pressure_PLS_neg_butterfly <- res_gam_butterfly_woodland_ind
+#matrix_pressure_PLS_neg_butterfly <- res_gam_butterfly_wetland
+matrix_pressure_PLS_neg_butterfly <- matrix_pressure_PLS_neg_butterfly %>% group_by(PLS) %>% summarise(openland_effect = length(which(milieu_catopenland < 0))/length(milieu_catopenland),
+                                                                                             otherLULC_effect = length(which(milieu_catothers < 0))/length(milieu_catothers),
+                                                                                             urban_effect = length(which(milieu_caturban < 0))/length(milieu_caturban),
+                                                                                             tempspring_effect = length(which(tempsrping < 0))/length(tempsrping),
+                                                                                             precspring_effect = length(which(precspring < 0))/length(precspring),
+                                                                                             shannon_effect = length(which(shannon < 0))/length(shannon),
+                                                                                             drymatter_effect = length(which(drymatter < 0))/length(drymatter),
+                                                                                             d_impervious_effect =  length(which(`year:d_impervious` < 0))/length(`year:d_impervious`),
+                                                                                             d_tempsrping_effect =  length(which(`year:d_tempsrping` < 0))/length(`year:d_tempsrping`),
+                                                                                             d_tempsrpingvar_effect =  length(which(`year:d_tempsrpingvar` < 0))/length(`year:d_tempsrpingvar`),
+                                                                                             d_precspring_effect =  length(which(`year:d_precspring` < 0))/length(`year:d_precspring`),
+                                                                                             d_shannon_effect =  length(which(`year:d_shannon` < 0))/length(`year:d_shannon`),
+                                                                                             protectedarea_effect =  length(which(`year:protectedarea_perc` < 0))/length(`year:protectedarea_perc`),
+                                                                                             d_treedensity_lowmedium_effect =  length(which(`year:d_treedensity:eulandsystem_forest_lowmedium` < 0))/length(`year:d_treedensity:eulandsystem_forest_lowmedium`),
+                                                                                             d_treedensity_high_effect =  length(which(`year:d_treedensity:eulandsystem_forest_high` < 0))/length(`year:d_treedensity:eulandsystem_forest_high`),
+                                                                                             d_agri_low_effect =  length(which(`year:d_agri:eulandsystem_farmland_low` < 0))/length(`year:d_agri:eulandsystem_farmland_low`),
+                                                                                             d_agri_medium_effect =  length(which(`year:d_agri:eulandsystem_farmland_medium` < 0))/length(`year:d_agri:eulandsystem_farmland_medium`),
+                                                                                             d_agri_high_effect =  length(which(`year:d_agri:eulandsystem_farmland_high` < 0))/length(`year:d_agri:eulandsystem_farmland_high`),
+                                                                                             protectedarea_type_effect =  length(which(`year:protectedarea_perc:protectedarea_type` < 0))/length(`year:protectedarea_perc:protectedarea_type`),
+                                                                                             nb_sp = length(`drymatter`))
 
 
-matrix_pressure_PLS_butterfly <- res_gam_mainland_species_PLS_interaction_butterfly
-matrix_pressure_PLS_butterfly <- matrix_pressure_PLS_butterfly %>% group_by(PLS) %>% summarise(drymatter_effect = (length(which(`year:drymatter` > 0))- length(which(`year:drymatter` < 0)))/length(`year:drymatter`),
-                                                                               tempspring_effect = (length(which(`year:tempspring` > 0)) - length(which(`year:tempspring` < 0)))/length(`year:drymatter`),
-                                                                               tempspringvar_effect = (length(which(`year:tempspringvar` > 0)) - length(which(`year:tempspringvar` < 0)))/length(`year:drymatter`),
-                                                                               precspring_effect = (length(which(`year:precspring` > 0)) - length(which(`year:precspring` < 0)))/length(`year:drymatter`),
-                                                                               protectedarea_perc_effect = (length(which(`year:protectedarea_perc` > 0)) - length(which(`year:protectedarea_perc` < 0)))/length(`year:drymatter`),
-                                                                               #smallwoodyfeatures_effect = (length(which(`year:smallwoodyfeatures` > 0)) - length(which(`year:smallwoodyfeatures` < 0)))/length(`year:drymatter`),
-                                                                               shannon_effect = (length(which(`year:shannon` > 0)) - length(which(`year:shannon` < 0)))/length(`year:drymatter`),
-                                                                               impervious_effect = (length(which(`year:impervious` > 0)) - length(which(`year:impervious` < 0)))/length(`year:drymatter`),
-                                                                               impervious_med_effect = (length(which(`year:impervious:eulandsystem_catmedium_intensity` > 0)) - length(which(`year:impervious:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                               impervious_high_effect = (length(which(`year:impervious:eulandsystem_cathigh_intensity` > 0)) - length(which(`year:impervious:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                               treedensity_effect = (length(which(`year:treedensity` > 0)) - length(which(`year:treedensity` < 0)))/length(`year:drymatter`),
-                                                                               treedensity_med_effect = (length(which(`year:treedensity:eulandsystem_catmedium_intensity` > 0)) - length(which(`year:treedensity:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                               treedensity_high_effect = (length(which(`year:treedensity:eulandsystem_cathigh_intensity` > 0)) - length(which(`year:treedensity:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                               #grassland_effect = (length(which(`year:grassland` > 0)) - length(which(`year:grassland` < 0)))/length(`year:drymatter`),
-                                                                               #grassland_med_effect = (length(which(`year:grassland:eulandsystem_catmedium_intensity` > 0)) - length(which(`year:grassland:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                               #grassland_high_effect = (length(which(`year:grassland:eulandsystem_cathigh_intensity` > 0)) - length(which(`year:grassland:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                               farmland_effect = (length(which(`year:farmland` > 0)) - length(which(`year:farmland` < 0)))/length(`year:drymatter`),
-                                                                               farmland_med_effect = (length(which(`year:farmland:eulandsystem_catmedium_intensity` > 0)) - length(which(`year:farmland:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                               farmland_high_effect = (length(which(`year:farmland:eulandsystem_cathigh_intensity` > 0)) - length(which(`year:farmland:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                               nb_sp = length(`year:drymatter`))
-
-sort_matrix_pressure_PLS_butterfly <- as.matrix(matrix_pressure_PLS_butterfly[,c("tempspring_effect","tempspringvar_effect","precspring_effect","impervious_effect","impervious_med_effect","impervious_high_effect",
-                                                                                 "treedensity_effect","treedensity_med_effect","treedensity_high_effect",
-                                                                                 "farmland_effect","farmland_med_effect","farmland_high_effect")])
-
-for(i in unique(matrix_pressure_PLS_butterfly$PLS)){
-  temporary_df <- data.frame(rank = rank(sort_matrix_pressure_PLS_butterfly[which(matrix_pressure_PLS_butterfly$PLS == i),]), PLS = i)
-  temporary_df$pressure <- row.names(temporary_df)
-  if(i == "1"){
-    rank_pressure_butterfly <- temporary_df
-  }else{
-    rank_pressure_butterfly <- rbind(rank_pressure_butterfly,temporary_df)
-  }
-}
-
-rank_pressure_butterfly_short <- dcast(rank_pressure_butterfly,  PLS ~ pressure, value.var = "rank" )
-rank_pressure_butterfly_short_sf <- merge(grid_eu_mainland_biogeo,rank_pressure_butterfly_short,by="PLS",all.x=TRUE)
-ggplot() + geom_sf() +  
-  geom_sf(data=rank_pressure_butterfly_short_sf, aes(fill=impervious_effect)) + scale_fill_gradientn(colors = paletteer_c("ggthemes::Red-Blue Diverging", 30))
-
-
-matrix_pressure_PLS_neg_butterfly <- res_gam_mainland_species_PLS_interaction_butterfly
-matrix_pressure_PLS_neg_butterfly <- matrix_pressure_PLS_neg_butterfly %>% group_by(PLS) %>% summarise(drymatter_effect = (length(which(`year:drymatter` < 0)))/length(`year:drymatter`),
-                                                                                               tempspring_effect = (length(which(`year:tempspring` < 0)))/length(`year:drymatter`),
-                                                                                               tempspringvar_effect = (length(which(`year:tempspringvar` < 0)))/length(`year:drymatter`),
-                                                                                               precspring_effect = (length(which(`year:precspring` < 0)))/length(`year:drymatter`),
-                                                                                               protectedarea_perc_effect = (length(which(`year:protectedarea_perc` < 0)))/length(`year:drymatter`),
-                                                                                               protectedarea_type_effect = (length(which(`year:protectedarea_perc:protectedarea_type` < 0)))/length(`year:drymatter`),
-                                                                                               #smallwoodyfeatures_effect = (length(which(`year:smallwoodyfeatures` < 0)))/length(`year:drymatter`),
-                                                                                               shannon_effect = (length(which(`year:shannon` < 0)))/length(`year:drymatter`),
-                                                                                               impervious_effect = (length(which(`year:impervious` < 0)))/length(`year:drymatter`),
-                                                                                               impervious_med_effect = (length(which(`year:impervious:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               impervious_high_effect = (length(which(`year:impervious:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               treedensity_effect = (length(which(`year:treedensity` < 0)))/length(`year:drymatter`),
-                                                                                               treedensity_med_effect = (length(which(`year:treedensity:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               treedensity_high_effect = (length(which(`year:treedensity:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               #grassland_effect = (length(which(`year:grassland` < 0)))/length(`year:drymatter`),
-                                                                                               #grassland_med_effect = (length(which(`year:grassland:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               #grassland_high_effect = (length(which(`year:grassland:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               farmland_effect = (length(which(`year:farmland` < 0)))/length(`year:drymatter`),
-                                                                                               farmland_med_effect = (length(which(`year:farmland:eulandsystem_catmedium_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               farmland_high_effect = (length(which(`year:farmland:eulandsystem_cathigh_intensity` < 0)))/length(`year:drymatter`),
-                                                                                               nb_sp = length(`year:drymatter`))
-
-
-matrix_pressure_PLS_neg_butterfly_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS_neg_butterfly,by="PLS",all.x=TRUE)
-ggplot() + geom_sf() +  
-  geom_sf(data=matrix_pressure_PLS_neg_butterfly_sf, aes(fill=impervious_effect)) + scale_fill_gradient2(low="white", high="red", limits = c(0, max(matrix_pressure_PLS_neg_butterfly[,2:16])))
-
-sort_matrix_pressure_PLS_neg_butterfly <- as.matrix(matrix_pressure_PLS_neg_butterfly[,c("tempspring_effect","tempspringvar_effect","precspring_effect","impervious_effect","impervious_med_effect","impervious_high_effect",
-                                                                                 "treedensity_effect","treedensity_med_effect","treedensity_high_effect",
-                                                                                 "farmland_effect","farmland_med_effect","farmland_high_effect")])
-
-
-for(i in unique(matrix_pressure_PLS_neg_butterfly$PLS)){
-  temporary_df <- data.frame(rank = rank(sort_matrix_pressure_PLS_neg_butterfly[which(matrix_pressure_PLS_neg_butterfly$PLS == i),]), PLS = i)
-  temporary_df$pressure <- row.names(temporary_df)
-  if(i == "1"){
-    rank_pressure_neg_butterfly <- temporary_df
-  }else{
-    rank_pressure_neg_butterfly <- rbind(rank_pressure_neg_butterfly,temporary_df)
-  }
-}
-
-rank_pressure_neg_butterfly_short <- dcast(rank_pressure_neg_butterfly,  PLS ~ pressure, value.var = "rank" )
-rank_pressure_neg_butterfly_short_sf <- merge(grid_eu_mainland_biogeo,rank_pressure_neg_butterfly_short,by="PLS",all.x=TRUE)
-ggplot() + geom_sf() +  
-  geom_sf(data=rank_pressure_neg_butterfly_short_sf, aes(fill=impervious_effect)) + scale_fill_gradient2(low="white", high="red", limits = c(1, 15))
-
-
-
-matrix_pressure_PLS_pos_butterfly <- res_gam_mainland_species_PLS_interaction_butterfly
-matrix_pressure_PLS_pos_butterfly <- matrix_pressure_PLS_pos_butterfly %>% group_by(PLS) %>% summarise(drymatter_effect = (length(which(`year:drymatter` > 0)))/length(`year:drymatter`),
-                                                                                                       tempspring_effect = (length(which(`year:tempspring` > 0)))/length(`year:drymatter`),
-                                                                                                       tempspringvar_effect = (length(which(`year:tempspringvar` > 0)))/length(`year:drymatter`),
-                                                                                                       precspring_effect = (length(which(`year:precspring` > 0)))/length(`year:drymatter`),
-                                                                                                       protectedarea_perc_effect = (length(which(`year:protectedarea_perc` > 0)))/length(`year:drymatter`),
-                                                                                                       protectedarea_type_effect = (length(which(`year:protectedarea_perc:protectedarea_type` > 0)))/length(`year:drymatter`),
-                                                                                                       #smallwoodyfeatures_effect = (length(which(`year:smallwoodyfeatures` > 0)))/length(`year:drymatter`),
-                                                                                                       shannon_effect = (length(which(`year:shannon` > 0)))/length(`year:drymatter`),
-                                                                                                       impervious_effect = (length(which(`year:impervious` > 0)))/length(`year:drymatter`),
-                                                                                                       impervious_med_effect = (length(which(`year:impervious:eulandsystem_catmedium_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       impervious_high_effect = (length(which(`year:impervious:eulandsystem_cathigh_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       treedensity_effect = (length(which(`year:treedensity` > 0)))/length(`year:drymatter`),
-                                                                                                       treedensity_med_effect = (length(which(`year:treedensity:eulandsystem_catmedium_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       treedensity_high_effect = (length(which(`year:treedensity:eulandsystem_cathigh_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       #grassland_effect = (length(which(`year:grassland` > 0)))/length(`year:drymatter`),
-                                                                                                       #grassland_med_effect = (length(which(`year:grassland:eulandsystem_catmedium_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       #grassland_high_effect = (length(which(`year:grassland:eulandsystem_cathigh_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       farmland_effect = (length(which(`year:farmland` > 0)))/length(`year:drymatter`),
-                                                                                                       farmland_med_effect = (length(which(`year:farmland:eulandsystem_catmedium_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       farmland_high_effect = (length(which(`year:farmland:eulandsystem_cathigh_intensity` > 0)))/length(`year:drymatter`),
-                                                                                                       nb_sp = length(`year:drymatter`))
-
-
-matrix_pressure_PLS_pos_butterfly_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS_pos_butterfly,by="PLS",all.x=TRUE)
-ggplot() + geom_sf() +  
-  geom_sf(data=matrix_pressure_PLS_pos_butterfly_sf, aes(fill=impervious_effect)) + scale_fill_gradient2(low="white", high="blue", limits = c(0, max(matrix_pressure_PLS_neg_butterfly[,2:16])))
-
-sort_matrix_pressure_PLS_pos_butterfly <- as.matrix(matrix_pressure_PLS_pos_butterfly[,c("tempspring_effect","tempspringvar_effect","precspring_effect","impervious_effect","impervious_med_effect","impervious_high_effect",
-                                                                                         "treedensity_effect","treedensity_med_effect","treedensity_high_effect",
-                                                                                         "farmland_effect","farmland_med_effect","farmland_high_effect")])
-
-
-for(i in unique(matrix_pressure_PLS_pos_butterfly$PLS)){
-  temporary_df <- data.frame(rank = rank(sort_matrix_pressure_PLS_pos_butterfly[which(matrix_pressure_PLS_pos_butterfly$PLS == i),]), PLS = i)
-  temporary_df$pressure <- row.names(temporary_df)
-  if(i == "1"){
-    rank_pressure_pos_butterfly <- temporary_df
-  }else{
-    rank_pressure_pos_butterfly <- rbind(rank_pressure_pos_butterfly,temporary_df)
-  }
-}
-
-rank_pressure_pos_butterfly_short <- dcast(rank_pressure_pos_butterfly,  PLS ~ pressure, value.var = "rank" )
-rank_pressure_pos_butterfly_short_sf <- merge(grid_eu_mainland_biogeo,rank_pressure_pos_butterfly_short,by="PLS",all.x=TRUE)
-ggplot() + geom_sf() +  
-  geom_sf(data=rank_pressure_pos_butterfly_short_sf, aes(fill=impervious_effect)) + scale_fill_gradient2(low="white", high="blue", limits = c(1, 15))
-
-
-pressure_EU_butterfly <- res_gam_mainland_species_PLS_butterfly[which(res_gam_mainland_species_PLS_butterfly$PLS=="europe"),]
-pressure_EU_butterfly_long <- melt(pressure_EU_butterfly, id.vars=c("species_name","PLS"))
-pressure_EU_butterfly_long <- pressure_EU_butterfly_long[which(!pressure_EU_butterfly_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
-pressure_EU_butterfly_long <- pressure_EU_butterfly_long %>% group_by(variable) %>% summarise(median_pressure=median(value, na.rm=TRUE),
-                                                                                              mean_pressure=mean(value, na.rm=TRUE),
-                                                                                              sd_pressure=sd(value, na.rm=TRUE))
-
-ggplot(pressure_EU_butterfly_long,
-       aes(x = variable, y = exp(median_pressure))) + geom_point() +
-  theme_ggstatsplot() + scale_x_discrete(labels=c("year:treedensity" = "Tree density","year:impervious"="Imperviousness",
-                                                  "year:drymatter"="Productivity","year:tempspring"="Temperature",
-                                                  "year:tempspringvar"="Temp variation","year:precspring"="Precipitation",
-                                                  "year:protectedarea_perc"="Protected area","year:smallwoodyfeatures"="Hedges",
-                                                  "year:shannon"="Landscape diversity")) +
-  labs(y="Estimate") + theme(axis.title.x = element_blank(),
-                             axis.text.x = element_text(angle=45, hjust = 1),
-                             legend.position = "none")
-
+matrix_pressure_PLS_pos_butterfly <- res_gam_butterfly
+#matrix_pressure_PLS_pos_butterfly <- res_gam_butterfly_grassland
+#matrix_pressure_PLS_pos_butterfly <- res_gam_butterfly_woodland
+#matrix_pressure_PLS_pos_butterfly <- res_gam_butterfly_woodland_ind
+#matrix_pressure_PLS_pos_butterfly <- res_gam_butterfly_wetland
+matrix_pressure_PLS_pos_butterfly <- matrix_pressure_PLS_pos_butterfly %>% group_by(PLS) %>% summarise(openland_effect = length(which(milieu_catopenland > 0))/length(milieu_catopenland),
+                                                                                             otherLULC_effect = length(which(milieu_catothers > 0))/length(milieu_catothers),
+                                                                                             urban_effect = length(which(milieu_caturban > 0))/length(milieu_caturban),
+                                                                                             tempspring_effect = length(which(tempsrping > 0))/length(tempsrping),
+                                                                                             precspring_effect = length(which(precspring > 0))/length(precspring),
+                                                                                             shannon_effect = length(which(shannon > 0))/length(shannon),
+                                                                                             drymatter_effect = length(which(drymatter > 0))/length(drymatter),
+                                                                                             d_impervious_effect =  length(which(`year:d_impervious` > 0))/length(`year:d_impervious`),
+                                                                                             d_tempsrping_effect =  length(which(`year:d_tempsrping` > 0))/length(`year:d_tempsrping`),
+                                                                                             d_tempsrpingvar_effect =  length(which(`year:d_tempsrpingvar` > 0))/length(`year:d_tempsrpingvar`),
+                                                                                             d_precspring_effect =  length(which(`year:d_precspring` > 0))/length(`year:d_precspring`),
+                                                                                             d_shannon_effect =  length(which(`year:d_shannon` > 0))/length(`year:d_shannon`),
+                                                                                             protectedarea_effect =  length(which(`year:protectedarea_perc` > 0))/length(`year:protectedarea_perc`),
+                                                                                             d_treedensity_lowmedium_effect =  length(which(`year:d_treedensity:eulandsystem_forest_lowmedium` > 0))/length(`year:d_treedensity:eulandsystem_forest_lowmedium`),
+                                                                                             d_treedensity_high_effect =  length(which(`year:d_treedensity:eulandsystem_forest_high` > 0))/length(`year:d_treedensity:eulandsystem_forest_high`),
+                                                                                             d_agri_low_effect =  length(which(`year:d_agri:eulandsystem_farmland_low` > 0))/length(`year:d_agri:eulandsystem_farmland_low`),
+                                                                                             d_agri_medium_effect =  length(which(`year:d_agri:eulandsystem_farmland_medium` > 0))/length(`year:d_agri:eulandsystem_farmland_medium`),
+                                                                                             d_agri_high_effect =  length(which(`year:d_agri:eulandsystem_farmland_high` > 0))/length(`year:d_agri:eulandsystem_farmland_high`),
+                                                                                             protectedarea_type_effect =  length(which(`year:protectedarea_perc:protectedarea_type` > 0))/length(`year:protectedarea_perc:protectedarea_type`),
+                                                                                             nb_sp = length(`drymatter`))
 
 pressure_EU_butterfly <- data.frame(rbind(matrix_pressure_PLS_pos_butterfly[matrix_pressure_PLS_pos_butterfly$PLS=="europe",],
-                                          matrix_pressure_PLS_neg_butterfly[matrix_pressure_PLS_neg_butterfly$PLS=="europe",]))
+                                     matrix_pressure_PLS_neg_butterfly[matrix_pressure_PLS_neg_butterfly$PLS=="europe",]))
 pressure_EU_butterfly$PLS <- pressure_EU_butterfly$nb_sp <- NULL
 pressure_EU_butterfly$sign <- c("positive effect","negative effect")
 pressure_EU_butterfly <- melt(pressure_EU_butterfly, id.vars="sign")
@@ -680,18 +502,107 @@ df_pressure_EU_butterfly$variable <- factor(df_pressure_EU_butterfly$variable, d
 ggplot(df_pressure_EU_butterfly, aes(x = variable, y = value, fill = sign)) +
   geom_col(alpha=0.5) + geom_hline(aes(yintercept = 0)) +
   scale_fill_manual(values = c("positive effect" = "blue","negative effect" = "red")) +
-  scale_x_discrete(labels=c("farmland_high_effect" = "High-intensity farmland","tempspring_effect" = "Spring temperature","precspring_effect" = "Spring precipitation",
-                            "treedensity_high_effect" = "Tree density in high-instensity area","impervious_high_effect" = "Impervious in high-instensity area","farmland_med_effect" = "Medium-intensity farmland","impervious_med_effect" = "Impervious in medium-intensity area",
-                            "treedensity_effect" = "Tree density in low-instensity area","tempspringvar_effect" = "Spring temperature variation","treedensity_med_effect" = "Tree density in medium-instensity area",
-                            "shannon_effect" = "Landscape shannon diversity","impervious_effect" = "Impervious in low-instensity area","drymatter_effect" = "Vegetation productivity",
-                            "farmland_effect" = "Low-intensity farmland","protectedarea_perc_effect" = "Protected area","protectedarea_type_effect" = "Protected area type")) +
+  scale_x_discrete(labels=c("openland_effect" = "Openland vs. forest on abundance", "otherLULC_effect" = "Other LULC vs. forest on abundance", "urban_effect" = "Urban land vs. forest on abundance", "tempspring_effect" = "Mean temperature on abundance",             
+                            "precspring_effect" = "Mean precipitation on abundance", "shannon_effect" = "Landscape diversity on abundance", "drymatter_effect" = "Ecosystem productivity on abundance", "d_impervious_effect" = "D urbanisation on trend",           
+                            "d_tempsrping_effect" = "D temperature on trend", "d_tempsrpingvar_effect" = "D temperature variation on trend", "d_precspring_effect" = "D precipitation on trend", "d_shannon_effect" = "D landscape diversity on trend",              
+                            "protectedarea_effect" = "Protected area percentage on trend", "d_treedensity_lowmedium_effect" = "D tree density in low/medium intensive forests on trend", "d_treedensity_high_effect" = "D tree density in high intensive forests on trend", "d_agri_low_effect" = "D agricultural surface in low intensive farmland on trend",             
+                            "d_agri_medium_effect" = "D agricultural surface in medium intensive farmland on trend", "d_agri_high_effect" = "D agricultural surface in high intensive farmland on trend", "protectedarea_type_effect" = "Protected area type on trend")) +
   xlab("Pressures") + ylab("% of species impacted") +
   theme_minimal() + coord_flip() +
-  theme(legend.position = "non")
-
+  theme(legend.position = "none")
 
 ggsave("output/pressure_butterfly_eu.png",
        width = 8,
        height = 6,
        dpi = 300
 )
+
+ggplot(df_pressure_EU_butterfly[which(df_pressure_EU_butterfly$variable %in% c("d_impervious_effect","d_tempsrping_effect","d_tempsrpingvar_effect",
+                                                                     "d_precspring_effect","d_shannon_effect", "protectedarea_effect",
+                                                                     "d_treedensity_lowmedium_effect","d_treedensity_high_effect","d_agri_low_effect",
+                                                                     "d_agri_medium_effect","d_agri_high_effect","protectedarea_type_effect")),], aes(x = variable, y = value, fill = sign)) +
+  geom_col(alpha=0.5) + geom_hline(aes(yintercept = 0)) +
+  scale_fill_manual(values = c("positive effect" = "blue","negative effect" = "red")) +
+  scale_x_discrete(labels=c("d_impervious_effect" = "D urbanisation on trend",           
+                            "d_tempsrping_effect" = "D temperature on trend", "d_tempsrpingvar_effect" = "D temperature variation on trend", "d_precspring_effect" = "D precipitation on trend", "d_shannon_effect" = "D landscape diversity on trend",              
+                            "protectedarea_effect" = "Protected area percentage on trend", "d_treedensity_lowmedium_effect" = "D tree density in low/medium intensive forests on trend", "d_treedensity_high_effect" = "D tree density in high intensive forests on trend", "d_agri_low_effect" = "D agricultural surface in low intensive farmland on trend",             
+                            "d_agri_medium_effect" = "D agricultural surface in medium intensive farmland on trend", "d_agri_high_effect" = "D agricultural surface in high intensive farmland on trend", "protectedarea_type_effect" = "Protected area type on trend")) +
+  xlab("Pressures") + ylab("% of species impacted") +
+  theme_minimal() + coord_flip() +
+  theme(legend.position = "none")
+
+ggsave("output/pressure_trend_butterfly_eu.png",
+       width = 8,
+       height = 6,
+       dpi = 300
+)
+
+ggplot(df_pressure_EU_butterfly[which(df_pressure_EU_butterfly$variable %in% c("openland_effect","otherLULC_effect","urban_effect","tempspring_effect",
+                                                                     "precspring_effect","shannon_effect","drymatter_effect")),], aes(x = variable, y = value, fill = sign)) +
+  geom_col(alpha=0.5) + geom_hline(aes(yintercept = 0)) +
+  scale_fill_manual(values = c("positive effect" = "blue","negative effect" = "red")) +
+  scale_x_discrete(labels=c("openland_effect" = "Openland vs. forest on abundance", "otherLULC_effect" = "Other LULC vs. forest on abundance", "urban_effect" = "Urban land vs. forest on abundance", "tempspring_effect" = "Mean temperature on abundance",             
+                            "precspring_effect" = "Mean precipitation on abundance", "shannon_effect" = "Landscape diversity on abundance", "drymatter_effect" = "Ecosystem productivity on abundance")) +
+  xlab("Pressures") + ylab("% of species impacted") +
+  theme_minimal() + coord_flip() +
+  theme(legend.position = "none")
+
+ggsave("output/control_ab_butterfly_eu.png",
+       width = 8,
+       height = 6,
+       dpi = 300
+)
+
+
+### by habitat from https://butterfly-monitoring.net/sites/default/files/Publications/Technical%20report%20EU%20Grassland%20indicator%201990-2017%20June%202019%20v4%20(3).pdf
+# https://butterfly-monitoring.net/sites/default/files/Pdf/Reports/Assessing%20Butterflies%20in%20Europe%20-%20Butterfly%20Indicators%20Revised.pdf
+
+grassland_species <- c("Lasiommata megera","Coenonympha pamphilus","Lycaena phlaeas","Ochlodes sylvanus",
+                       "Polyommatus icarus","Thymelicus acteon","Anthocharis cardamines","Cupido minimus",
+                       "Cyaniris semiargus","Erynnis tages","Lysandra bellargus","Lysandra coridon",
+                       "Maniola jurtina","Euphydryas aurinia","Phengaris arion","Phengaris nausithous",
+                       "Spialia sertorius")
+
+woodland_species <- c("Apatura ilia","Apatura iris","Apatura metis","Aporia crataegi","Araschnia levana",
+                      "Argynnis laodice","Argynnis pandora","Argynnis paphia","Boloria euphrosyne","Boloria graeca",
+                      "Brintesia circe","Carterocephalus silvicola","Celastrina argiolus","Coenonympha arcania","Coenonympha hero",
+                      "Coenonympha leander","Colias caucasica","Erebia aethiopellus","Erebia aethiops","Erebia cyclopius",
+                      "Erebia euryale","Erebia ligea","Erebia neoridas","Erebia zapateri","Euphydryas intermedia",
+                      "Euphydryas maturna","Fabriciana elisa","Favonius quercus","Gonepteryx farinosa","Gonepteryx maderensis",
+                      "Gonepteryx rhamni","Hipparchia fagi","Hipparchia hermione","Hipparchia maderensis","Hipparchia mersina",
+                      "Hipparchia syriaca","Issoria eugenia","Kirinia climene","Kirinia roxelana","Laeosopis roboris",
+                      "Lasiommata deidamia","Lasiommata maera","Lasiommata petropolitana","Leptidea morsei","Libythea celtis",
+                      "Limenitis camilla","Limenitis populi","Limenitis reducta","Lopinga achine","Melitaea aetherie",
+                      "Neptis rivularis","Neptis sappho","Nymphalis antiopa","Nymphalis polychloros","Nymphalis vaualbum",
+                      "Nymphalis xanthomelas","Pararge aegeria","Pararge xiphia","Pieris balcana","Polygonia c-album",
+                      "Pseudochazara tisiphone","Satyrium acaciae","Satyrium ilicis","Satyrium pruni","Satyrium w-album",
+                      "Thecla betulae","Tomares callimachus")
+
+woodland_ind_species <- c("Apatura ilia","Apatura iris","Aporia crataegi","Araschnia levana",
+                          "Argynnis pandora","Argynnis paphia","Boloria euphrosyne",
+                          "Brintesia circe","Carterocephalus silvicola","Celastrina argiolus","Coenonympha arcania","Coenonympha hero",
+                          "Erebia aethiops","Erebia ligea",
+                          "Euphydryas maturna","Favonius quercus",
+                          "Gonepteryx rhamni","Hipparchia fagi","Hipparchia hermione",
+                          "Lasiommata maera","Lasiommata petropolitana","Libythea celtis",
+                          "Limenitis camilla","Limenitis populi","Limenitis reducta",
+                          "Nymphalis antiopa","Nymphalis polychloros",
+                          "Pararge aegeria","Polygonia c-album",
+                          "Satyrium acaciae","Satyrium ilicis","Satyrium w-album",
+                          "Thecla betulae")
+
+wetland_species <- c("Agriades optilete","Boloria aquilonaris","Boloria eunomia","Boloria freija","Boloria frigga",
+                     "Coenonympha oedippus","Coenonympha tullia","Colias palaeno","Erebia disa","Erebia embla",
+                     "Oeneis jutta","Pyrgus centaureae")
+
+res_gam_butterfly_grassland <- res_gam_butterfly[which(res_gam_butterfly$species_name %in% grassland_species),]
+res_gam_butterfly_woodland <- res_gam_butterfly[which(res_gam_butterfly$species_name %in% woodland_species),]
+res_gam_butterfly_woodland_ind <- res_gam_butterfly[which(res_gam_butterfly$species_name %in% woodland_ind_species),]
+res_gam_butterfly_wetland <- res_gam_butterfly[which(res_gam_butterfly$species_name %in% wetland_species),]
+
+# boxplot r2 by pls
+
+ggplot(res_gam_butterfly, aes(x= PLS, y=dev_exp, fill=PLS)) + 
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+  theme_minimal()

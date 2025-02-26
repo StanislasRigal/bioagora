@@ -1592,6 +1592,11 @@ res_gam_bird_farmland <- res_gam_bird[which(res_gam_bird$sci_name_out %in% uniqu
 res_gam_bird_forest <- res_gam_bird[which(res_gam_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
 
 
+ggplot(res_gam_bird, aes(x= PLS, y=dev_exp, fill=PLS)) + 
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+  theme_minimal()
+
 ### INLA instead of frequentist #https://punama.github.io/BDI_INLA/
 
 library(INLA)
