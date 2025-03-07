@@ -613,11 +613,11 @@ col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","mil
                "year:d_agri:eulandsystem_farmland_high","year:protectedarea_perc:protectedarea_type")
 
 
-global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("time_effort","area_sampled_m2","scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=3)"), collapse = " + "))),
+global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=3)"), collapse = " + "))),
                   family=family, data=poisson_df)
 
 
-# descale pressure estimates
+# unscale pressure estimates https://stackoverflow.com/questions/23642111/how-to-unscale-the-coefficients-from-an-lmer-model-fitted-with-a-scaled-respon
 
 global_mod_coef <- summary(global_mod)$p.table[grep("year",row.names(summary(global_mod)$p.table)),]
 
@@ -635,10 +635,20 @@ eulandsystem_farmland_high_si <- sd(na.omit(press_mainland_trend$eulandsystem_fa
 eulandsystem_forest_lowmedium_si <- sd(na.omit(press_mainland_trend$eulandsystem_forest_lowmedium))
 eulandsystem_forest_high_si <- sd(na.omit(press_mainland_trend$eulandsystem_forest_high))
 
+global_mod_coef_unscale <- global_mod_coef
 
-
-
-
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_impervious"),c("Estimate","Std. Error")]/d_impervious_si  # delata method, taylor expension g(x)=ax & s^2(g(x))=(g'(x))^2.s^(x)
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_tempsrping"),c("Estimate","Std. Error")]/d_tempsrping_si
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),c("Estimate","Std. Error")]/d_tempsrpingvar_si
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_precspring"),c("Estimate","Std. Error")]/d_precspring_si
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_shannon"),c("Estimate","Std. Error")]/d_shannon_si
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:protectedarea_perc"),c("Estimate","Std. Error")]/protectedarea_perc_si
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),c("Estimate","Std. Error")]/(d_treedensity_si*eulandsystem_forest_lowmedium_si)
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),c("Estimate","Std. Error")]/(d_treedensity_si*eulandsystem_forest_high_si)
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),c("Estimate","Std. Error")]/(d_agri_si*eulandsystem_farmland_low_si)
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),c("Estimate","Std. Error")]/(d_agri_si*eulandsystem_farmland_medium_si)
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),c("Estimate","Std. Error")]/(d_agri_si*eulandsystem_farmland_high_si)
+global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),c("Estimate","Std. Error")]/protectedarea_perc_si
 
 
 
