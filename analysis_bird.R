@@ -1177,6 +1177,9 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               
                               pressure_subdata <- pressure_data[which(pressure_data$siteID == x$siteID),]
                               
+                              impervious_2018 <- pressure_subdata$impervious2018
+                              treedensity_2018 <- pressure_subdata$treedensity2018
+                              
                               d_impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13
                               d_treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7
                               d_agri <- (pressure_subdata$agri2018-pressure_subdata$agri2000)/19
@@ -1204,7 +1207,7 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               
                               PLS <- pressure_subdata$PLS
                               
-                              trend_result <- data.frame(d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
+                              trend_result <- data.frame(impervious_2018,treedensity_2018,d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
                                                          d_shannon,shannon,milieu,drymatter,protectedarea_perc,protectedarea_type,
                                                          eulandsystem_cat,eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
                                                          eulandsystem_forest_lowmedium,eulandsystem_forest_high,PLS)
