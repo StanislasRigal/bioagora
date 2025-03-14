@@ -1179,6 +1179,11 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               
                               impervious_2018 <- pressure_subdata$impervious2018
                               treedensity_2018 <- pressure_subdata$treedensity2018
+                              agri_2018 <- pressure_subdata$agri2018
+                              tempspring_2020 <- pressure_subdata$tempspring2020
+                              tempspringvar_2020 <- pressure_subdata$tempspringvar2020
+                              precspring_2020 <- pressure_subdata$precspring2020
+                              shannon_2018 <- pressure_subdata$shannon2018
                               
                               d_impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13
                               d_treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7
@@ -1207,7 +1212,8 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               
                               PLS <- pressure_subdata$PLS
                               
-                              trend_result <- data.frame(impervious_2018,treedensity_2018,d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
+                              trend_result <- data.frame(impervious_2018,treedensity_2018,agri_2018,tempspring_2020,tempspringvar_2020,precspring_2020,shannon_2018,
+                                                         d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
                                                          d_shannon,shannon,milieu,drymatter,protectedarea_perc,protectedarea_type,
                                                          eulandsystem_cat,eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
                                                          eulandsystem_forest_lowmedium,eulandsystem_forest_high,PLS)
@@ -1603,6 +1609,121 @@ ggplot(res_gam_bird, aes(x= PLS, y=dev_exp, fill=PLS)) +
 ### INLA instead of frequentist #https://punama.github.io/BDI_INLA/
 
 library(INLA)
+library(fmesher)
+
+grid_eu_20 <- st_read("raw_data/grid_eu/grid_20km_surf.gpkg")
+grid_eu_20 <- grid_eu_20[grep("CY|IS|TR|MT|AL|EL|ME|MK|RS",grid_eu_20$NUTS2021_0,invert = TRUE),]
+grid_eu_20 <- grid_eu_20[grep("ES7|FRY|PT2|PT3",grid_eu_20$NUTS2021_1,invert = TRUE),] # remove oversea territories
+grid_eu_20 <- grid_eu_20[which(!(grid_eu_20$NUTS2021_0 == "")),]
+
+
+
+grid_coords=as.matrix(st_coordinates(st_centroid(grid_eu_20))[,c("X","Y")]%>%st_drop_geometry())
+## Compute the boundaries of the mesh
+# - Inner boundary with slight concavity to follow data
+bndint = inla.nonconvex.hull(grid_coords, convex = -0.05)
+# - Outer boundary with stronger concavity for extension
+bndext = inla.nonconvex.hull(grid_coords, convex = -0.2)
+# Build triangular mesh:
+# - max.edge: Maximum allowed triangle edge length (inner, outer zones)
+# - cutoff: Minimum distance between mesh vertices
+mesh = fm_mesh_2d_inla(grid_coords,
+                       boundary = list(bndint, bndext),
+                       max.edge = c(50000, 200000), cutoff = 100000)
+print(mesh$n) # Number of mesh vertices, 2000 c'est pas mal, trop risque de faire buguer
+
+par(mar = rep(0.5, 4))
+plot(mesh, main = "", asp = 1)
+points(grid_coords,col=2,cex=0.2,pch=16)
+points(mesh$loc, col=4, cex=0.5)
+
+poisson_sf <- merge(site_data[,"siteID"],poisson_df)
+
+sp_dat_sf = poisson_sf%>%
+  #filter(species==species_name)%>%
+  #select(Month,Time_period,Year,geometry)%>%
+  st_join(grid_eu_20[c('GRD_ID')],join=st_within)
+
+plot(grid_eu_mainland_outline)
+plot(sp_dat_sf,pch=16,col=4,add=T,cex=0.5)
+
+
+tmp <- na.omit(sp_dat_sf %>%
+  st_drop_geometry()%>%
+  #select(GRD_ID)%>%
+  group_by(GRD_ID)%>%
+  summarize(nFocal=n()))
+
+Poisson_sf <- na.omit(sp_dat_sf %>%
+  st_drop_geometry()%>%
+  #select(GRD_ID)%>%
+  group_by(GRD_ID)%>%
+  summarize(temp=mean(tempsrping),protect=mean(protectedarea_perc),shannon=mean(shannon)))
+
+
+# cell centroids coordinates per sampled spatio-temporal cell.
+coord_data = as.matrix(st_coordinates(st_centroid(grid_eu_20[which(grid_eu_20$GRD_ID %in% unique(Poisson_sf$GRD_ID)),]))[,c("X","Y")])
+# Compute the observation matrix A
+A = inla.spde.make.A(mesh, loc = coord_data)
+# Indices for the total observation matrix A implemented with inla.stack.
+idx_sp = inla.spde.make.index("sp",n.spde = mesh$n)
+
+stk = inla.stack(
+  data = list(y = as.numeric(tmp$nFocal)),  # Specify the response variable
+  A = list(1, A),         # Vector of multiplication factors for random and fixed effects
+  effects = list(as.data.frame(Poisson_sf), idx_sp),
+  tag = "obs"  # Detail the random and fixed effects
+)
+
+
+nu = 1
+d = 2 # dimension
+alpha = nu + d / 2
+spde_sp = inla.spde2.pcmatern(
+  mesh = mesh, alpha = alpha,constr = T, 
+  prior.range = c(10, 0.5), prior.sigma = c(1, 0.5)
+)
+
+
+formula = y ~ temp + protect + shannon + 
+  f(sp, model = spde_sp)
+
+
+fit = inla(
+  formula, # Formula of the model
+  #offset = fixed_effects$log_TG_Count,
+  data = inla.stack.data(stk), # data = Observation matrix
+  family = "poisson",  # Distribution of the response variable
+  control.compute = list(cpo=T, dic=T, mlik=T, waic=T, return.marginals.predictor = T, config = TRUE),  # Statistics criteria
+  control.predictor=list(compute = FALSE, A = inla.stack.A(stk), link = 1), # link = 1 to compute the fitted values with the links function
+  control.inla = list(int.strategy = "eb", strategy = "adaptive"),  # Optimization settings
+  verbose = F,#T, # Text option
+  #inla.mode = "experimental",
+  num.threads = 10)
+summary(fit)
+
+
+# Create projection matrix from mesh to prediction points
+A_pred <- inla.spde.make.A(mesh = mesh, loc = grid_coords)
+
+# Get estimated spatial field values (posterior mean)
+spatial_field <- fit$summary.random$sp$mean
+
+# Calculate spatial component at prediction points
+spatial_part <- as.vector(A_pred %*% spatial_field)
+
+grid_eu_20$intensity <- exp(spatial_part)
+
+# With geom_sf
+ggplot() +
+  geom_sf(data=grid_eu_20,
+          aes(fill=log10(intensity))) +
+  scale_fill_viridis()+
+  theme_minimal() +
+  labs(title = "Estimated Intensity Surface")
+
+
+
 
 bird_data = subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out=="Alauda arvensis"),]
 pressure_data = press_mainland_trend_scale

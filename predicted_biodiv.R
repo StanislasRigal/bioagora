@@ -592,13 +592,13 @@ pressure_name <- c("d_impervious","d_treedensity","d_agri",
 
 species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
 
-poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","time_effort","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
+poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
                                                  pressure_name,"PLS")])
 
 species_press_data_year_unscale <- merge(bird_data, pressure_data_unscale[which(pressure_data_unscale$siteID %in% unique(bird_data$siteID) & pressure_data_unscale$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
 
-poisson_df_unscale <- na.omit(species_press_data_year_unscale[,c("siteID","count","year","time_effort","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
-                                                 pressure_name,"impervious_2018","treedensity_2018","PLS")])
+poisson_df_unscale <- na.omit(species_press_data_year_unscale[,c("siteID","count","year","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
+                                                 pressure_name,"tempspring_2020","tempspringvar_2020","precspring_2020","agri_2018","shannon_2018","impervious_2018","treedensity_2018","PLS")])
 
 poisson_df$year <- poisson_df$year - 2000
 
@@ -625,7 +625,7 @@ col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","mil
                "year:d_agri:eulandsystem_farmland_high","year:protectedarea_perc:protectedarea_type")
 
 
-global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=3)"), collapse = " + "))),
+global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
                   family=family, data=poisson_df)
 
 
@@ -662,6 +662,9 @@ global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsys
 global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),c("Estimate","Std. Error")]/(d_agri_si*eulandsystem_farmland_high_si)
 global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),c("Estimate","Std. Error")] <- global_mod_coef[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),c("Estimate","Std. Error")]/protectedarea_perc_si
 
+nb_rep <- 1000
+
+
 beta1_BAU <- global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"] +
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*mean(poisson_df_unscale$d_impervious) +
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*mean(poisson_df_unscale$d_tempsrping) +
@@ -676,46 +679,299 @@ beta1_BAU <- global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*mean(poisson_df_unscale$d_agri)*mean(poisson_df_unscale$eulandsystem_farmland_high) +
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"]*mean(poisson_df_unscale$protectedarea_perc)*mean(poisson_df_unscale$protectedarea_type)
 
+beta1_BAU_sample <- rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Std. Error"]) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Std. Error"])*mean(poisson_df_unscale$d_impervious) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Std. Error"])*mean(poisson_df_unscale$d_tempsrping) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*mean(poisson_df_unscale$d_tempsrpingvar) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Std. Error"])*mean(poisson_df_unscale$d_precspring) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Std. Error"])*mean(poisson_df_unscale$d_shannon) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Std. Error"])*mean(poisson_df_unscale$protectedarea_perc) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Std. Error"])*mean(poisson_df_unscale$d_treedensity)*mean(poisson_df_unscale$eulandsystem_forest_lowmedium) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Std. Error"])*mean(poisson_df_unscale$d_treedensity)*mean(poisson_df_unscale$eulandsystem_forest_high) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Std. Error"])*mean(poisson_df_unscale$d_agri)*mean(poisson_df_unscale$eulandsystem_farmland_low) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Std. Error"])*mean(poisson_df_unscale$d_agri)*mean(poisson_df_unscale$eulandsystem_farmland_medium) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Std. Error"])*mean(poisson_df_unscale$d_agri)*mean(poisson_df_unscale$eulandsystem_farmland_high) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Std. Error"])*mean(poisson_df_unscale$protectedarea_perc)*mean(poisson_df_unscale$protectedarea_type)
+
+
+
+# rate of change from estimate in proportion from recent history
+# pressure_level_2050 = pressure_level_2020*proxy2050/proxy2020
+# d_pressure_2050_2020 = (pressure_level_2050-pressure_level_2020)/(2050-2020) = pressure_level_2020*(proxy2050/proxy2020-1)/(2050-2020)
+d_impervious_ssp1 <- mean(poisson_df_unscale$impervious_2018)*
+  (lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) 
+d_shannon_ssp1 <- mean(poisson_df_unscale$shannon_2018)*
+  (lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018) 
+d_treedensity_ssp1 <- mean(poisson_df_unscale$treedensity_2018)*
+  (sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)
+d_agri_ssp1 <- mean(poisson_df_unscale$agri_2018)*
+  (sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018)
+d_tempspring_ssp1 <- mean(poisson_df_unscale$tempspring_2020)*
+  (climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_tempspringvar_ssp1 <- mean(poisson_df_unscale$tempspringvar_2020)*
+  (climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$var_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_precspring_ssp1 <- mean(poisson_df_unscale$precspring_2020)*
+  (climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]/climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+eulandsystem_forest_lowmedium_ssp1 <- mean(poisson_df_unscale$eulandsystem_forest_lowmedium)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]
+eulandsystem_forest_high_ssp1 <- mean(poisson_df_unscale$eulandsystem_forest_high)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]
+eulandsystem_farmland_low_ssp1 <- mean(poisson_df_unscale$eulandsystem_farmland_low)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]
+eulandsystem_farmland_medium_ssp1 <- mean(poisson_df_unscale$eulandsystem_farmland_medium)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]
+eulandsystem_farmland_high_ssp1 <- mean(poisson_df_unscale$eulandsystem_farmland_high)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]
+
+# rate of change from similar proxy
+#d_tempspring_ssp1 <- (climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]-climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")])/(2050-2018)
+#d_tempspringvar_ssp1 <- (climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]-climate_pls$var_t_2016[which(climate_pls$PLS=="europe")])/(2050-2018)
+#d_precspring_ssp1 <- (climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]-climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")])/(2050-2018)
+#d_agri_ssp1 <- (sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))]))/(2050-2015)
+
 beta1_SSP1 <- global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*mean(poisson_df_unscale$impervious_2018)*(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*(climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]-climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")])/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*(climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]-climate_pls$var_t_2016[which(climate_pls$PLS=="europe")])/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"]*(climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]-climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")])/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"]*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]))/(2050-2015) +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*d_impervious_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*d_tempspring_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*d_tempspringvar_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"]*d_precspring_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"]*d_shannon_ssp1 +
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"]*pa_pls_short$ssp1[which(pa_pls_short$PLS=="europe")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"]*mean(poisson_df_unscale$treedensity_2018)*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"]*mean(poisson_df_unscale$treedensity_2018)*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"]*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))]))/(2050-2015)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"]*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))]))/(2050-2015)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))]))/(2050-2015)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"]*d_treedensity_ssp1*eulandsystem_forest_lowmedium_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"]*d_treedensity_ssp1*eulandsystem_forest_high_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"]*d_agri_ssp1*eulandsystem_farmland_low_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"]*d_agri_ssp1*eulandsystem_farmland_medium_ssp1 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*d_agri_ssp1*eulandsystem_farmland_high_ssp1 +
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"]*pa_pls_short$ssp1[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
 
+beta1_SSP1_sample <- rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Std. Error"]) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Std. Error"])*d_impervious_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Std. Error"])*d_tempspring_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*d_tempspringvar_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Std. Error"])*d_precspring_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Std. Error"])*d_shannon_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Std. Error"])*pa_pls_short$ssp1[which(pa_pls_short$PLS=="europe")] +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Std. Error"])*d_treedensity_ssp1*eulandsystem_forest_lowmedium_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Std. Error"])*d_treedensity_ssp1*eulandsystem_forest_high_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Std. Error"])*d_agri_ssp1*eulandsystem_farmland_low_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Std. Error"])*d_agri_ssp1*eulandsystem_farmland_medium_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Std. Error"])*d_agri_ssp1*eulandsystem_farmland_high_ssp1 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Std. Error"])*pa_pls_short$ssp1[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
+
+
+d_impervious_ssp3 <- mean(poisson_df_unscale$impervious_2018)*
+  (lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) 
+d_shannon_ssp3 <- mean(poisson_df_unscale$shannon_2018)*
+  (lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018) 
+d_treedensity_ssp3 <- mean(poisson_df_unscale$treedensity_2018)*
+  (sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)
+d_agri_ssp3 <- mean(poisson_df_unscale$agri_2018)*
+  (sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018)
+d_tempspring_ssp3 <- mean(poisson_df_unscale$tempspring_2020)*
+  (climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_tempspringvar_ssp3 <- mean(poisson_df_unscale$tempspringvar_2020)*
+  (climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$var_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_precspring_ssp3 <- mean(poisson_df_unscale$precspring_2020)*
+  (climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]/climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+eulandsystem_forest_lowmedium_ssp3 <- mean(poisson_df_unscale$eulandsystem_forest_lowmedium)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]
+eulandsystem_forest_high_ssp3 <- mean(poisson_df_unscale$eulandsystem_forest_high)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]
+eulandsystem_farmland_low_ssp3 <- mean(poisson_df_unscale$eulandsystem_farmland_low)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]
+eulandsystem_farmland_medium_ssp3 <- mean(poisson_df_unscale$eulandsystem_farmland_medium)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]
+eulandsystem_farmland_high_ssp3 <- mean(poisson_df_unscale$eulandsystem_farmland_high)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]
+
+
 beta1_SSP3 <- global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*mean(poisson_df_unscale$impervious_2018)*(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*(climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]-climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")])/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*(climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]-climate_pls$var_t_2016[which(climate_pls$PLS=="europe")])/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"]*(climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]-climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")])/(2050-2018) +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"]*(sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]))/(2050-2015) +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*d_impervious_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*d_tempspring_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*d_tempspringvar_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"]*d_precspring_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"]*d_shannon_ssp3 +
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"]*pa_pls_short$ssp3[which(pa_pls_short$PLS=="europe")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"]*mean(poisson_df_unscale$treedensity_2018)*(sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"]*mean(poisson_df_unscale$treedensity_2018)*(sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"]*(sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))]))/(2050-2015)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"]*(sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))]))/(2050-2015)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")] +
-  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*(sum(lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))]))/(2050-2015)*lulc_pls_short$ssp3[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"]*d_treedensity_ssp3*eulandsystem_forest_lowmedium_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"]*d_treedensity_ssp3*eulandsystem_forest_high_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"]*d_agri_ssp3*eulandsystem_farmland_low_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"]*d_agri_ssp3*eulandsystem_farmland_medium_ssp3 +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*d_agri_ssp3*eulandsystem_farmland_high_ssp3 +
   global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"]*pa_pls_short$ssp3[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
 
+beta1_SSP3_sample <- rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Std. Error"]) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Std. Error"])*d_impervious_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Std. Error"])*d_tempspring_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*d_tempspringvar_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Std. Error"])*d_precspring_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Std. Error"])*d_shannon_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Std. Error"])*pa_pls_short$ssp3[which(pa_pls_short$PLS=="europe")] +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Std. Error"])*d_treedensity_ssp3*eulandsystem_forest_lowmedium_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Std. Error"])*d_treedensity_ssp3*eulandsystem_forest_high_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Std. Error"])*d_agri_ssp3*eulandsystem_farmland_low_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Std. Error"])*d_agri_ssp3*eulandsystem_farmland_medium_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Std. Error"])*d_agri_ssp3*eulandsystem_farmland_high_ssp3 +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Std. Error"])*pa_pls_short$ssp3[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
+
+
+d_impervious_nac <- mean(poisson_df_unscale$impervious_2018)*
+  (lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) 
+d_shannon_nac <- mean(poisson_df_unscale$shannon_2018)*
+  (lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018) 
+d_treedensity_nac <- mean(poisson_df_unscale$treedensity_2018)*
+  (sum(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)
+d_agri_nac <- mean(poisson_df_unscale$agri_2018)*
+  (sum(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018)
+d_tempspring_nac <- mean(poisson_df_unscale$tempspring_2020)*
+  (climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_tempspringvar_nac <- mean(poisson_df_unscale$tempspringvar_2020)*
+  (climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$var_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_precspring_nac <- mean(poisson_df_unscale$precspring_2020)*
+  (climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]/climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+eulandsystem_forest_lowmedium_nac <- mean(poisson_df_unscale$eulandsystem_forest_lowmedium)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]
+eulandsystem_forest_high_nac <- mean(poisson_df_unscale$eulandsystem_forest_high)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]
+eulandsystem_farmland_low_nac <- mean(poisson_df_unscale$eulandsystem_farmland_low)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]
+eulandsystem_farmland_medium_nac <- mean(poisson_df_unscale$eulandsystem_farmland_medium)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]
+eulandsystem_farmland_high_nac <- mean(poisson_df_unscale$eulandsystem_farmland_high)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]
+
+
+beta1_nac <- global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*d_impervious_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*d_tempspring_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*d_tempspringvar_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"]*d_precspring_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"]*d_shannon_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"]*pa_pls_short$nac[which(pa_pls_short$PLS=="europe")] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"]*d_treedensity_nac*eulandsystem_forest_lowmedium_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"]*d_treedensity_nac*eulandsystem_forest_high_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"]*d_agri_nac*eulandsystem_farmland_low_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"]*d_agri_nac*eulandsystem_farmland_medium_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*d_agri_nac*eulandsystem_farmland_high_nac +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"]*pa_pls_short$nac[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
+
+beta1_nac_sample <- rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Std. Error"]) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Std. Error"])*d_impervious_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Std. Error"])*d_tempspring_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*d_tempspringvar_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Std. Error"])*d_precspring_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Std. Error"])*d_shannon_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Std. Error"])*pa_pls_short$nac[which(pa_pls_short$PLS=="europe")] +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Std. Error"])*d_treedensity_nac*eulandsystem_forest_lowmedium_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Std. Error"])*d_treedensity_nac*eulandsystem_forest_high_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Std. Error"])*d_agri_nac*eulandsystem_farmland_low_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Std. Error"])*d_agri_nac*eulandsystem_farmland_medium_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Std. Error"])*d_agri_nac*eulandsystem_farmland_high_nac +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Std. Error"])*pa_pls_short$nac[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
+
+
+d_impervious_nfn <- mean(poisson_df_unscale$impervious_2018)*
+  (lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) 
+d_shannon_nfn <- mean(poisson_df_unscale$shannon_2018)*
+  (lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018) 
+d_treedensity_nfn <- mean(poisson_df_unscale$treedensity_2018)*
+  (sum(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)
+d_agri_nfn <- mean(poisson_df_unscale$agri_2018)*
+  (sum(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018)
+d_tempspring_nfn <- mean(poisson_df_unscale$tempspring_2020)*
+  (climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_tempspringvar_nfn <- mean(poisson_df_unscale$tempspringvar_2020)*
+  (climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$var_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_precspring_nfn <- mean(poisson_df_unscale$precspring_2020)*
+  (climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]/climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+eulandsystem_forest_lowmedium_nfn <- mean(poisson_df_unscale$eulandsystem_forest_lowmedium)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]
+eulandsystem_forest_high_nfn <- mean(poisson_df_unscale$eulandsystem_forest_high)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]
+eulandsystem_farmland_low_nfn <- mean(poisson_df_unscale$eulandsystem_farmland_low)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]
+eulandsystem_farmland_medium_nfn <- mean(poisson_df_unscale$eulandsystem_farmland_medium)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]
+eulandsystem_farmland_high_nfn <- mean(poisson_df_unscale$eulandsystem_farmland_high)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]
+
+
+beta1_nfn <- global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*d_impervious_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*d_tempspring_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*d_tempspringvar_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"]*d_precspring_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"]*d_shannon_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"]*pa_pls_short$nfn[which(pa_pls_short$PLS=="europe")] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"]*d_treedensity_nfn*eulandsystem_forest_lowmedium_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"]*d_treedensity_nfn*eulandsystem_forest_high_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"]*d_agri_nfn*eulandsystem_farmland_low_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"]*d_agri_nfn*eulandsystem_farmland_medium_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*d_agri_nfn*eulandsystem_farmland_high_nfn +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"]*pa_pls_short$nfn[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
+
+beta1_nfn_sample <- rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Std. Error"]) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Std. Error"])*d_impervious_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Std. Error"])*d_tempspring_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*d_tempspringvar_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Std. Error"])*d_precspring_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Std. Error"])*d_shannon_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Std. Error"])*pa_pls_short$nfn[which(pa_pls_short$PLS=="europe")] +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Std. Error"])*d_treedensity_nfn*eulandsystem_forest_lowmedium_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Std. Error"])*d_treedensity_nfn*eulandsystem_forest_high_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Std. Error"])*d_agri_nfn*eulandsystem_farmland_low_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Std. Error"])*d_agri_nfn*eulandsystem_farmland_medium_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Std. Error"])*d_agri_nfn*eulandsystem_farmland_high_nfn +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Std. Error"])*pa_pls_short$nfn[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
+
+
+d_impervious_nfs <- mean(poisson_df_unscale$impervious_2018)*
+  (lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) 
+d_shannon_nfs <- mean(poisson_df_unscale$shannon_2018)*
+  (lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018) 
+d_treedensity_nfs <- mean(poisson_df_unscale$treedensity_2018)*
+  (sum(lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)
+d_agri_nfs <- mean(poisson_df_unscale$agri_2018)*
+  (sum(lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018)
+d_tempspring_nfs <- mean(poisson_df_unscale$tempspring_2020)*
+  (climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_tempspringvar_nfs <- mean(poisson_df_unscale$tempspringvar_2020)*
+  (climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$var_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+d_precspring_nfs <- mean(poisson_df_unscale$precspring_2020)*
+  (climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]/climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2020)
+eulandsystem_forest_lowmedium_nfs <- mean(poisson_df_unscale$eulandsystem_forest_lowmedium)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_lowmedium")]
+eulandsystem_forest_high_nfs <- mean(poisson_df_unscale$eulandsystem_forest_high)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="forest_high")]
+eulandsystem_farmland_low_nfs <- mean(poisson_df_unscale$eulandsystem_farmland_low)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_low")]
+eulandsystem_farmland_medium_nfs <- mean(poisson_df_unscale$eulandsystem_farmland_medium)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_medium")]
+eulandsystem_farmland_high_nfs <- mean(poisson_df_unscale$eulandsystem_farmland_high)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable=="farmland_high")]
+
+
+beta1_nfs <- global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"]*d_impervious_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"]*d_tempspring_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*d_tempspringvar_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"]*d_precspring_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"]*d_shannon_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"]*pa_pls_short$nfs[which(pa_pls_short$PLS=="europe")] +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"]*d_treedensity_nfs*eulandsystem_forest_lowmedium_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"]*d_treedensity_nfs*eulandsystem_forest_high_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"]*d_agri_nfs*eulandsystem_farmland_low_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"]*d_agri_nfs*eulandsystem_farmland_medium_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"]*d_agri_nfs*eulandsystem_farmland_high_nfs +
+  global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"]*pa_pls_short$nfs[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
+
+beta1_nfs_sample <- rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year"),"Std. Error"]) +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_impervious"),"Std. Error"])*d_impervious_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrping"),"Std. Error"])*d_tempspring_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*d_tempspringvar_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_precspring"),"Std. Error"])*d_precspring_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_shannon"),"Std. Error"])*d_shannon_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc"),"Std. Error"])*pa_pls_short$nfs[which(pa_pls_short$PLS=="europe")] +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_lowmedium"),"Std. Error"])*d_treedensity_nfs*eulandsystem_forest_lowmedium_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_treedensity:eulandsystem_forest_high"),"Std. Error"])*d_treedensity_nfs*eulandsystem_forest_high_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Std. Error"])*d_agri_nfs*eulandsystem_farmland_low_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Std. Error"])*d_agri_nfs*eulandsystem_farmland_medium_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Std. Error"])*d_agri_nfs*eulandsystem_farmland_high_nfs +
+  rnorm(nb_rep,global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Estimate"], sd=global_mod_coef_unscale[which(row.names(global_mod_coef)=="year:protectedarea_perc:protectedarea_type"),"Std. Error"])*pa_pls_short$nfs[which(pa_pls_short$PLS=="europe")]*mean(poisson_df_unscale$protectedarea_type)
 
 
 
+### apply to all species and PLS 
+
+source("functions.R")
+
+predict_trend_all_bird <- ddply(subsite_data_mainland_trend,
+                      .(sci_name_out),.fun=predict_trend_bird,
+                      pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                      pressure_data_unscale=press_mainland_trend,
+                      lulc_pls_short=lulc_pls_short,climate_pls=climate_pls,pa_pls_short=pa_pls_short,
+                      .progress = "text")
+predict_trend_all_bird <- predict_trend_all_bird[which(!is.na(predict_trend_all_bird$PLS)),]
+
+saveRDS(predict_trend_all_bird,"output/predict_trend_all_bird.rds")
 
 
+predict_trend_all_bird_eu <- predict_trend_all_bird[which(predict_trend_all_bird$PLS=="europe"),]
 
-
-
-
-
-
-
+# rajouter incertitude
 
 
 
