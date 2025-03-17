@@ -971,7 +971,223 @@ saveRDS(predict_trend_all_bird,"output/predict_trend_all_bird.rds")
 
 predict_trend_all_bird_eu <- predict_trend_all_bird[which(predict_trend_all_bird$PLS=="europe"),]
 
-# rajouter incertitude
+species_habitat <- read.csv2("raw_data/Habitat_class_PECBMS.csv")
+predict_trend_farmland <- predict_trend_all_bird[which(predict_trend_all_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")])),]
+predict_trend_forest <- predict_trend_all_bird[which(predict_trend_all_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
+
+overall_trend_all <- ddply(predict_trend_all_bird,
+                                .(PLS),.fun=overall_mean_sd_trend,
+                                .progress = "text")
+
+overall_trend_farmland <- ddply(predict_trend_farmland,
+                                .(PLS),.fun=overall_mean_sd_trend,
+                                .progress = "text")
+
+overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_bau), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")]))),
+                                max(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")])))))
+
+overall_trend_forest <- ddply(predict_trend_forest[which(!(predict_trend_forest$sci_name_out=="Bombycilla garrulus" & predict_trend_forest$PLS=="14")),],
+                                .(PLS),.fun=overall_mean_sd_trend,
+                                .progress = "text")
+
+overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_bau), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")]))),
+                                max(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")])))))
+
+
+europe_all <- data.frame(value = c(overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],
+                                        overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                                        overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe")],
+                                        overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],
+                                        overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],
+                                        overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]),
+                              sd = c(overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe")],
+                                     overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe")],
+                                     overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe")],
+                                     overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe")],
+                                     overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe")],
+                                     overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe")]),
+                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+
+ggplot(europe_all, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  xlab("Estimate") 
+
+europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")]),
+                              sd = c(overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_ssp3[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_nac[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_nfn[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_nfs[which(overall_trend_farmland$PLS=="europe")]),
+                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+
+ggplot(europe_farmland, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  xlab("Estimate") 
+
+europe_forest <- data.frame(value = c(overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],
+                                        overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                        overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe")],
+                                        overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],
+                                        overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],
+                                        overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]),
+                              sd = c(overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe")],
+                                     overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                     overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe")],
+                                     overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe")],
+                                     overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe")],
+                                     overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe")]),
+                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+
+ggplot(europe_forest, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  xlab("Estimate") 
+
+
+# plot pressure change
+
+lulc_sf <- merge(grid_eu_mainland_biogeo,lulc_pls_short,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="urban"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="urban"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="urban"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="urban"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(lulc_sf$nfn[which(lulc_sf$variable=="urban")]-lulc_sf$initial[which(lulc_sf$variable=="urban")]),
+                                max(lulc_sf$ssp3[which(lulc_sf$variable=="urban")]-lulc_sf$initial[which(lulc_sf$variable=="urban")])))
+
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_low"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_low"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_low"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_low"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(lulc_sf$ssp1[which(lulc_sf$variable=="farmland_low")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_low")]),
+                                max(lulc_sf$nac[which(lulc_sf$variable=="farmland_low")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_low")])))
+
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_medium"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_medium"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_medium"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_medium"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(lulc_sf$nac[which(lulc_sf$variable=="farmland_medium")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_medium")]),
+                                max(lulc_sf$ssp1[which(lulc_sf$variable=="farmland_medium")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_medium")])))
+
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_high"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_high"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(lulc_sf$ssp1[which(lulc_sf$variable=="farmland_high")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_high")]),
+                                max(lulc_sf$nac[which(lulc_sf$variable=="farmland_high")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_high")])))
+
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(lulc_sf$nfn[which(lulc_sf$variable=="forest_lowmedium")]-lulc_sf$initial[which(lulc_sf$variable=="forest_lowmedium")]),
+                                max(lulc_sf$ssp1[which(lulc_sf$variable=="forest_lowmedium")]-lulc_sf$initial[which(lulc_sf$variable=="forest_lowmedium")])))
+
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_high"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_high"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(lulc_sf$nac[which(lulc_sf$variable=="forest_high")]-lulc_sf$initial[which(lulc_sf$variable=="forest_high")]),
+                                max(lulc_sf$ssp1[which(lulc_sf$variable=="forest_high")]-lulc_sf$initial[which(lulc_sf$variable=="forest_high")])))
+
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="landscape_div"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="landscape_div"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="landscape_div"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf[which(lulc_sf$variable=="landscape_div"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(lulc_sf$ssp3[which(lulc_sf$variable=="landscape_div")]-lulc_sf$initial[which(lulc_sf$variable=="landscape_div")]),
+                                max(lulc_sf$nac[which(lulc_sf$variable=="landscape_div")]-lulc_sf$initial[which(lulc_sf$variable=="landscape_div")])))
+
+
+
+pa_sf <- merge(grid_eu_mainland_biogeo,pa_pls_short,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=pa_sf, aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(pa_sf[,c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(pa_sf[,c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=pa_sf, aes(fill=nac-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(0,max(pa_sf$nfn-pa_sf$initial, na.rm=TRUE)))
+
+
+
+climate_sf <- merge(grid_eu_mainland_biogeo,climate_pls,by="PLS",all.x=TRUE)
+climate_sf$d_mean <- climate_sf$mean_t_4_5 - climate_sf$mean_t_2016
+climate_sf$d_sum <- climate_sf$sum_p_4_5 - climate_sf$sum_p_2016
+climate_sf$d_var <- climate_sf$var_t_4_5 - climate_sf$var_t_2016
+ggplot() + geom_sf() +  
+  geom_sf(data=climate_sf, aes(fill=mean_t_2016), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(climate_sf[,c("mean_t_2016","mean_t_4_5")]))),
+                                max(na.omit(st_drop_geometry(climate_sf[,c("mean_t_2016","mean_t_4_5")])))))
+ggplot() + geom_sf() +  
+  geom_sf(data=climate_sf, aes(fill=d_mean), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2()
+ggplot() + geom_sf() +  
+  geom_sf(data=climate_sf, aes(fill=d_sum), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2()
+ggplot() + geom_sf() +  
+  geom_sf(data=climate_sf, aes(fill=d_var), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2()
+
+
+
+
+
+
+
+
+
 
 
 
