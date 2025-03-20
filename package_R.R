@@ -39,6 +39,7 @@ library(scales)
 library(mgcv)
 library(paletteer)
 library(viridis)
+library(ggridges)
 
 # predicted data
 library(ncdf4)

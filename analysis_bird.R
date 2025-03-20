@@ -1359,7 +1359,8 @@ res_gam_bird <- ddply(subsite_data_mainland_trend,
                       .progress = "text")
 res_gam_bird <- res_gam_bird[which(!is.na(res_gam_bird$PLS)),]
 
-saveRDS(res_gam_bird,"output/res_gam_bird.rds")
+#saveRDS(res_gam_bird,"output/res_gam_bird.rds")
+#res_gam_bird<-readRDS("output/res_gam_bird.rds")
 
 #### Declining species per PLS
 
@@ -1503,23 +1504,6 @@ ggsave("output/pressure_protectedarea_pos_bird.png",
        dpi = 300
 )
 
-pressure_EU_bird <- res_gam_mainland_species_PLS[which(res_gam_mainland_species_PLS$PLS=="europe"),]
-pressure_EU_bird_long <- melt(pressure_EU_bird, id.vars=c("sci_name_out","PLS"))
-pressure_EU_bird_long <- pressure_EU_bird_long[which(!pressure_EU_bird_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
-pressure_EU_bird_long <- pressure_EU_bird_long %>% group_by(variable) %>% summarise(median_pressure=median(value, na.rm=TRUE),
-                                                                                              mean_pressure=mean(value, na.rm=TRUE),
-                                                                                              sd_pressure=sd(value, na.rm=TRUE))
-
-ggplot(pressure_EU_bird_long,
-       aes(x = variable, y = exp(median_pressure))) + geom_point() +
-  theme_ggstatsplot() + scale_x_discrete(labels=c("year:treedensity" = "Tree density","year:impervious"="Imperviousness",
-                                                  "year:drymatter"="Productivity","year:tempspring"="Temperature",
-                                                  "year:tempspringvar"="Temp variation","year:precspring"="Precipitation",
-                                                  "year:protectedarea_perc"="Protected area","year:smallwoodyfeatures"="Hedges",
-                                                  "year:shannon"="Landscape diversity")) +
-  labs(y="Estimate") + theme(axis.title.x = element_blank(),
-                             axis.text.x = element_text(angle=45, hjust = 1),
-                             legend.position = "none")
 
 
 pressure_EU_bird <- data.frame(rbind(matrix_pressure_PLS_pos_bird[matrix_pressure_PLS_pos_bird$PLS=="europe",],
@@ -1605,6 +1589,53 @@ ggplot(res_gam_bird, aes(x= PLS, y=dev_exp, fill=PLS)) +
   geom_boxplot() +
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
   theme_minimal()
+
+# other representation
+
+df_pressure_hist <- melt(res_gam_bird, id.vars=)
+
+pressure_EU_bird <- res_gam_bird[which(res_gam_bird$PLS=="europe"),]
+pressure_EU_bird_long <- melt(pressure_EU_bird, id.vars=c("sci_name_out","PLS"))
+pressure_EU_bird_long <- pressure_EU_bird_long[which(!pressure_EU_bird_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
+
+
+
+ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                                                         "year:d_shannon","year:protectedarea_perc","year:d_treedensity:eulandsystem_forest_lowmedium","year:d_treedensity:eulandsystem_forest_high",
+                                                                         "year:d_agri:eulandsystem_farmland_low","year:d_agri:eulandsystem_farmland_medium",
+                                                                         "year:d_agri:eulandsystem_farmland_high","year:protectedarea_perc:protectedarea_type")),], aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
+                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
+                            "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
+  geom_density_ridges() + xlim(c(-0.15,0.1))+
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  xlab("Pressures") + ylab("Estimate") +
+  theme(legend.position = "none")
+
+
+ggsave("output/pressure_trend_bird_eu_hist.png",
+       width = 12,
+       height = 8,
+       dpi = 300
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### INLA instead of frequentist #https://punama.github.io/BDI_INLA/
 
