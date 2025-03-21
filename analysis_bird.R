@@ -1353,6 +1353,15 @@ saveRDS(site_number_species_biogeo,"output/site_number_species_biogeo.rds")
 
 source("functions.R")
 
+res_gamm_bird <- ddply(subsite_data_mainland_trend,
+                      .(sci_name_out),.fun=gam_species_PLS1,
+                      pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                      .progress = "text")
+res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
+
+#saveRDS(res_gamm_bird,"output/res_gamm_bird.rds")
+#res_gamm_bird<-readRDS("output/res_gamm_bird.rds")
+
 res_gam_bird <- ddply(subsite_data_mainland_trend,
                       .(sci_name_out),.fun=gam_species_PLS3,
                       pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,

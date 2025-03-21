@@ -10,7 +10,7 @@ site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
 subsite_data_mainland_trend <- readRDS("output/subsite_data_mainland_trend.rds")
 
 
-press_mainland_trend_FR <- press_mainland_trend[which(pressure_data$siteID %in% unique(bird_data[which(bird_data$scheme_code=="FR"),]$siteID)),]
+press_mainland_trend_FR <- press_mainland_trend[which(press_mainland_trend$siteID %in% unique(bird_data_mainland[which(bird_data_mainland$scheme_code=="FR"),]$siteID)),]
 press_mainland_trend_scale_FR <- press_mainland_trend_FR
 press_mainland_trend_scale_FR[,c("d_impervious","d_treedensity","d_agri",
                               "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
@@ -47,17 +47,17 @@ saveRDS(res_gam_bird_FR,"output/res_gam_bird_FR.rds")
 pressure_change <- data.frame(variable = c("Low intensity farmland","Medium intensity farmland","High intensity farmland",
                                            "Forest cover","Urban cover",
                                            "Agricultural cover","Temperature","Wood production","Hedge"),
-                              initial = c(5,2,93,16914,5263,28.8,14.1,52,500),
-                              tend = c(20,10,70,18606,7369,25.1,15,61,547),
-                              s1 = c(70,30,0,19769,5061,25.8,15,52,935),
-                              s2 = c(50,50,0,17515,5567,27.7,15,61,939),
-                              s3 = c(20,50,30,17564,6073,27.1,15,71,619),
-                              s4 = c(10,20,70,17264,7085,26.8,15,71,549))
+                              initial = c(0.05,0.02,0.93,16914,5263,28.8,14.1,52,500),
+                              tend = c(0.20,0.10,0.70,18606,7369,25.1,15,61,547),
+                              s1 = c(0.70,0.30,0,19769,5061,25.8,15,52,935),
+                              s2 = c(0.50,0.50,0,17515,5567,27.7,15,61,939),
+                              s3 = c(0.20,0.50,0.30,17564,6073,27.1,15,71,619),
+                              s4 = c(0.10,0.20,0.70,17264,7085,26.8,15,71,549))
 
 
 
 bird_data <- droplevels(subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out == "Alauda arvensis"),])
-pressure_data <- press_mainland_trend_scale
+pressure_data <- press_mainland_trend_scale_FR
 pressure_data_unscale <- press_mainland_trend_FR
 site_data <- site_mainland_sf_reproj
 min_site_number_per_species <- 60
@@ -129,7 +129,7 @@ eulandsystem_forest_high_si <- sd(na.omit(pressure_data_unscale$eulandsystem_for
 
 mod_coef_unscale <- mod_coef
 
-mod_coef_unscale[which(row.names(mod_coef)=="year:d_impervious"),c("Estimate","Std. Error")] <- mod_coef[which(row.names(mod_coef)=="year:d_impervious"),c("Estimate","Std. Error")]/d_impervious_si  # delata method, taylor expension g(x)=ax & s^2(g(x))=(g'(x))^2.s^(x)
+mod_coef_unscale[which(row.names(mod_coef)=="year:d_impervious"),c("Estimate","Std. Error")] <- mod_coef[which(row.names(mod_coef)=="year:d_impervious"),c("Estimate","Std. Error")]/d_impervious_si  # delta method for se, taylor expansion g(x)=ax & s^2(g(x))=(g'(x))^2.s^(x)
 mod_coef_unscale[which(row.names(mod_coef)=="year:d_tempsrping"),c("Estimate","Std. Error")] <- mod_coef[which(row.names(mod_coef)=="year:d_tempsrping"),c("Estimate","Std. Error")]/d_tempsrping_si
 mod_coef_unscale[which(row.names(mod_coef)=="year:d_tempsrpingvar"),c("Estimate","Std. Error")] <- mod_coef[which(row.names(mod_coef)=="year:d_tempsrpingvar"),c("Estimate","Std. Error")]/d_tempsrpingvar_si
 mod_coef_unscale[which(row.names(mod_coef)=="year:d_precspring"),c("Estimate","Std. Error")] <- mod_coef[which(row.names(mod_coef)=="year:d_precspring"),c("Estimate","Std. Error")]/d_precspring_si
