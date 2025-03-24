@@ -11,6 +11,13 @@ subsite_data_mainland_trend <- readRDS("output/subsite_data_mainland_trend.rds")
 
 
 press_mainland_trend_FR <- press_mainland_trend[which(press_mainland_trend$siteID %in% unique(bird_data_mainland[which(bird_data_mainland$scheme_code=="FR"),]$siteID)),]
+
+press_mainland_trend_FR$eufarm <- NA
+press_mainland_trend_FR$eufarm[which(press_mainland_trend_FR$eulandsystem_farmland_low > press_mainland_trend_FR$eulandsystem_farmland_medium & press_mainland_trend_FR$eulandsystem_farmland_low > press_mainland_trend_FR$eulandsystem_farmland_high)] <- "low"
+press_mainland_trend_FR$eufarm[which(press_mainland_trend_FR$eulandsystem_farmland_medium > press_mainland_trend_FR$eulandsystem_farmland_low & press_mainland_trend_FR$eulandsystem_farmland_medium > press_mainland_trend_FR$eulandsystem_farmland_high)] <- "medium"
+press_mainland_trend_FR$eufarm[which(press_mainland_trend_FR$eulandsystem_farmland_high > press_mainland_trend_FR$eulandsystem_farmland_low & press_mainland_trend_FR$eulandsystem_farmland_high > press_mainland_trend_FR$eulandsystem_farmland_medium)] <- "high"
+press_mainland_trend_FR$eufarm <- factor(press_mainland_trend_FR$eufarm , levels = c("low","medium","high"))
+
 press_mainland_trend_scale_FR <- press_mainland_trend_FR
 press_mainland_trend_scale_FR[,c("d_impervious","d_treedensity","d_agri",
                               "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
@@ -425,4 +432,56 @@ beta1_s4_sample <- rnorm(nb_rep,mod_coef_unscale[which(row.names(mod_coef)=="yea
   rnorm(nb_rep,mod_coef_unscale[which(row.names(mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Estimate"], sd=mod_coef_unscale[which(row.names(mod_coef)=="year:d_agri:eulandsystem_farmland_low"),"Std. Error"])*d_agri_high_s4 +
   rnorm(nb_rep,mod_coef_unscale[which(row.names(mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef_unscale[which(row.names(mod_coef)=="year:d_agri:eulandsystem_farmland_medium"),"Std. Error"])*d_agri_medium_s4 +
   rnorm(nb_rep,mod_coef_unscale[which(row.names(mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_unscale[which(row.names(mod_coef)=="year:d_agri:eulandsystem_farmland_high"),"Std. Error"])*d_agri_high_s4
+
+
+
+
+# by species type:
+
+farmland_species <- c("Alauda arvensis","Alectoris rufa","Anthus campestris","Corvus frugilegus",
+                      "Emberiza calandra","Emberiza cirlus","Galerida cristata","Lanius collurio",
+                      "Motacilla flava","Perdix perdix","Upupa epops","Buteo buteo",
+                      "Sylvia communis","Falco tinnunculus","Linaria cannabina","Lullula arborea",
+                      "Oenanthe oenanthe","Saxicola torquatus","Anthus pratensis","Emberiza citrinella",
+                      "Emberiza hortulana","Saxicola rubetra")
+forest_species <- c("Certhia familiaris","Coccothraustes coccothraustes","Periparus ater","Phylloscopus bonelli",
+                    "Phylloscopus sibilatrix","Phylloscopus trochilus","Pyrrhula pyrrhula","Dendrocopos major",
+                    "Leiopicus medius","Poecile montanus","Poecile palustris","Sitta europaea",
+                    "Certhia brachydactyla","Sylvia melanocephala","Dryocopus martius","Erithacus rubecula",
+                    "Lophophanes cristatus","Phylloscopus collybita","Regulus ignicapilla","Regulus regulus",
+                    "Troglodytes troglodytes","Turdus philomelos","Turdus viscivorus")
+
+smap_sp_mean <- read.csv("raw_data/smap_sp_mean.csv")
+species_affected <- smap_sp_mean$Species[which(!is.na(smap_sp_mean$temp) | !is.na(smap_sp_mean$urb) | !is.na(smap_sp_mean$hico) | !is.na(smap_sp_mean$forest))]
+
+pressure_FR_bird_long <- reshape2::melt(res_gam_bird_FR, id.vars=c("sci_name_out","PLS"))
+pressure_FR_bird_long <- reshape2::melt(res_gam_bird_FR[which(res_gam_bird_FR$sci_name_out %in% farmland_species),], id.vars=c("sci_name_out","PLS"))
+pressure_FR_bird_long <- reshape2::melt(res_gam_bird_FR[which(res_gam_bird_FR$sci_name_out %in% forest_species),], id.vars=c("sci_name_out","PLS"))
+pressure_FR_bird_long <- reshape2::melt(res_gam_bird_FR[which(res_gam_bird_FR$sci_name_out %in% species_affected),], id.vars=c("sci_name_out","PLS"))
+pressure_FR_bird_long <- pressure_FR_bird_long[which(!pressure_FR_bird_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
+
+
+
+ggplot(pressure_FR_bird_long[which(pressure_FR_bird_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                                                         "year:d_shannon","year:protectedarea_perc","year:d_treedensity:eulandsystem_forest_lowmedium","year:d_treedensity:eulandsystem_forest_high",
+                                                                         "year:d_agri:eulandsystem_farmland_low","year:d_agri:eulandsystem_farmland_medium",
+                                                                         "year:d_agri:eulandsystem_farmland_high","year:protectedarea_perc:protectedarea_type")),], aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
+                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
+                            "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
+  geom_density_ridges(stat = "binline",
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.5,0.5))+
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  xlab("Pressures") + ylab("Estimate") +
+  theme(legend.position = "none")
+
+ggplot(pressure_FR_bird_long[which(pressure_FR_bird_long$variable %in% c("trend_tend","trend_s1","trend_s2","trend_s3","trend_s4")),], aes(x = value, y = variable, fill = variable)) +
+  geom_density_ridges(stat = "binline",
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.5,0.5))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
+                      quantiles = 2) +
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  xlab("Pressures") + ylab("Estimate") +
+  theme(legend.position = "none")
+
 
