@@ -265,6 +265,14 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend_butterfly,tra
                                 
                                 pressure_subdata <- pressure_data[which(pressure_data$transect_id == x$transect_id),]
                                 
+                                impervious_2018 <- pressure_subdata$impervious2018
+                                treedensity_2018 <- pressure_subdata$treedensity2018
+                                agri_2018 <- pressure_subdata$agri2018
+                                tempspring_2020 <- pressure_subdata$tempspring2020
+                                tempspringvar_2020 <- pressure_subdata$tempspringvar2020
+                                precspring_2020 <- pressure_subdata$precspring2020
+                                shannon_2018 <- pressure_subdata$shannon2018
+                                
                                 d_impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13
                                 d_treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7
                                 d_agri <- (pressure_subdata$agri2018-pressure_subdata$agri2000)/19
@@ -292,7 +300,8 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend_butterfly,tra
                                 
                                 PLS <- pressure_subdata$PLS
                                 
-                                trend_result <- data.frame(d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
+                                trend_result <- data.frame(impervious_2018,treedensity_2018,agri_2018,tempspring_2020,tempspringvar_2020,precspring_2020,shannon_2018,
+                                                           d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
                                                            d_shannon,shannon,milieu,drymatter,protectedarea_perc,protectedarea_type,
                                                            eulandsystem_cat,eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
                                                            eulandsystem_forest_lowmedium,eulandsystem_forest_high,PLS)
@@ -402,13 +411,25 @@ saveRDS(site_number_species_biogeo_butterfly,"output/site_number_species_biogeo_
 
 source("functions.R")
 
+
+res_gamm_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
+                       .(species_name),.fun=gam_species_PLS1b,
+                       pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly,
+                       .progress = "text")
+res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
+
+#saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly.rds")
+
+res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.25),]
+
+
 res_gam_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
                       .(species_name),.fun=gam_species_PLS3b,
                       pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly,
                       .progress = "text")
 res_gam_butterfly <- res_gam_butterfly[which(!is.na(res_gam_butterfly$PLS)),]
 
-saveRDS(res_gam_butterfly,"output/res_gam_butterfly.rds")
+#saveRDS(res_gam_butterfly,"output/res_gam_butterfly.rds")
 
 
 dec_species_PLS <- res_gam_mainland_species_PLS_trend_butterfly
@@ -606,3 +627,63 @@ ggplot(res_gam_butterfly, aes(x= PLS, y=dev_exp, fill=PLS)) +
   geom_boxplot() +
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
   theme_minimal()
+
+
+# other representation
+
+pressure_EU_butterfly <- res_gam_butterfly[which(res_gam_butterfly$PLS=="europe"),]
+pressure_EU_butterfly <- res_gamm_butterfly_correct[which(res_gamm_butterfly_correct$PLS=="europe"),]
+pressure_EU_butterfly_long <- melt(pressure_EU_butterfly, id.vars=c("species_name","PLS"))
+pressure_EU_butterfly_long <- pressure_EU_butterfly_long[which(!pressure_EU_butterfly_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
+
+
+
+ggplot(pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                                                         "year:d_shannon","year:protectedarea_perc","year:d_treedensity:eulandsystem_forest_lowmedium","year:d_treedensity:eulandsystem_forest_high",
+                                                                         "year:d_agri:eulandsystem_farmland_low","year:d_agri:eulandsystem_farmland_medium",
+                                                                         "year:d_agri:eulandsystem_farmland_high","year:protectedarea_perc:protectedarea_type")),], aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
+                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
+                            "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
+  geom_density_ridges(stat = "binline",
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
+                      quantiles = 2) +
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  xlab("Pressures") + ylab("Estimate") +
+  theme(legend.position = "none")
+
+
+ggsave("output/pressure_trend_butterfly_eu_hist.png",
+       width = 12,
+       height = 8,
+       dpi = 300
+)
+
+
+
+
+
+
+matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity:eulandsystem_forest_lowmedium` <0 | `year:d_treedensity:eulandsystem_forest_high` < 0 | `year:d_agri:eulandsystem_farmland_low` < 0 | `year:d_agri:eulandsystem_farmland_medium` < 0 | `year:d_agri:eulandsystem_farmland_high` < 0)),
+                                                                                        nb_sp_neg_climate = length(which(`year:d_tempsrping` < 0 | `year:d_tempsrpingvar` < 0 | `year:d_precspring` < 0)),
+                                                                                        max_effect = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, "lulc", "climate"),
+                                                                                        nb_sp_neg = length(which(year < 0)),
+                                                                                        nb_sp_pos = length(which(year > 0)),
+                                                                                        nb_sp = n(),
+                                                                                        max_effect_percent = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp),
+                                                                                        min_effect_percent = ifelse(nb_sp_neg_lulc < nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp)))
+
+
+matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=max_effect, alpha=max_effect_percent), col=NA) + scale_fill_manual(values = c("lulc" = "#33a02c", "climate" = "#1f78b4")) +
+  scale_alpha_continuous(range = c(0.35, 0.95)) + theme(legend.position = "none")
+
+
+ggsave("output/main_pressure_neg_butterfly.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+

@@ -1371,6 +1371,16 @@ res_gam_bird <- res_gam_bird[which(!is.na(res_gam_bird$PLS)),]
 #saveRDS(res_gam_bird,"output/res_gam_bird.rds")
 #res_gam_bird<-readRDS("output/res_gam_bird.rds")
 
+### select good model fit and compare with PECBMS trends
+
+pecbms_trend_class <- read.csv("output/pecbms_trend_class.csv", header=TRUE)
+
+res_gamm_bird_eu <- res_gamm_bird[which(res_gamm_bird$PLS=="europe"),]
+
+res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
+
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.25),]
+
 #### Declining species per PLS
 
 dec_species_PLS <- res_gam_bird
@@ -1601,9 +1611,8 @@ ggplot(res_gam_bird, aes(x= PLS, y=dev_exp, fill=PLS)) +
 
 # other representation
 
-df_pressure_hist <- melt(res_gam_bird, id.vars=)
-
 pressure_EU_bird <- res_gam_bird[which(res_gam_bird$PLS=="europe"),]
+pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe"),]
 pressure_EU_bird_long <- melt(pressure_EU_bird, id.vars=c("sci_name_out","PLS"))
 pressure_EU_bird_long <- pressure_EU_bird_long[which(!pressure_EU_bird_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
 
@@ -1616,7 +1625,10 @@ ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d
   scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
                             "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
                             "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
-  geom_density_ridges() + xlim(c(-0.15,0.1))+
+  geom_density_ridges(stat = "binline",
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
+                      quantiles = 2) +
   theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
   xlab("Pressures") + ylab("Estimate") +
   theme(legend.position = "none")
@@ -1633,10 +1645,48 @@ ggsave("output/pressure_trend_bird_eu_hist.png",
 
 
 
+matrix_pressure_PLS <- data.frame(res_gamm_bird_correct %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity:eulandsystem_forest_lowmedium` <0 | `year:d_treedensity:eulandsystem_forest_high` < 0 | `year:d_agri:eulandsystem_farmland_low` < 0 | `year:d_agri:eulandsystem_farmland_medium` < 0 | `year:d_agri:eulandsystem_farmland_high` < 0)),
+                                                                             nb_sp_neg_climate = length(which(`year:d_tempsrping` < 0 | `year:d_tempsrpingvar` < 0 | `year:d_precspring` < 0)),
+                                                                             max_effect = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, "lulc", "climate"),
+                                                                             nb_sp_neg = length(which(year < 0)),
+                                                                             nb_sp_pos = length(which(year > 0)),
+                                                                             nb_sp = n(),
+                                                                             max_effect_percent = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp),
+                                                                             min_effect_percent = ifelse(nb_sp_neg_lulc < nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp)))
 
 
+matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
+ggplot() + geom_sf() +  
+  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=max_effect, alpha=max_effect_percent), col=NA) + scale_fill_manual(values = c("lulc" = "#33a02c", "climate" = "#1f78b4")) +
+  scale_alpha_continuous(range = c(0.35, 0.95)) + theme(legend.position = "none")
+  
+
+ggsave("output/main_pressure_neg_bird.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 
+grid_eu_mainland_biogeo_plot <- grid_eu_mainland_biogeo
+grid_eu_mainland_biogeo_plot$color <- as.character(c(rep(1,5), rep(2,5), rep(3,5), rep(4,5), rep(5,5)))#grid_eu_mainland_biogeo_plot$PLS %% 2 == 0
+poly_grid_eu_mainland_biogeo <- st_cast(grid_eu_mainland_biogeo, "POLYGON")
+poly_grid_eu_mainland_biogeo <- poly_grid_eu_mainland_biogeo[which(as.numeric(st_area(poly_grid_eu_mainland_biogeo)) > 2000000000),]
+poly_grid_eu_mainland_biogeo_center <- st_centroid(poly_grid_eu_mainland_biogeo)
+text_coord <- st_drop_geometry(poly_grid_eu_mainland_biogeo_center)
+text_coord$Long <- st_coordinates(poly_grid_eu_mainland_biogeo_center)[,1]
+text_coord$Lat <- st_coordinates(poly_grid_eu_mainland_biogeo_center)[,2]
+ggplot() + geom_sf() +  
+  geom_sf(data=grid_eu_mainland_biogeo_plot,aes(fill=color), alpha=0.5) + 
+  scale_fill_viridis_d() +
+  geom_text(data = text_coord, aes(x=Long, y=Lat, label=PLS), size = 3) +
+  theme(legend.position = "none")
+
+ggsave("output/bioregions.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 
 
