@@ -1319,6 +1319,17 @@ predict_trend_all_bird <- predict_trend_all_bird[which(!is.na(predict_trend_all_
 saveRDS(predict_trend_all_bird,"output/predict_trend_all_bird.rds")
 
 
+predict_trend_all_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
+                                .(species_name),.fun=predict_trend_butterfly,
+                                pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly,
+                                pressure_data_unscale=press_mainland_trend_butterfly,
+                                lulc_pls_short=lulc_pls_short,climate_pls=climate_pls,pa_pls_short=pa_pls_short,
+                                .progress = "text")
+predict_trend_all_butterfly <- predict_trend_all_butterfly[which(!is.na(predict_trend_all_butterfly$PLS)),]
+
+saveRDS(predict_trend_all_butterfly,"output/predict_trend_all_butterfly.rds")
+
+
 predict_trend_all_bird_eu <- predict_trend_all_bird[which(predict_trend_all_bird$PLS=="europe"),]
 
 species_habitat <- read.csv2("raw_data/Habitat_class_PECBMS.csv")
@@ -1379,6 +1390,26 @@ ggplot(europe_all, aes(x=value,y = variable)) +
   geom_point(size = 3.5, aes(color = variable)) + 
   xlab("Estimate") 
 
+europe_all_signif <- data.frame(value = c(overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                         sd = c(overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                         variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+
+ggplot(europe_all_signif, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  xlab("Estimate") 
+
 europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe")],
@@ -1394,6 +1425,26 @@ europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_bau[which(over
                               variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
 
 ggplot(europe_farmland, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  xlab("Estimate") 
+
+europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                              sd = c(overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+
+ggplot(europe_farmland_signif, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
@@ -1419,6 +1470,25 @@ ggplot(europe_forest, aes(x=value,y = variable)) +
   geom_point(size = 3.5, aes(color = variable)) + 
   xlab("Estimate") 
 
+europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                            sd = c(overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                            variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+
+ggplot(europe_forest_signif, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  xlab("Estimate") 
 
 # plot pressure change
 

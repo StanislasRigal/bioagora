@@ -3430,7 +3430,11 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                                                                }else{
                                                                                  predict_trend_i <- data.frame(trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                                                                                                                trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
-                                                                                                               trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,PLS=unique(x$PLS))
+                                                                                                               trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                                                                                               trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
+                                                                                                               trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
+                                                                                                               trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
+                                                                                                               PLS=unique(x$PLS))
                                                                                }
                                                                                  
                                                                                return(predict_trend_i)
@@ -3450,7 +3454,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                       trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                       trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                       trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                      PLS=unique(x$PLS))
+                                      PLS=NA)
     }
     
   }else{
@@ -3460,13 +3464,196 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                     trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                     trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                     trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                    PLS=unique(x$PLS))
+                                    PLS=NA)
   }
   
   return(predict_trend_all)
 }
 
 
+
+
+butterfly_data <- droplevels(subsite_data_mainland_trend_butterfly[which(subsite_data_mainland_trend_butterfly$species_name == "Aglais io"),])
+pressure_data <- press_mainland_trend_butterfly_scale
+pressure_data_unscale <- press_mainland_trend_butterfly
+site_data <- site_mainland_sf_reproj_butterfly
+min_site_number_per_species <- 60
+min_occurence_species <- 200
+family <- "quasipoisson"
+
+
+predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_unscale,site_data,
+                               lulc_pls_short,climate_pls,pa_pls_short,
+                               pressure_name = c("d_impervious","d_treedensity","d_agri",
+                                                 "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                                 "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                 "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                                 "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
+                               min_site_number_per_species = 60,
+                               min_occurence_species=200,
+                               family="quasipoisson"){
+  
+  species_press_data_year <- merge(butterfly_data, pressure_data[which(pressure_data$transect_id %in% unique(butterfly_data$transect_id) & pressure_data$year %in% unique(butterfly_data$year)),], by =c("transect_id","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("transect_id","count_corrected","year","transect_length","bms_id","Long_LAEA","Lat_LAEA",
+                                                   pressure_name,"PLS")])
+  
+  species_press_data_year_unscale <- merge(butterfly_data, pressure_data_unscale[which(pressure_data_unscale$transect_id %in% unique(butterfly_data$transect_id) & pressure_data_unscale$year %in% unique(butterfly_data$year)),], by =c("transect_id","year"), all.x=TRUE)
+  
+  poisson_df_unscale <- na.omit(species_press_data_year_unscale[,c("transect_id","count_corrected","year","transect_length","bms_id","Long_LAEA","Lat_LAEA",
+                                                                   pressure_name,"tempspring_2020","tempspringvar_2020","precspring_2020","agri_2018","shannon_2018","impervious_2018","treedensity_2018","PLS")])
+  
+  
+  poisson_df$year <- poisson_df$year - 2000
+  
+  if(length(table(poisson_df$transect_length)) > length(unique(poisson_df$bms_id))){
+    one_scheme_time_area <- 0 
+    poisson_df$transect_length <- scale(poisson_df$transect_length)
+  }else{
+    one_scheme_time_area <- 1
+  }
+  
+  poisson_df$count_corrected_scale_all <- scales::rescale(poisson_df$count_corrected)
+  
+  if(length(pressure_name) > 1){
+    formula_gam <- "count_corrected_scale_all ~ year + year:d_impervious + year:d_treedensity:eulandsystem_forest_lowmedium + year:d_treedensity:eulandsystem_forest_high +
+    year:d_agri:eulandsystem_farmland_low + year:d_agri:eulandsystem_farmland_medium + year:d_agri:eulandsystem_farmland_high +
+    year:d_tempsrping + year:d_tempsrpingvar + year:d_precspring + year:d_shannon + year:protectedarea_perc + 
+    milieu_cat + tempsrping + precspring + shannon + drymatter"
+  }else{
+    formula_gam <- paste("count_corrected_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
+  }
+  
+  col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
+                 "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_tempsrping",
+                 "year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc",
+                 "year:d_treedensity:eulandsystem_forest_lowmedium","year:d_treedensity:eulandsystem_forest_high",
+                 "year:d_agri:eulandsystem_farmland_low","year:d_agri:eulandsystem_farmland_medium",
+                 "year:d_agri:eulandsystem_farmland_high")
+  
+  if(nrow(poisson_df) >= min_occurence_species){
+    
+    ### global poisson model
+    
+    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    
+    if(global_mod$converged){
+      
+      predict_trend_europe <- predict_trend(mod=global_mod,
+                                            pressure_data_unscale,
+                                            poisson_df_unscale,
+                                            lulc_pls_short,
+                                            climate_pls,
+                                            pa_pls_short,
+                                            PLS="europe")
+      
+      unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+      
+      if_fail <- data.frame(trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+                            trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
+                            trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                            trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
+                            trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
+                            trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
+                            PLS=NA)
+      
+      predict_trend_pls <- ddply(unique_poisson_df,.(PLS),.fun=purrr::possibly(otherwise=if_fail,
+                                                                               .f=function(x,min_site_number_per_species,poisson_df){
+                                                                                 
+                                                                                 if(nrow(x) >= min_site_number_per_species){
+                                                                                   
+                                                                                   poisson_df_i <- poisson_df[which(poisson_df$PLS == unique(x$PLS)),]
+                                                                                   poisson_df_unscale_i <- poisson_df_unscale[which(poisson_df_unscale$PLS == unique(x$PLS)),]
+                                                                                   
+                                                                                   if(length(table(poisson_df_i$transect_length)) > length(unique(poisson_df_i$bms_id))){
+                                                                                     one_scheme_time_area <- 0 
+                                                                                     poisson_df_i$transect_length <- scale(poisson_df_i$transect_length)
+                                                                                   }else{
+                                                                                     one_scheme_time_area <- 1
+                                                                                   }
+                                                                                   
+                                                                                   if(length(unique(poisson_df_i$bms_id)) > 1 && one_scheme_time_area == 0){
+                                                                                     res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                           family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   }
+                                                                                   if(length(unique(poisson_df_i$bms_id)) == 1 && one_scheme_time_area == 0){
+                                                                                     res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                           family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   }
+                                                                                   if(length(unique(poisson_df_i$bms_id)) > 1 && one_scheme_time_area == 1){
+                                                                                     res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                           family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   }
+                                                                                   if(length(unique(poisson_df_i$bms_id)) == 1 && one_scheme_time_area == 1){
+                                                                                     res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                           family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   }
+                                                                                   
+                                                                                   predict_trend_i <- predict_trend(mod=res.poisson_i$gam,
+                                                                                                                    pressure_data_unscale,
+                                                                                                                    poisson_df_unscale_i,
+                                                                                                                    lulc_pls_short,
+                                                                                                                    climate_pls,
+                                                                                                                    pa_pls_short,
+                                                                                                                    PLS=unique(x$PLS))
+                                                                                   
+                                                                                 }else{
+                                                                                   predict_trend_i <- data.frame(trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+                                                                                                                 trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
+                                                                                                                 trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                                                                                                 trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
+                                                                                                                 trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
+                                                                                                                 trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
+                                                                                                                 PLS=unique(x$PLS))
+                                                                                 }
+                                                                                 
+                                                                                 return(predict_trend_i)
+                                                                               }),
+                                 min_site_number_per_species=min_site_number_per_species,poisson_df=poisson_df,
+                                 .progress="text")
+      
+      predict_trend_all <- rbind(predict_trend_pls,predict_trend_europe)
+      
+      #res.poisson_sf <- merge(grid_eu_mainland_biogeo,predict_trend_all,by="PLS")
+      #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=trend_BAU)) + scale_fill_gradient2()
+      
+    }else{
+      predict_trend_all <- data.frame(trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+                                      trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
+                                      trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                      trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
+                                      trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
+                                      trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
+                                      PLS=NA)
+    }
+    
+  }else{
+    predict_trend_all <- data.frame(trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+                                    trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
+                                    trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                    trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
+                                    trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
+                                    trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
+                                    PLS=NA)
+  }
+  
+  return(predict_trend_all)
+}
 
 
 
@@ -3490,8 +3677,28 @@ overall_mean_sd_trend <- function(data){
   mu_nfs <- mean(data$trend_nfs,na.rm=TRUE)
   var_nfs <- (sum((data$sd_nfs)^2 + (data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2
   sd_nfs <- sqrt(var_nfs)
+  mu_bau_signif <- mean(data$trend_BAU_signif,na.rm=TRUE)
+  var_bau_signif <- (sum((data$sd_BAU_signif)^2 + (data$trend_BAU_signif)^2, na.rm = TRUE))/n - mu_bau^2
+  sd_bau_signif <- sqrt(var_bau_signif)
+  mu_ssp1_signif <- mean(data$trend_SSP1_signif,na.rm=TRUE)
+  var_ssp1_signif <- (sum((data$sd_SSP1_signif)^2 + (data$trend_SSP1_signif)^2, na.rm = TRUE))/n - mu_ssp1^2
+  sd_ssp1_signif <- sqrt(var_ssp1_signif)
+  mu_ssp3_signif <- mean(data$trend_SSP3_signif,na.rm=TRUE)
+  var_ssp3_signif <- (sum((data$sd_SSP3_signif)^2 + (data$trend_SSP3_signif)^2, na.rm = TRUE))/n - mu_ssp3^2
+  sd_ssp3_signif <- sqrt(var_ssp3_signif)
+  mu_nac_signif <- mean(data$trend_nac_signif,na.rm=TRUE)
+  var_nac_signif <- (sum((data$sd_nac_signif)^2 + (data$trend_nac_signif)^2, na.rm = TRUE))/n - mu_nac^2
+  sd_nac_signif <- sqrt(var_nac_signif)
+  mu_nfn_signif <- mean(data$trend_nfn_signif,na.rm=TRUE)
+  var_nfn_signif <- (sum((data$sd_nfn_signif)^2 + (data$trend_nfn_signif)^2, na.rm = TRUE))/n - mu_nfn^2
+  sd_nfn_signif <- sqrt(var_nfn_signif)
+  mu_nfs_signif <- mean(data$trend_nfs_signif,na.rm=TRUE)
+  var_nfs_signif <- (sum((data$sd_nfs_signif)^2 + (data$trend_nfs_signif)^2, na.rm = TRUE))/n - mu_nfs^2
+  sd_nfs_signif <- sqrt(var_nfs_signif)
   return(data.frame(mu_bau,sd_bau,mu_ssp1,sd_ssp1,mu_ssp3,sd_ssp3,
-                    mu_nac,sd_nac,mu_nfn,sd_nfn,mu_nfs,sd_nfs))
+                    mu_nac,sd_nac,mu_nfn,sd_nfn,mu_nfs,sd_nfs,
+                    mu_bau_signif,sd_bau_signif,mu_ssp1_signif,sd_ssp1_signif,mu_ssp3_signif,sd_ssp3_signif,
+                    mu_nac_signif,sd_nac_signif,mu_nfn_signif,sd_nfn_signif,mu_nfs_signif,sd_nfs_signif))
 }
 
 

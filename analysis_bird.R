@@ -2257,3 +2257,42 @@ for(i in 1:length(num_site_within_bw)){
     }
   }
 }
+
+
+eu_test <- get_eurostat_geospatial(nuts_level = 3, crs="3035")
+eu_test <- eu_test[grep("FRY|PT20|PT30|ES63|ES64|ES70|IS|TR|CY|RS|AL|ME|MK", x= eu_test$NUTS_ID, invert = TRUE),]
+set.seed(1)
+eu_test$value <- rnorm(nrow(eu_test))
+eu_test$value[which(eu_test$URBN_TYPE==3)] <- eu_test$value[which(eu_test$URBN_TYPE==3)] + rnorm(nrow(eu_test[which(eu_test$URBN_TYPE==3),]), mean =-1)
+ggplot() + geom_sf() +  
+  geom_sf(data=eu_test,aes(fill=value)) + coord_sf() +
+  scale_fill_gradient2() + theme_void() +
+  theme(legend.position = "none")
+
+eu_test$nuts2 <- substr(eu_test$NUTS_ID, 1, 4)
+eu_testb <- eu_test %>% group_by(nuts2) %>% summarize(value_mean=mean(value))
+
+ggplot() + geom_sf() +  
+  geom_sf(data=eu_testb,aes(fill=value_mean)) + coord_sf() +
+  scale_fill_gradient2() + theme_void() +
+  theme(legend.position = "none")
+
+ggsave("output/eu_test_pres.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+
+
+ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_agri:eulandsystem_farmland_high")),], aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
+                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
+                            "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
+  geom_density_ridges(stat = "binline",col="white",
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.03,0.03))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
+                      quantiles = 2, col="white", linewidth=1.5) +
+  theme_ridges() + geom_vline(aes(xintercept = 0), col="white", lty=2, linewidth=1.5) +
+  xlab("Pressures") + ylab("Estimate") + theme_void()+
+  theme(legend.position = "none", text = element_blank())
