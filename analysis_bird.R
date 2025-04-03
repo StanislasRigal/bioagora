@@ -1381,6 +1381,10 @@ res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
 
 res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.25),]
 
+unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
+
+
+
 #### Declining species per PLS
 
 dec_species_PLS <- res_gam_bird
@@ -1613,7 +1617,9 @@ ggplot(res_gam_bird, aes(x= PLS, y=dev_exp, fill=PLS)) +
 
 pressure_EU_bird <- res_gam_bird[which(res_gam_bird$PLS=="europe"),]
 pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe"),]
-pressure_EU_bird_long <- melt(pressure_EU_bird, id.vars=c("sci_name_out","PLS"))
+pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")])),]
+pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
+pressure_EU_bird_long <- reshape::melt(pressure_EU_bird, id.vars=c("sci_name_out","PLS"))
 pressure_EU_bird_long <- pressure_EU_bird_long[which(!pressure_EU_bird_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
 
 
@@ -1658,7 +1664,7 @@ matrix_pressure_PLS <- data.frame(res_gamm_bird_correct %>% group_by(PLS) %>% su
 matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=max_effect, alpha=max_effect_percent), col=NA) + scale_fill_manual(values = c("lulc" = "#33a02c", "climate" = "#1f78b4")) +
-  scale_alpha_continuous(range = c(0.35, 0.95)) + theme(legend.position = "none")
+  scale_alpha_continuous(range = c(0.35, 0.95)) #+ theme(legend.position = "none")
   
 
 ggsave("output/main_pressure_neg_bird.png",

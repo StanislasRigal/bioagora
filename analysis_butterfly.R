@@ -633,7 +633,9 @@ ggplot(res_gam_butterfly, aes(x= PLS, y=dev_exp, fill=PLS)) +
 
 pressure_EU_butterfly <- res_gam_butterfly[which(res_gam_butterfly$PLS=="europe"),]
 pressure_EU_butterfly <- res_gamm_butterfly_correct[which(res_gamm_butterfly_correct$PLS=="europe"),]
-pressure_EU_butterfly_long <- melt(pressure_EU_butterfly, id.vars=c("species_name","PLS"))
+pressure_EU_butterfly <- res_gamm_butterfly_correct[which(res_gamm_butterfly_correct$PLS=="europe" & res_gamm_butterfly_correct$species_name %in% grassland_species),]
+pressure_EU_butterfly <- res_gamm_butterfly_correct[which(res_gamm_butterfly_correct$PLS=="europe" & res_gamm_butterfly_correct$species_name %in% woodland_ind_species),]
+pressure_EU_butterfly_long <- reshape::melt(pressure_EU_butterfly, id.vars=c("species_name","PLS"))
 pressure_EU_butterfly_long <- pressure_EU_butterfly_long[which(!pressure_EU_butterfly_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
 
 
@@ -678,7 +680,7 @@ matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %
 matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=max_effect, alpha=max_effect_percent), col=NA) + scale_fill_manual(values = c("lulc" = "#33a02c", "climate" = "#1f78b4")) +
-  scale_alpha_continuous(range = c(0.35, 0.95)) + theme(legend.position = "none")
+  scale_alpha_continuous(range = c(0.35, 0.95)) #+ theme(legend.position = "none")
 
 
 ggsave("output/main_pressure_neg_butterfly.png",
