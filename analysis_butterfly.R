@@ -418,7 +418,16 @@ res_gamm_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
                        .progress = "text")
 res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
 
-#saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly.rds")
+#saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly1.rds")
+
+
+res_gamm_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
+                            .(species_name),.fun=gam_species_PLS2b,
+                            pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly,
+                            .progress = "text")
+res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
+
+#saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly2.rds")
 
 res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.25),]
 
@@ -647,6 +656,22 @@ ggplot(pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in%
   scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
                             "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
                             "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
+  geom_density_ridges(stat = "binline",
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
+                      quantiles = 2) +
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  xlab("Pressures") + ylab("Estimate") +
+  theme(legend.position = "none")
+
+ggplot(pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                                                                   "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                                                                   "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
+                                                                                   "year:eulandsystem_farmland_high")),], aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
+                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity" = "D tree density on trend","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests on trend", "year:eulandsystem_forest_high" = "High intensive forests on trend",
+                            "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline",
                       bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
   stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,

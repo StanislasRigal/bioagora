@@ -1330,15 +1330,31 @@ predict_trend_all_butterfly <- predict_trend_all_butterfly[which(!is.na(predict_
 saveRDS(predict_trend_all_butterfly,"output/predict_trend_all_butterfly.rds")
 
 
-predict_trend_all_bird_eu <- predict_trend_all_bird[which(predict_trend_all_bird$PLS=="europe"),]
+
+
+predict_trend_all_bird_correct <- merge(res_gamm_bird_correct,predict_trend_all_bird, by=c("sci_name_out","PLS"),all.x=TRUE)
+
+predict_trend_all_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe"),]
+
 
 species_habitat <- read.csv2("raw_data/Habitat_class_PECBMS.csv")
-predict_trend_farmland <- predict_trend_all_bird[which(predict_trend_all_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")])),]
-predict_trend_forest <- predict_trend_all_bird[which(predict_trend_all_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
+predict_trend_farmland <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")])),]
+predict_trend_forest <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
 
-overall_trend_all <- ddply(predict_trend_all_bird,
+
+predict_trend_all_bird_correct <- merge(res_gamm_butterfly_correct,predict_trend_all_butterfly, by=c("species_name","PLS"),all.x=TRUE)
+predict_trend_all_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe"),]
+predict_trend_farmland <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$species_name %in% grassland_species),]
+predict_trend_forest <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$species_name %in% woodland_ind_species),]
+
+
+overall_trend_all <- ddply(predict_trend_all_bird_correct,
                                 .(PLS),.fun=overall_mean_sd_trend,
                                 .progress = "text")
+
+overall_trend_all_eu <- ddply(predict_trend_all_bird_eu,
+                           .(PLS),.fun=overall_mean_sd_trend,
+                           .progress = "text")
 
 overall_trend_farmland <- ddply(predict_trend_farmland,
                                 .(PLS),.fun=overall_mean_sd_trend,

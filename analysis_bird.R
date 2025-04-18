@@ -1359,7 +1359,16 @@ res_gamm_bird <- ddply(subsite_data_mainland_trend,
                       .progress = "text")
 res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
 
-#saveRDS(res_gamm_bird,"output/res_gamm_bird.rds")
+#saveRDS(res_gamm_bird,"output/res_gamm_bird1.rds")
+
+res_gamm_bird <- ddply(subsite_data_mainland_trend,
+                       .(sci_name_out),.fun=gam_species_PLS2,
+                       pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                       .progress = "text")
+res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
+
+#saveRDS(res_gamm_bird,"output/res_gamm_bird2.rds")
+
 #res_gamm_bird<-readRDS("output/res_gamm_bird.rds")
 
 res_gam_bird <- ddply(subsite_data_mainland_trend,
@@ -1631,6 +1640,23 @@ ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d
   scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
                             "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
                             "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
+  geom_density_ridges(stat = "binline",
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
+                      quantiles = 2) +
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  xlab("Pressures") + ylab("Estimate") +
+  theme(legend.position = "none")
+
+
+ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                                                                   "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                                                                   "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
+                                                                                   "year:eulandsystem_farmland_high")),], aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
+                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity" = "D tree density on trend","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests on trend", "year:eulandsystem_forest_high" = "High intensive forests on trend",
+                            "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline",
                       bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
   stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
@@ -2267,19 +2293,27 @@ for(i in 1:length(num_site_within_bw)){
 
 eu_test <- get_eurostat_geospatial(nuts_level = 3, crs="3035")
 eu_test <- eu_test[grep("FRY|PT20|PT30|ES63|ES64|ES70|IS|TR|CY|RS|AL|ME|MK", x= eu_test$NUTS_ID, invert = TRUE),]
+
+agri_prod <- read.csv("raw_data/estat_agr_r_accts_filtered_en.csv")
+agri_prod$nuts2 <- substr(agri_prod$geo, 1, 4)
+
 set.seed(1)
 eu_test$value <- rnorm(nrow(eu_test))
 eu_test$value[which(eu_test$URBN_TYPE==3)] <- eu_test$value[which(eu_test$URBN_TYPE==3)] + rnorm(nrow(eu_test[which(eu_test$URBN_TYPE==3),]), mean =-1)
 ggplot() + geom_sf() +  
-  geom_sf(data=eu_test,aes(fill=value)) + coord_sf() +
+  geom_sf(data=eu_test,aes(fill=value), col=NA) + coord_sf() +
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2() + theme_void() +
   theme(legend.position = "none")
 
 eu_test$nuts2 <- substr(eu_test$NUTS_ID, 1, 4)
-eu_testb <- eu_test %>% group_by(nuts2) %>% summarize(value_mean=mean(value))
+eu_testb <- eu_test %>% group_by(nuts2) %>% summarize(value_mean=mean(value), type=mean(URBN_TYPE))
+eu_testb <- merge(eu_testb,agri_prod, by="nuts2", all.x=TRUE)
+eu_testb$OBS_VALUE[which(is.na(eu_testb$OBS_VALUE))] <- mean(eu_testb$OBS_VALUE, na.rm=TRUE)
 
 ggplot() + geom_sf() +  
-  geom_sf(data=eu_testb,aes(fill=value_mean)) + coord_sf() +
+  geom_sf(data=eu_testb,aes(fill=OBS_VALUE), col=NA) + coord_sf() +
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2() + theme_void() +
   theme(legend.position = "none")
 
@@ -2289,6 +2323,25 @@ ggsave("output/eu_test_pres.png",
        dpi = 300
 )
 
+eu_testc <- st_intersection(overall_trend_farmland_sf,eu_testb)
+eu_testc <- eu_testc %>% group_by(nuts2) %>% summarize(prod_mean=mean(OBS_VALUE),
+                                                       biodiv_mean_bau = mean(mu_bau_signif),
+                                                       biodiv_mean_ssp1 = mean(mu_ssp1_signif),
+                                                       biodiv_mean_nfn = mean(mu_nfn_signif))
+eu_testc$biodiv_mean_bau[which(is.na(eu_testc$biodiv_mean_bau))] <- 0
+eu_testc$biodiv_mean_ssp1[which(is.na(eu_testc$biodiv_mean_ssp1))] <- 0
+eu_testc$biodiv_mean_nfn[which(is.na(eu_testc$biodiv_mean_nfn))] <- 0
+
+eu_testc$prod_mean_bau <- eu_testc$prod_mean + 25*eu_testc$biodiv_mean_bau*eu_testc$prod_mean
+eu_testc$prod_mean_ssp1 <- eu_testc$prod_mean + 25*eu_testc$biodiv_mean_ssp1*eu_testc$prod_mean
+eu_testc$prod_mean_nfn <- eu_testc$prod_mean + 25*eu_testc$biodiv_mean_nfn*eu_testc$prod_mean
+
+
+ggplot() + geom_sf() +  
+  geom_sf(data=eu_testc,aes(fill=prod_mean), col=NA) + coord_sf() +
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2() + theme_void() +
+  theme(legend.position = "none")
 
 
 ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_agri:eulandsystem_farmland_high")),], aes(x = value, y = variable, fill = variable)) +

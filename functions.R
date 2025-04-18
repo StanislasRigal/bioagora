@@ -1707,6 +1707,228 @@ gam_species_PLS1 <- function(bird_data,pressure_data,site_data,
 
 
 
+gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
+                             pressure_name = c("d_impervious","d_treedensity","d_agri",
+                                               "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                               "d_shannon","shannon","drymatter","protectedarea_perc",
+                                               "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                               "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
+                             min_site_number_per_species = 60,
+                             min_occurence_species=200,
+                             family="quasipoisson"){
+  
+  species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
+                                                   pressure_name,"PLS")])
+  
+  poisson_df$year <- poisson_df$year - min(poisson_df$year)
+  
+  if(length(table(poisson_df$area_sampled_m2)) > length(unique(poisson_df$scheme_code))){
+    one_scheme_time_area <- 0 
+    poisson_df$area_sampled_m2 <- scale(poisson_df$area_sampled_m2)
+  }else{
+    one_scheme_time_area <- 1
+  }
+  
+  poisson_df$count_scale_all <- scales::rescale(poisson_df$count)
+  
+  if(length(pressure_name) > 1){
+    formula_gam <- "count_scale_all ~ year + year:d_impervious + year:d_treedensity +
+    year:eulandsystem_forest_lowmedium + year:eulandsystem_forest_high +
+    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_medium + year:eulandsystem_farmland_high +
+    year:d_tempsrping + year:d_tempsrpingvar + year:d_precspring + year:d_shannon + year:protectedarea_perc +
+    milieu_cat + tempsrping + precspring + shannon + drymatter"
+  }else{
+    formula_gam <- paste("count_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
+  }
+  
+  col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
+                 "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_treedensity",
+                 "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
+                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                 "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc")
+  
+  if(nrow(poisson_df) >= min_occurence_species){
+    
+    ### global poisson model (gamm too resource consumming over the whole Europe)
+    
+    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    
+    #global_vif <- max(car::vif(lm(as.formula(formula_gam), data=poisson_df), type="predictor")$GVIF)
+    
+    #res_data <- merge(site_data,data.frame(siteID=poisson_df$siteID,year=poisson_df$year,res=residuals(global_mod,type="deviance")),by="siteID")
+    #gam.check(global_mod)
+    #ggplot(grid_eu_mainland_outline) +  geom_sf() + geom_sf(data=res_data,aes(col=res), size=0.5) + scale_color_gradient2() + theme_minimal()
+    
+    if(global_mod$converged){
+      
+      unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+      
+      if_fail <- rbind(matrix(NA,(nrow=length(col_names)+1),ncol=4),c(0,rep(0,3)))
+      row.names(if_fail) <- c(col_names,"dev_exp","n_obs")
+      
+      result_all_site <- daply(unique_poisson_df,.(PLS),.fun=purrr::possibly(otherwise=if_fail,
+                                                                             .f=function(x,min_site_number_per_species,poisson_df){
+                                                                               
+                                                                               if(nrow(x) >= min_site_number_per_species){
+                                                                                 
+                                                                                 poisson_df_i <- poisson_df[which(poisson_df$PLS == unique(x$PLS)),]
+                                                                                 poisson_df_i$year <- poisson_df_i$year - min(poisson_df_i$year)
+                                                                                 
+                                                                                 if(length(table(poisson_df_i$area_sampled_m2)) > length(unique(poisson_df_i$scheme_code))){
+                                                                                   one_scheme_time_area <- 0 
+                                                                                   poisson_df_i$area_sampled_m2 <- scale(poisson_df_i$area_sampled_m2)
+                                                                                 }else{
+                                                                                   one_scheme_time_area <- 1
+                                                                                 }
+                                                                                 
+                                                                                 if(length(unique(poisson_df_i$scheme_code)) > 1 && one_scheme_time_area == 0){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(siteID=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("scheme_code|area_sampled_m2",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 if(length(unique(poisson_df_i$scheme_code)) == 1 && one_scheme_time_area == 0){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(siteID=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("area_sampled_m2",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 if(length(unique(poisson_df_i$scheme_code)) > 1 && one_scheme_time_area == 1){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(siteID=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("scheme_code",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 if(length(unique(poisson_df_i$scheme_code)) == 1 && one_scheme_time_area == 1){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(siteID=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("no_",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 
+                                                                                 if(nrow(result_i) == length(col_names)){
+                                                                                   result_site <- result_i
+                                                                                 }else{
+                                                                                   row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(result_i)))), ncol=1)
+                                                                                   row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(result_i)))]
+                                                                                   result_i_complet <- merge(result_i,row_to_add,by="row.names",all=TRUE)
+                                                                                   result_i_complet <- result_i_complet[match(col_names, result_i_complet$Row.names),]
+                                                                                   result_i_complet <- as.matrix(result_i_complet[2:5])
+                                                                                   result_site <- result_i_complet
+                                                                                 }
+                                                                                 result_site <- rbind(result_site,c(dev_exp,rep(0,3)))
+                                                                                 result_site <- rbind(result_site,c(n_obs,rep(0,3)))
+                                                                                 
+                                                                               }else{
+                                                                                 n_obs <- nrow(poisson_df[which(poisson_df$PLS == unique(x$PLS)),])
+                                                                                 result_site <- matrix(NA,(nrow=length(col_names)+1),ncol=4)
+                                                                                 result_site <- rbind(result_site,c(n_obs,rep(0,3)))
+                                                                               }
+                                                                               
+                                                                               row.names(result_site) <- c(col_names,"dev_exp","n_obs")
+                                                                               
+                                                                               return(result_site)
+                                                                             }),
+                               min_site_number_per_species=min_site_number_per_species,poisson_df=poisson_df,
+                               .progress="text")
+      
+      if(!is.na(dim(result_all_site)[3])){
+        result_all_site <- aperm(result_all_site, c(2,3,1))
+        
+        if(dim(result_all_site)[3] > 1){
+          res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1,])))
+          res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4,])))
+        }
+        if(dim(result_all_site)[3] == 1){
+          res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1])))
+          res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4])))
+        }
+      }
+      
+      if(is.na(dim(result_all_site)[3])){
+        res.poisson_df <- data.frame(matrix(NA,nrow=1,ncol=(length(col_names)+2)))
+        res.poisson_pval <- matrix(1,nrow=1,ncol=(length(col_names)+2))
+      }
+      
+      
+      
+      res.poisson_df[res.poisson_pval > 0.05] <- NA 
+      
+      if(is.na(dim(result_all_site)[3])){
+        
+        res.poisson_df$PLS <- NA
+        
+      }else{
+        
+        res.poisson_df$PLS <- gsub("X","",row.names(res.poisson_df))
+        
+      }
+      
+      global_mod_coef <- summary(global_mod)$p.table[grep("scheme_code|area_sampled_m2|time_effort|no_",row.names(summary(global_mod)$p.table),invert = TRUE),]
+      
+      if(nrow(global_mod_coef) < length(col_names)){
+        row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(global_mod_coef)))), ncol=1)
+        row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(global_mod_coef)))]
+        global_mod_coef_complet <- merge(global_mod_coef,row_to_add,by="row.names",all=TRUE)
+        global_mod_coef_complet <- global_mod_coef_complet[match(col_names, global_mod_coef_complet$Row.names),]
+        global_mod_coef_complet <- as.matrix(global_mod_coef_complet[2:5])
+        global_mod_coef <- global_mod_coef_complet
+      }
+      
+      global_mod_coef <- rbind(global_mod_coef,c(summary(global_mod)$dev.expl,rep(0,3)),c(summary(global_mod)$n,rep(0,3)))
+      
+      global_mod_coef1 <- global_mod_coef[,1]
+      global_mod_coef1[which(global_mod_coef[,4] > 0.05)] <- NA
+      global_mod_df <- data.frame(t(global_mod_coef1))
+      names(global_mod_df) <- c(col_names,"dev_exp","n_obs")
+      global_mod_df$PLS <- "europe"
+      
+      res.poisson_df <- rbind(res.poisson_df,global_mod_df)
+      
+      #res.poisson_sf <- merge(grid_eu_mainland_biogeo,res.poisson_df,by="PLS")
+      #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=exp(`treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
+      
+    }else{
+      res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
+      names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
+      res.poisson_df$PLS <- NA
+    }
+    
+  }else{
+    res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
+    names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
+    res.poisson_df$PLS <- NA
+  }
+  
+  return(res.poisson_df)
+}
+
+
 gam_species_PLS3 <- function(bird_data,pressure_data,site_data,
                              pressure_name = c("d_impervious","d_treedensity","d_agri",
                                                "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
@@ -2018,6 +2240,228 @@ gam_species_PLS1b <- function(butterfly_data,pressure_data,site_data,
                                                                                if(nrow(x) >= min_site_number_per_species){
                                                                                  
                                                                                  poisson_df_i <- poisson_df[which(poisson_df$PLS == unique(x$PLS)),]
+                                                                                 
+                                                                                 if(length(table(poisson_df_i$transect_length)) > length(unique(poisson_df_i$bms_id))){
+                                                                                   one_scheme_time_area <- 0 
+                                                                                   poisson_df_i$transect_length <- scale(poisson_df_i$transect_length)
+                                                                                 }else{
+                                                                                   one_scheme_time_area <- 1
+                                                                                 }
+                                                                                 
+                                                                                 if(length(unique(poisson_df_i$bms_id)) > 1 && one_scheme_time_area == 0){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("bms_id|transect_length",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 if(length(unique(poisson_df_i$bms_id)) == 1 && one_scheme_time_area == 0){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("transect_length",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 if(length(unique(poisson_df_i$bms_id)) > 1 && one_scheme_time_area == 1){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("bms_id",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 if(length(unique(poisson_df_i$bms_id)) == 1 && one_scheme_time_area == 1){
+                                                                                   res.poisson_i <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                                                                                                         family=family, data=poisson_df_i,random=list(transect_id=~1))
+                                                                                   result_i <- summary(res.poisson_i$gam)$p.table
+                                                                                   dev_exp <- summary(res.poisson_i$gam)$r.sq
+                                                                                   n_obs <- summary(res.poisson_i$gam)$n
+                                                                                   result_i <- as.matrix(result_i[grep("no_",row.names(result_i),invert = TRUE),])
+                                                                                 }
+                                                                                 
+                                                                                 if(nrow(result_i) == length(col_names)){
+                                                                                   result_site <- result_i
+                                                                                 }else{
+                                                                                   row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(result_i)))), ncol=1)
+                                                                                   row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(result_i)))]
+                                                                                   result_i_complet <- merge(result_i,row_to_add,by="row.names",all=TRUE)
+                                                                                   result_i_complet <- result_i_complet[match(col_names, result_i_complet$Row.names),]
+                                                                                   result_i_complet <- as.matrix(result_i_complet[2:5])
+                                                                                   result_site <- result_i_complet
+                                                                                 }
+                                                                                 result_site <- rbind(result_site,c(dev_exp,rep(0,3)))
+                                                                                 result_site <- rbind(result_site,c(n_obs,rep(0,3)))
+                                                                                 
+                                                                               }else{
+                                                                                 n_obs <- nrow(poisson_df[which(poisson_df$PLS == unique(x$PLS)),])
+                                                                                 result_site <- matrix(NA,(nrow=length(col_names)+1),ncol=4)
+                                                                                 result_site <- rbind(result_site,c(n_obs,rep(0,3)))
+                                                                               }
+                                                                               
+                                                                               row.names(result_site) <- c(col_names,"dev_exp","n_obs")
+                                                                               
+                                                                               return(result_site)
+                                                                             }),
+                               min_site_number_per_species=min_site_number_per_species,poisson_df=poisson_df,
+                               .progress="text")
+      
+      if(!is.na(dim(result_all_site)[3])){
+        result_all_site <- aperm(result_all_site, c(2,3,1))
+        
+        if(dim(result_all_site)[3] > 1){
+          res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1,])))
+          res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4,])))
+        }
+        if(dim(result_all_site)[3] == 1){
+          res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1])))
+          res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4])))
+        }
+      }
+      
+      if(is.na(dim(result_all_site)[3])){
+        res.poisson_df <- data.frame(matrix(NA,nrow=1,ncol=(length(col_names)+2)))
+        res.poisson_pval <- matrix(1,nrow=1,ncol=(length(col_names)+2))
+      }
+      
+      
+      
+      res.poisson_df[res.poisson_pval > 0.05] <- NA 
+      
+      if(is.na(dim(result_all_site)[3])){
+        
+        res.poisson_df$PLS <- NA
+        
+      }else{
+        
+        res.poisson_df$PLS <- gsub("X","",row.names(res.poisson_df))
+        
+      }
+      
+      global_mod_coef <- summary(global_mod)$p.table[grep("bms_id|transect_length|time_effort|no_",row.names(summary(global_mod)$p.table),invert = TRUE),]
+      
+      if(nrow(global_mod_coef) < length(col_names)){
+        row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(global_mod_coef)))), ncol=1)
+        row.names(row_to_add) <- col_names[which(!(col_names %in% row.names(global_mod_coef)))]
+        global_mod_coef_complet <- merge(global_mod_coef,row_to_add,by="row.names",all=TRUE)
+        global_mod_coef_complet <- global_mod_coef_complet[match(col_names, global_mod_coef_complet$Row.names),]
+        global_mod_coef_complet <- as.matrix(global_mod_coef_complet[2:5])
+        global_mod_coef <- global_mod_coef_complet
+      }
+      
+      global_mod_coef <- rbind(global_mod_coef,c(summary(global_mod)$dev.expl,rep(0,3)),c(summary(global_mod)$n,rep(0,3)))
+      
+      global_mod_coef1 <- global_mod_coef[,1]
+      global_mod_coef1[which(global_mod_coef[,4] > 0.05)] <- NA
+      global_mod_df <- data.frame(t(global_mod_coef1))
+      names(global_mod_df) <- c(col_names,"dev_exp","n_obs")
+      global_mod_df$PLS <- "europe"
+      
+      res.poisson_df <- rbind(res.poisson_df,global_mod_df)
+      
+      #res.poisson_sf <- merge(grid_eu_mainland_biogeo,res.poisson_df,by="PLS")
+      #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=exp(`treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
+      
+    }else{
+      res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
+      names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
+      res.poisson_df$PLS <- NA
+    }
+    
+  }else{
+    res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
+    names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
+    res.poisson_df$PLS <- NA
+  }
+  
+  return(res.poisson_df)
+}
+
+
+gam_species_PLS2b <- function(butterfly_data,pressure_data,site_data,
+                              pressure_name = c("d_impervious","d_treedensity","d_agri",
+                                                "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                                "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                                "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
+                              min_site_number_per_species = 60,
+                              min_occurence_species=200,
+                              family="quasipoisson"){
+  
+  species_press_data_year <- merge(butterfly_data, pressure_data[which(pressure_data$transect_id %in% unique(butterfly_data$transect_id) & pressure_data$year %in% unique(butterfly_data$year)),], by =c("transect_id","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("transect_id","count_corrected","year","transect_length","bms_id","Long_LAEA","Lat_LAEA",
+                                                   pressure_name,"PLS")])
+  
+  poisson_df$year <- poisson_df$year - min(poisson_df$year)
+  
+  if(length(table(poisson_df$transect_length)) > length(unique(poisson_df$bms_id))){
+    one_scheme_time_area <- 0 
+    poisson_df$transect_length <- scale(poisson_df$transect_length)
+  }else{
+    one_scheme_time_area <- 1
+  }
+  
+  poisson_df$count_corrected_scale_all <- scales::rescale(poisson_df$count_corrected)
+  
+  if(length(pressure_name) > 1){
+    formula_gam <- "count_corrected_scale_all ~ year + year:d_impervious + year:d_treedensity +
+    year:eulandsystem_forest_lowmedium + year:eulandsystem_forest_high +
+    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_medium + year:eulandsystem_farmland_high +
+    year:d_tempsrping + year:d_tempsrpingvar + year:d_precspring + year:d_shannon + year:protectedarea_perc +
+    milieu_cat + tempsrping + precspring + shannon + drymatter"
+  }else{
+    formula_gam <- paste("count_corrected_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
+  }
+  
+  col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
+                 "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_treedensity",
+                 "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
+                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                 "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc")
+  
+  if(nrow(poisson_df) >= min_occurence_species){
+    
+    ### global poisson model (gamm too resource consumming over the whole Europe)
+    
+    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    
+    #global_vif <- max(car::vif(lm(as.formula(formula_gam), data=poisson_df), type="predictor")$GVIF)
+    
+    #res_data <- merge(site_data,data.frame(transect_id=poisson_df$transect_id,year=poisson_df$year,res=residuals(global_mod,type="deviance")),by="transect_id")
+    #gam.check(global_mod)
+    #ggplot(grid_eu_mainland_outline) +  geom_sf() + geom_sf(data=res_data,aes(col=res), size=0.5) + scale_color_gradient2() + theme_minimal()
+    
+    if(global_mod$converged){
+      
+      unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
+      
+      if_fail <- rbind(matrix(NA,(nrow=length(col_names)+1),ncol=4),c(0,rep(0,3)))
+      row.names(if_fail) <- c(col_names,"dev_exp","n_obs")
+      
+      result_all_site <- daply(unique_poisson_df,.(PLS),.fun=purrr::possibly(otherwise=if_fail,
+                                                                             .f=function(x,min_site_number_per_species,poisson_df){
+                                                                               
+                                                                               if(nrow(x) >= min_site_number_per_species){
+                                                                                 
+                                                                                 poisson_df_i <- poisson_df[which(poisson_df$PLS == unique(x$PLS)),]
+                                                                                 poisson_df_i$year <- poisson_df_i$year - min(poisson_df_i$year)
                                                                                  
                                                                                  if(length(table(poisson_df_i$transect_length)) > length(unique(poisson_df_i$bms_id))){
                                                                                    one_scheme_time_area <- 0 
