@@ -681,34 +681,92 @@ ggplot(pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in%
   theme(legend.position = "none")
 
 
+pressure_EU_butterfly_long_d <- pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                                                                             "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                                                                             "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
+                                                                                             "year:eulandsystem_farmland_high")),]
+
+pressure_EU_butterfly_long_d$variable <- factor(pressure_EU_butterfly_long_d$variable , levels = c("year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_impervious",
+                                                                                         "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                                                                         "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
+                                                                                         "year:eulandsystem_farmland_high"))
+
+ggplot(pressure_EU_butterfly_long_d, aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
+                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity" = "D tree density on trend","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests on trend", "year:eulandsystem_forest_high" = "High intensive forests on trend",
+                            "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
+  geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.1,0.1))+
+  scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
+                               "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
+                               "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
+                               "year:eulandsystem_farmland_high"="#b2df8a")) +
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  theme(legend.position = "none", axis.title = element_blank())
+
+
 ggsave("output/pressure_trend_butterfly_eu_hist.png",
-       width = 12,
-       height = 8,
+       width = 6,
+       height = 6,
        dpi = 300
 )
 
 
+pressure_EU_butterfly_long_s <- pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in% c("milieu_catopenland","milieu_caturban","tempsrping",
+                                                                                             "precspring","shannon","drymatter")),]
+
+pressure_EU_butterfly_long_s$variable <- factor(pressure_EU_butterfly_long_s$variable , levels = c("tempsrping","precspring","milieu_catopenland",
+                                                                                         "milieu_caturban","shannon","drymatter"))
+
+ggplot(pressure_EU_butterfly_long_s, aes(x = value, y = variable, fill = variable)) +
+  scale_y_discrete(labels=c("tempsrping" = "Temperature on abundance","precspring"= "Precipitation on abundance","milieu_catopenland" = "Openland vs forest on abundance",
+                            "milieu_caturban" = "Urban vs forest on abundance","shannon" = "Landscape diversity on abundance","drymatter" = "Productivity on abundance")) + 
+  geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-5,5))+
+  scale_fill_manual(values = c("tempsrping"="#1f78b4","precspring"="#1f78b4","milieu_catopenland"="#33a02c","milieu_catothers"="#33a02c",
+                               "milieu_caturban"="#33a02c","shannon"="#33a02c","drymatter"="#33a02c")) +
+  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
+  xlab("Pressures") + ylab("Estimate") +
+  theme(legend.position = "none")
 
 
 
 
-matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity:eulandsystem_forest_lowmedium` <0 | `year:d_treedensity:eulandsystem_forest_high` < 0 | `year:d_agri:eulandsystem_farmland_low` < 0 | `year:d_agri:eulandsystem_farmland_medium` < 0 | `year:d_agri:eulandsystem_farmland_high` < 0)),
-                                                                                        nb_sp_neg_climate = length(which(`year:d_tempsrping` < 0 | `year:d_tempsrpingvar` < 0 | `year:d_precspring` < 0)),
-                                                                                        max_effect = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, "lulc", "climate"),
-                                                                                        nb_sp_neg = length(which(year < 0)),
-                                                                                        nb_sp_pos = length(which(year > 0)),
-                                                                                        nb_sp = n(),
-                                                                                        max_effect_percent = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp),
-                                                                                        min_effect_percent = ifelse(nb_sp_neg_lulc < nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp)))
+
+matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity` <0 |`year:d_agri` < 0)),
+                                                                                             nb_sp_neg_lulc_int = length(which(`year:eulandsystem_farmland_high` < 0 | `year:eulandsystem_forest_high` < 0)),
+                                                                                             nb_sp_neg_climate = length(which(`year:d_tempsrping` < 0 | `year:d_tempsrpingvar` < 0 | `year:d_precspring` < 0)),
+                                                                                             #max_effect = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, "lulc", "climate"),
+                                                                                             nb_sp_neg = length(which(year < 0)),
+                                                                                             nb_sp_pos = length(which(year > 0)),
+                                                                                             nb_sp = n(),
+                                                                                             perc_sp_neg_lulc = nb_sp_neg_lulc/nb_sp,
+                                                                                             perc_sp_neg_lulc_int = nb_sp_neg_lulc_int/nb_sp,
+                                                                                             perc_sp_neg_climate = nb_sp_neg_climate/nb_sp))
+                                                                                             #max_effect_percent = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp),
+                                                                                             #min_effect_percent = ifelse(nb_sp_neg_lulc < nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp)))
 
 
 matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
-ggplot() + geom_sf() +  
-  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=max_effect, alpha=max_effect_percent), col=NA) + scale_fill_manual(values = c("lulc" = "#33a02c", "climate" = "#1f78b4")) +
-  scale_alpha_continuous(range = c(0.35, 0.95)) #+ theme(legend.position = "none")
+ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
+  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc), col=NA) + 
+  scale_fill_gradient(low= "white",high = "#33a02c") +
+  theme_minimal() + theme(legend.title = element_blank())
+ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
+  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc_int), col=NA) + 
+  scale_fill_gradient(low= "white",high = "#b2df8a") +
+  theme_minimal() + theme(legend.title = element_blank())
+ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
+  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_climate), col=NA) + 
+  scale_fill_gradient(low= "white",high = "#1f78b4") +
+  theme_minimal() + theme(legend.title = element_blank())
+ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
+  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=nb_sp), col=NA) + 
+  scale_fill_gradient(low= "white",high = "#fb9a99") +
+  theme_minimal() + theme(legend.title = element_blank())
 
-
-ggsave("output/main_pressure_neg_butterfly.png",
+ggsave("output/main_pressure_neg_butterfly_lulc.png",
        width = 8,
        height = 8,
        dpi = 300
