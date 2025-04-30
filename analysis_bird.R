@@ -1305,7 +1305,7 @@ get_upper_tri <- function(test_multicor){
   return(test_multicor)
 }
 test_multicor <- get_upper_tri(test_multicor)
-test_multicor <- melt(test_multicor, na.rm = TRUE)
+test_multicor <- reshape2::melt(test_multicor, na.rm = TRUE)
 ggplot(data = test_multicor, aes(Var2, Var1, fill = value))+
   geom_tile(color = "white")+
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
@@ -1392,6 +1392,73 @@ res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.25),]
 
 unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
 
+
+### chack with Benoit a priori expectation
+
+expected_effect <- read.csv2("raw_data/pressions_oiseaux.csv")
+
+obs_vs_expected <- merge(res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe"),],expected_effect, by.x = "sci_name_out", by.y="Species", all.x=TRUE)
+
+obs_vs_expected$Augmentation.des.températures <- factor(obs_vs_expected$Augmentation.des.températures, levels = c("--","-","0","+","++"))
+obs_vs_expected$Augmentation.de.l.artificialisation <- factor(obs_vs_expected$Augmentation.de.l.artificialisation, levels = c("--","-","0","+","++"))
+obs_vs_expected$Augmentation.du.couvert.forestier <- factor(obs_vs_expected$Augmentation.du.couvert.forestier, levels = c("--","-","0","+","++"))
+obs_vs_expected$Intensification.de.l.agriculture <- factor(obs_vs_expected$Intensification.de.l.agriculture, levels = c("--","-","0","+","++"))
+obs_vs_expected$Diversité.des.paysages <- factor(obs_vs_expected$Diversité.des.paysages, levels = c("--","-","0","+","++"))
+obs_vs_expected$Aires.protégées <- factor(obs_vs_expected$Aires.protégées, levels = c("--","-","0","+","++"))
+
+ggplot(obs_vs_expected, aes(x=Augmentation.des.températures, y=tempsrping)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Augmentation.des.températures, y=`year:d_tempsrping`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+
+ggplot(obs_vs_expected, aes(x=Augmentation.de.l.artificialisation, y=milieu_caturban)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Augmentation.de.l.artificialisation, y=`year:d_impervious`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+
+ggplot(obs_vs_expected, aes(x=Augmentation.du.couvert.forestier, y=milieu_catopenland)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Augmentation.du.couvert.forestier, y=`year:d_treedensity`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Augmentation.du.couvert.forestier, y=`year:eulandsystem_forest_lowmedium`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Augmentation.du.couvert.forestier, y=`year:eulandsystem_forest_high`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+
+ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=milieu_catopenland)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:d_agri`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:eulandsystem_farmland_low`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:eulandsystem_farmland_medium`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:eulandsystem_farmland_high`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+
+ggplot(obs_vs_expected, aes(x=Diversité.des.paysages, y=shannon)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Diversité.des.paysages, y=`year:d_shannon`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+
+ggplot(obs_vs_expected, aes(x=Aires.protégées, y=`year:protectedarea_perc`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
 
 
 #### Declining species per PLS
@@ -1657,7 +1724,7 @@ ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d
                             "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline",
-                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.15,0.15))+
   stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
                       quantiles = 2) +
   theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
@@ -1680,7 +1747,7 @@ ggplot(pressure_EU_bird_long_d, aes(x = value, y = variable, fill = variable)) +
                             "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
-                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.2,0.2))+
   scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
                                "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
                                "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
@@ -1713,7 +1780,11 @@ ggplot(pressure_EU_bird_long_s, aes(x = value, y = variable, fill = variable)) +
   xlab("Pressures") + ylab("Estimate") +
   theme(legend.position = "none")
 
-
+ggsave("output/pressure_state_bird_eu_hist.png",
+       width = 6,
+       height = 6,
+       dpi = 300
+)
 
 
 
@@ -1736,19 +1807,19 @@ matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc), col=NA) + 
   scale_fill_gradient(low= "white",high = "#33a02c") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc_int), col=NA) + 
   scale_fill_gradient(low= "white",high = "#b2df8a") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_climate), col=NA) + 
   scale_fill_gradient(low= "white",high = "#1f78b4") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=nb_sp), col=NA) + 
   scale_fill_gradient(low= "white",high = "#fb9a99") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 
 ggsave("output/main_pressure_neg_bird_lulc.png",
        width = 8,

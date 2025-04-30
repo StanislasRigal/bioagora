@@ -673,7 +673,7 @@ ggplot(pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in%
                             "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline",
-                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-1,1))+
   stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
                       quantiles = 2) +
   theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
@@ -697,7 +697,7 @@ ggplot(pressure_EU_butterfly_long_d, aes(x = value, y = variable, fill = variabl
                             "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
-                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.1,0.1))+
+                      bins = 60, draw_baseline = FALSE) + xlim(c(-1,1))+
   scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
                                "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
                                "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
@@ -730,7 +730,11 @@ ggplot(pressure_EU_butterfly_long_s, aes(x = value, y = variable, fill = variabl
   xlab("Pressures") + ylab("Estimate") +
   theme(legend.position = "none")
 
-
+ggsave("output/pressure_state_butterfly_eu_hist.png",
+       width = 6,
+       height = 6,
+       dpi = 300
+)
 
 
 

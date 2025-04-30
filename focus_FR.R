@@ -37,8 +37,9 @@ saveRDS(press_mainland_trend_scale_FR,"output/press_mainland_trend_scale_FR.rds"
 
 source("functions.R")
 
+subsite_data_mainland_trend_fr <- subsite_data_mainland_trend[which(subsite_data_mainland_trend$scheme_code=="FR"),]
 
-res_gam_bird_FR <- ddply(subsite_data_mainland_trend,
+res_gam_bird_FR <- ddply(subsite_data_mainland_trend_fr,
                       .(sci_name_out),.fun=gam_species_FR,
                       pressure_data=press_mainland_trend_scale_FR,
                       pressure_data_unscale=press_mainland_trend_FR,
