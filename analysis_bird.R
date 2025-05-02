@@ -1383,10 +1383,17 @@ res_gam_bird <- res_gam_bird[which(!is.na(res_gam_bird$PLS)),]
 ### select good model fit and compare with PECBMS trends
 
 pecbms_trend_class <- read.csv("output/pecbms_trend_class.csv", header=TRUE)
+pecbms_trend_class <- read.csv("output/pecbms_test2.csv", header=TRUE)
+pecbms_trend_class$PECBMS_slope_long <- as.numeric(substr(pecbms_trend_class$PECBMS_slope_long,1,6))
+pecbms_trend_class$PECBMS_slope_short <- as.numeric(substr(pecbms_trend_class$PECBMS_slope_short,1,6))
+pecbms_trend_class$PECBMS_slope_long[which(pecbms_trend_class$sci_name_out=="Sturnus vulgaris")] <- 0.98
+pecbms_trend_class$PECBMS_slope_short[which(pecbms_trend_class$sci_name_out=="Chloris chloris")] <- 0.98
 
 res_gamm_bird_eu <- res_gamm_bird[which(res_gamm_bird$PLS=="europe"),]
 
 res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
+
+plot(exp(year)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.25),])
 
 res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.25),]
 

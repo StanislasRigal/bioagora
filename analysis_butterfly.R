@@ -428,6 +428,7 @@ res_gamm_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
 res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
 
 #saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly2.rds")
+#res_gamm_butterfly <- readRDS("output/res_gamm_butterfly.rds")
 
 res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.25),]
 
@@ -756,19 +757,19 @@ matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc), col=NA) + 
   scale_fill_gradient(low= "white",high = "#33a02c") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc_int), col=NA) + 
   scale_fill_gradient(low= "white",high = "#b2df8a") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_climate), col=NA) + 
   scale_fill_gradient(low= "white",high = "#1f78b4") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=nb_sp), col=NA) + 
   scale_fill_gradient(low= "white",high = "#fb9a99") +
-  theme_minimal() + theme(legend.title = element_blank())
+  theme_void() + theme(legend.title = element_blank())
 
 ggsave("output/main_pressure_neg_butterfly_lulc.png",
        width = 8,

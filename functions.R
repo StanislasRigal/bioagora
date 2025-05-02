@@ -3048,6 +3048,7 @@ lm_CXI_biogeo <- function(CXI_data,pressure_data,site_data,min_site_number=40){
 predict_trend <- function(mod,
                           pressure_data_unscale,
                           poisson_df_unscale,
+                          poisson_df,
                           lulc_pls_short,
                           climate_pls,
                           pa_pls_short,
@@ -3651,6 +3652,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
       predict_trend_europe <- predict_trend(mod=global_mod,
                                             pressure_data_unscale,
                                             poisson_df_unscale,
+                                            poisson_df,
                                             lulc_pls_short,
                                             climate_pls,
                                             pa_pls_short,
@@ -3701,6 +3703,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                                                                  predict_trend_i <- predict_trend(mod=res.poisson_i$gam,
                                                                                                                   pressure_data_unscale,
                                                                                                                   poisson_df_unscale_i,
+                                                                                                                  poisson_df_i,
                                                                                                                   lulc_pls_short,
                                                                                                                   climate_pls,
                                                                                                                   pa_pls_short,
@@ -3719,7 +3722,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                                                                return(predict_trend_i)
                                                                              }),
                                min_site_number_per_species=min_site_number_per_species,poisson_df=poisson_df,
-                               .progress="text")
+                               .progress="none")
       
       predict_trend_all <- rbind(predict_trend_pls,predict_trend_europe)
       
@@ -3837,6 +3840,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
       predict_trend_europe <- predict_trend(mod=global_mod,
                                             pressure_data_unscale,
                                             poisson_df_unscale,
+                                            poisson_df,
                                             lulc_pls_short,
                                             climate_pls,
                                             pa_pls_short,
@@ -3887,6 +3891,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                                                                    predict_trend_i <- predict_trend(mod=res.poisson_i$gam,
                                                                                                                     pressure_data_unscale,
                                                                                                                     poisson_df_unscale_i,
+                                                                                                                    poisson_df_i,
                                                                                                                     lulc_pls_short,
                                                                                                                     climate_pls,
                                                                                                                     pa_pls_short,
@@ -3905,7 +3910,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                                                                  return(predict_trend_i)
                                                                                }),
                                  min_site_number_per_species=min_site_number_per_species,poisson_df=poisson_df,
-                                 .progress="text")
+                                 .progress="none")
       
       predict_trend_all <- rbind(predict_trend_pls,predict_trend_europe)
       
@@ -3939,41 +3944,86 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
 
 overall_mean_sd_trend <- function(data){
   n <- length(na.omit(data$trend_BAU))
-  mu_bau <- mean(data$trend_BAU,na.rm=TRUE)
-  var_bau <- (sum((data$sd_BAU)^2 + (data$trend_BAU)^2, na.rm = TRUE))/n - mu_bau^2
-  sd_bau <- sqrt(var_bau)
-  mu_ssp1 <- mean(data$trend_SSP1,na.rm=TRUE)
-  var_ssp1 <- (sum((data$sd_SSP1)^2 + (data$trend_SSP1)^2, na.rm = TRUE))/n - mu_ssp1^2
+  mu_bau <- mean(exp(data$trend_BAU),na.rm=TRUE)
+  var_bau <- (sum(data$sd_BAU^2*exp(data$trend_BAU)^2 + exp(data$trend_BAU)^2, na.rm = TRUE))/n - mu_bau^2
+  sd_bau <- sqrt(mu_bau^2*var_bau)
+  mu_ssp1 <- mean(exp(data$trend_SSP1),na.rm=TRUE)
+  var_ssp1 <- (sum(data$sd_SSP1^2*exp(data$trend_SSP1)^2 + exp(data$trend_SSP1)^2, na.rm = TRUE))/n - mu_ssp1^2
   sd_ssp1 <- sqrt(var_ssp1)
-  mu_ssp3 <- mean(data$trend_SSP3,na.rm=TRUE)
-  var_ssp3 <- (sum((data$sd_SSP3)^2 + (data$trend_SSP3)^2, na.rm = TRUE))/n - mu_ssp3^2
+  mu_ssp3 <- mean(exp(data$trend_SSP3),na.rm=TRUE)
+  var_ssp3 <- (sum(data$sd_SSP3^2*exp(data$trend_SSP3)^2 + exp(data$trend_SSP3)^2, na.rm = TRUE))/n - mu_ssp3^2
   sd_ssp3 <- sqrt(var_ssp3)
-  mu_nac <- mean(data$trend_nac,na.rm=TRUE)
-  var_nac <- (sum((data$sd_nac)^2 + (data$trend_nac)^2, na.rm = TRUE))/n - mu_nac^2
+  mu_nac <- mean(exp(data$trend_nac),na.rm=TRUE)
+  var_nac <- (sum(data$sd_nac^2*exp(data$trend_nac)^2 + exp(data$trend_nac)^2, na.rm = TRUE))/n - mu_nac^2
   sd_nac <- sqrt(var_nac)
-  mu_nfn <- mean(data$trend_nfn,na.rm=TRUE)
-  var_nfn <- (sum((data$sd_nfn)^2 + (data$trend_nfn)^2, na.rm = TRUE))/n - mu_nfn^2
+  mu_nfn <- mean(exp(data$trend_nfn),na.rm=TRUE)
+  var_nfn <- (sum(data$sd_nfn^2*exp(data$trend_nfn)^2 + exp(data$trend_nfn)^2, na.rm = TRUE))/n - mu_nfn^2
   sd_nfn <- sqrt(var_nfn)
-  mu_nfs <- mean(data$trend_nfs,na.rm=TRUE)
-  var_nfs <- (sum((data$sd_nfs)^2 + (data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2
+  mu_nfs <- mean(exp(data$trend_nfs),na.rm=TRUE)
+  var_nfs <- (sum(data$sd_nfs^2*exp(data$trend_nfs)^2 + exp(data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2#(sum((data$sd_nfs)^2 + (data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2
   sd_nfs <- sqrt(var_nfs)
-  mu_bau_signif <- mean(data$trend_BAU_signif,na.rm=TRUE)
-  var_bau_signif <- (sum((data$sd_BAU_signif)^2 + (data$trend_BAU_signif)^2, na.rm = TRUE))/n - mu_bau^2
+  mu_bau_signif <- mean(exp(data$trend_BAU_signif),na.rm=TRUE)
+  var_bau_signif <- (sum(data$sd_BAU_signif^2*exp(data$trend_BAU_signif)^2 + exp(data$trend_BAU_signif)^2, na.rm = TRUE))/n - mu_bau_signif^2
   sd_bau_signif <- sqrt(var_bau_signif)
-  mu_ssp1_signif <- mean(data$trend_SSP1_signif,na.rm=TRUE)
-  var_ssp1_signif <- (sum((data$sd_SSP1_signif)^2 + (data$trend_SSP1_signif)^2, na.rm = TRUE))/n - mu_ssp1^2
+  mu_ssp1_signif <- mean(exp(data$trend_SSP1_signif),na.rm=TRUE)
+  var_ssp1_signif <- (sum(data$sd_SSP1_signif^2*exp(data$trend_SSP1_signif)^2 + exp(data$trend_SSP1_signif)^2, na.rm = TRUE))/n - mu_ssp1_signif^2
   sd_ssp1_signif <- sqrt(var_ssp1_signif)
-  mu_ssp3_signif <- mean(data$trend_SSP3_signif,na.rm=TRUE)
-  var_ssp3_signif <- (sum((data$sd_SSP3_signif)^2 + (data$trend_SSP3_signif)^2, na.rm = TRUE))/n - mu_ssp3^2
+  mu_ssp3_signif <- mean(exp(data$trend_SSP3_signif),na.rm=TRUE)
+  var_ssp3_signif <- (sum(data$sd_SSP3_signif^2*exp(data$trend_SSP3_signif)^2 + exp(data$trend_SSP3_signif)^2, na.rm = TRUE))/n - mu_ssp3_signif^2
   sd_ssp3_signif <- sqrt(var_ssp3_signif)
-  mu_nac_signif <- mean(data$trend_nac_signif,na.rm=TRUE)
-  var_nac_signif <- (sum((data$sd_nac_signif)^2 + (data$trend_nac_signif)^2, na.rm = TRUE))/n - mu_nac^2
+  mu_nac_signif <- mean(exp(data$trend_nac_signif),na.rm=TRUE)
+  var_nac_signif <- (sum(data$sd_nac_signif^2*exp(data$trend_nac_signif)^2 + exp(data$trend_nac_signif)^2, na.rm = TRUE))/n - mu_nac_signif^2
   sd_nac_signif <- sqrt(var_nac_signif)
-  mu_nfn_signif <- mean(data$trend_nfn_signif,na.rm=TRUE)
-  var_nfn_signif <- (sum((data$sd_nfn_signif)^2 + (data$trend_nfn_signif)^2, na.rm = TRUE))/n - mu_nfn^2
+  mu_nfn_signif <- mean(exp(data$trend_nfn_signif),na.rm=TRUE)
+  var_nfn_signif <- (sum(data$sd_nfn_signif^2*exp(data$trend_nfn_signif)^2 + exp(data$trend_nfn_signif)^2, na.rm = TRUE))/n - mu_nfn_signif^2
   sd_nfn_signif <- sqrt(var_nfn_signif)
-  mu_nfs_signif <- mean(data$trend_nfs_signif,na.rm=TRUE)
-  var_nfs_signif <- (sum((data$sd_nfs_signif)^2 + (data$trend_nfs_signif)^2, na.rm = TRUE))/n - mu_nfs^2
+  mu_nfs_signif <- mean(exp(data$trend_nfs_signif),na.rm=TRUE)
+  var_nfs_signif <- (sum(data$sd_nfs_signif^2*exp(data$trend_nfs_signif)^2 + exp(data$trend_nfs_signif)^2, na.rm = TRUE))/n - mu_nfs_signif^2
+  sd_nfs_signif <- sqrt(var_nfs_signif)
+  return(data.frame(mu_bau,sd_bau,mu_ssp1,sd_ssp1,mu_ssp3,sd_ssp3,
+                    mu_nac,sd_nac,mu_nfn,sd_nfn,mu_nfs,sd_nfs,
+                    mu_bau_signif,sd_bau_signif,mu_ssp1_signif,sd_ssp1_signif,mu_ssp3_signif,sd_ssp3_signif,
+                    mu_nac_signif,sd_nac_signif,mu_nfn_signif,sd_nfn_signif,mu_nfs_signif,sd_nfs_signif,n))
+}
+
+
+overall_mean_sd_trend_weigthed <- function(data){
+  n <- length(na.omit(data$trend_BAU))
+  mu_bau <- weighted.mean(exp(data$trend_BAU),na.rm=TRUE, w = data$ab_tot)
+  var_bau <- (sum(data$sd_BAU^2*exp(data$trend_BAU)^2 + exp(data$trend_BAU)^2, na.rm = TRUE))/n - mu_bau^2
+  sd_bau <- sqrt(mu_bau^2*var_bau)
+  mu_ssp1 <- weighted.mean(exp(data$trend_SSP1),na.rm=TRUE, w = data$ab_tot)
+  var_ssp1 <- (sum(data$sd_SSP1^2*exp(data$trend_SSP1)^2 + exp(data$trend_SSP1)^2, na.rm = TRUE))/n - mu_ssp1^2
+  sd_ssp1 <- sqrt(var_ssp1)
+  mu_ssp3 <- weighted.mean(exp(data$trend_SSP3),na.rm=TRUE, w = data$ab_tot)
+  var_ssp3 <- (sum(data$sd_SSP3^2*exp(data$trend_SSP3)^2 + exp(data$trend_SSP3)^2, na.rm = TRUE))/n - mu_ssp3^2
+  sd_ssp3 <- sqrt(var_ssp3)
+  mu_nac <- weighted.mean(exp(data$trend_nac),na.rm=TRUE, w = data$ab_tot)
+  var_nac <- (sum(data$sd_nac^2*exp(data$trend_nac)^2 + exp(data$trend_nac)^2, na.rm = TRUE))/n - mu_nac^2
+  sd_nac <- sqrt(var_nac)
+  mu_nfn <- weighted.mean(exp(data$trend_nfn),na.rm=TRUE, w = data$ab_tot)
+  var_nfn <- (sum(data$sd_nfn^2*exp(data$trend_nfn)^2 + exp(data$trend_nfn)^2, na.rm = TRUE))/n - mu_nfn^2
+  sd_nfn <- sqrt(var_nfn)
+  mu_nfs <- weighted.mean(exp(data$trend_nfs),na.rm=TRUE, w = data$ab_tot)
+  var_nfs <- (sum(data$sd_nfs^2*exp(data$trend_nfs)^2 + exp(data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2#(sum((data$sd_nfs)^2 + (data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2
+  sd_nfs <- sqrt(var_nfs)
+  mu_bau_signif <- weighted.mean(exp(data$trend_BAU_signif),na.rm=TRUE, w = data$ab_tot)
+  var_bau_signif <- (sum(data$sd_BAU_signif^2*exp(data$trend_BAU_signif)^2 + exp(data$trend_BAU_signif)^2, na.rm = TRUE))/n - mu_bau_signif^2
+  sd_bau_signif <- sqrt(var_bau_signif)
+  mu_ssp1_signif <- weighted.mean(exp(data$trend_SSP1_signif),na.rm=TRUE, w = data$ab_tot)
+  var_ssp1_signif <- (sum(data$sd_SSP1_signif^2*exp(data$trend_SSP1_signif)^2 + exp(data$trend_SSP1_signif)^2, na.rm = TRUE))/n - mu_ssp1_signif^2
+  sd_ssp1_signif <- sqrt(var_ssp1_signif)
+  mu_ssp3_signif <- weighted.mean(exp(data$trend_SSP3_signif),na.rm=TRUE, w = data$ab_tot)
+  var_ssp3_signif <- (sum(data$sd_SSP3_signif^2*exp(data$trend_SSP3_signif)^2 + exp(data$trend_SSP3_signif)^2, na.rm = TRUE))/n - mu_ssp3_signif^2
+  sd_ssp3_signif <- sqrt(var_ssp3_signif)
+  mu_nac_signif <- weighted.mean(exp(data$trend_nac_signif),na.rm=TRUE, w = data$ab_tot)
+  var_nac_signif <- (sum(data$sd_nac_signif^2*exp(data$trend_nac_signif)^2 + exp(data$trend_nac_signif)^2, na.rm = TRUE))/n - mu_nac_signif^2
+  sd_nac_signif <- sqrt(var_nac_signif)
+  mu_nfn_signif <- weighted.mean(exp(data$trend_nfn_signif),na.rm=TRUE, w = data$ab_tot)
+  var_nfn_signif <- (sum(data$sd_nfn_signif^2*exp(data$trend_nfn_signif)^2 + exp(data$trend_nfn_signif)^2, na.rm = TRUE))/n - mu_nfn_signif^2
+  sd_nfn_signif <- sqrt(var_nfn_signif)
+  mu_nfs_signif <- weighted.mean(exp(data$trend_nfs_signif),na.rm=TRUE, w = data$ab_tot)
+  var_nfs_signif <- (sum(data$sd_nfs_signif^2*exp(data$trend_nfs_signif)^2 + exp(data$trend_nfs_signif)^2, na.rm = TRUE))/n - mu_nfs_signif^2
   sd_nfs_signif <- sqrt(var_nfs_signif)
   return(data.frame(mu_bau,sd_bau,mu_ssp1,sd_ssp1,mu_ssp3,sd_ssp3,
                     mu_nac,sd_nac,mu_nfn,sd_nfn,mu_nfs,sd_nfs,
