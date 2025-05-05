@@ -430,7 +430,7 @@ res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
 #saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly2.rds")
 #res_gamm_butterfly <- readRDS("output/res_gamm_butterfly.rds")
 
-res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.25),]
+res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.2),]
 
 
 res_gam_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
@@ -699,6 +699,8 @@ ggplot(pressure_EU_butterfly_long_d, aes(x = value, y = variable, fill = variabl
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
                       bins = 60, draw_baseline = FALSE) + xlim(c(-1,1))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
+                      quantiles = 2) +
   scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
                                "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
                                "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
@@ -725,6 +727,8 @@ ggplot(pressure_EU_butterfly_long_s, aes(x = value, y = variable, fill = variabl
                             "milieu_caturban" = "Urban vs forest on abundance","shannon" = "Landscape diversity on abundance","drymatter" = "Productivity on abundance")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
                       bins = 60, draw_baseline = FALSE) + xlim(c(-5,5))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
+                      quantiles = 2) +
   scale_fill_manual(values = c("tempsrping"="#1f78b4","precspring"="#1f78b4","milieu_catopenland"="#33a02c","milieu_catothers"="#33a02c",
                                "milieu_caturban"="#33a02c","shannon"="#33a02c","drymatter"="#33a02c")) +
   theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +

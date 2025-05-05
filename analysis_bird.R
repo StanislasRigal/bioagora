@@ -1395,7 +1395,13 @@ res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
 
 plot(exp(year)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.25),])
 
-res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.25),]
+correl_data <- data.frame(cor=NA,pval=NA,rsq=NA)
+for(i in seq(0,0.5, by=0.01)){
+  correl <- summary(lm(exp(year)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>i),]))
+  correl_data[which(seq(0,0.6, by=0.01)==i),] <- c(correl$coefficients[2,1],correl$coefficients[2,4],correl$r.squared)
+}
+
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2),]
 
 unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
 
@@ -1691,8 +1697,8 @@ res_gam_bird_farmland <- res_gam_bird[which(res_gam_bird$sci_name_out %in% uniqu
 res_gam_bird_forest <- res_gam_bird[which(res_gam_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
 
 
-ggplot(res_gam_bird, aes(x= PLS, y=dev_exp, fill=PLS)) + 
-  geom_boxplot() +
+ggplot(res_gamm_bird, aes(x= PLS, y=dev_exp, fill=PLS)) + 
+  geom_boxplot() + ylim(c(0,0.75)) + 
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
   theme_minimal()
 
@@ -1755,6 +1761,8 @@ ggplot(pressure_EU_bird_long_d, aes(x = value, y = variable, fill = variable)) +
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
                       bins = 60, draw_baseline = FALSE) + xlim(c(-0.2,0.2))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
+                       quantiles = 2) +
   scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
                                "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
                                "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
@@ -1781,6 +1789,8 @@ ggplot(pressure_EU_bird_long_s, aes(x = value, y = variable, fill = variable)) +
                             "milieu_caturban" = "Urban vs forest on abundance","shannon" = "Landscape diversity on abundance","drymatter" = "Productivity on abundance")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
                       bins = 60, draw_baseline = FALSE) + xlim(c(-3,3))+
+  stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
+                      quantiles = 2) +
   scale_fill_manual(values = c("tempsrping"="#1f78b4","precspring"="#1f78b4","milieu_catopenland"="#33a02c","milieu_catothers"="#33a02c",
                                "milieu_caturban"="#33a02c","shannon"="#33a02c","drymatter"="#33a02c")) +
   theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
