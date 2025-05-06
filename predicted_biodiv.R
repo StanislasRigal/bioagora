@@ -1905,93 +1905,138 @@ ggplot() + geom_sf() +
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="urban"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="urban"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="urban"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="urban"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), high = "#a80000ff",name = NULL) + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="urban"),], aes(fill=ssp1-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(lulc_sf$nfn[which(lulc_sf$variable=="urban")]-lulc_sf$initial[which(lulc_sf$variable=="urban")]),
-                                max(lulc_sf$ssp3[which(lulc_sf$variable=="urban")]-lulc_sf$initial[which(lulc_sf$variable=="urban")])))
+  scale_fill_gradient2(limits=c(0,0.06), name = NULL,high = "#a80000ff") + theme_void()
+
+ggsave("output/map_urban_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_low"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_low"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_low"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_low"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL, high = "#e6a600ff") +
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_low"),], aes(fill=ssp1-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(lulc_sf$ssp1[which(lulc_sf$variable=="farmland_low")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_low")]),
-                                max(lulc_sf$nac[which(lulc_sf$variable=="farmland_low")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_low")])))
+  scale_fill_gradient2(limits=c(-0.3,0.2), name = NULL,low = "#888888ff", high = "#e6a600ff") + theme_void()
+
+ggsave("output/map_farmland_low_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_medium"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_medium"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_medium"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_medium"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "#e68e00ff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_medium"),], aes(fill=ssp1-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(lulc_sf$nac[which(lulc_sf$variable=="farmland_medium")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_medium")]),
-                                max(lulc_sf$ssp1[which(lulc_sf$variable=="farmland_medium")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_medium")])))
+  scale_fill_gradient2(limits=c(-0.3,0.05), name = NULL,low = "#888888ff", high = "#e68e00ff") + theme_void()
+
+ggsave("output/map_farmland_medium_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_high"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="farmland_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "#e67500ff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="farmland_high"),], aes(fill=ssp1-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(lulc_sf$ssp1[which(lulc_sf$variable=="farmland_high")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_high")]),
-                                max(lulc_sf$nac[which(lulc_sf$variable=="farmland_high")]-lulc_sf$initial[which(lulc_sf$variable=="farmland_high")])))
+  scale_fill_gradient2(limits=c(-0.05,0.2), name = NULL,low = "#888888ff", high = "#e67500ff") + theme_void()
+
+ggsave("output/map_farmland_high_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "#00c800ff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),], aes(fill=ssp1-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(lulc_sf$nfn[which(lulc_sf$variable=="forest_lowmedium")]-lulc_sf$initial[which(lulc_sf$variable=="forest_lowmedium")]),
-                                max(lulc_sf$ssp1[which(lulc_sf$variable=="forest_lowmedium")]-lulc_sf$initial[which(lulc_sf$variable=="forest_lowmedium")])))
+  scale_fill_gradient2(limits=c(-0.2,0.1), name = NULL,low = "#888888ff", high = "#00c800ff") + theme_void()
+
+ggsave("output/map_forest_low_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_high"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_high"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "#82a600ff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_high"),], aes(fill=ssp1-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(lulc_sf$nac[which(lulc_sf$variable=="forest_high")]-lulc_sf$initial[which(lulc_sf$variable=="forest_high")]),
-                                max(lulc_sf$ssp1[which(lulc_sf$variable=="forest_high")]-lulc_sf$initial[which(lulc_sf$variable=="forest_high")])))
+  scale_fill_gradient2(limits=c(-0.05,0.2), name = NULL,low = "#888888ff", high = "#82a600ff") + theme_void()
+
+ggsave("output/map_forest_high_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="landscape_div"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="landscape_div"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="landscape_div"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="landscape_div"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "#66cdabff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="landscape_div"),], aes(fill=ssp1-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(lulc_sf$ssp3[which(lulc_sf$variable=="landscape_div")]-lulc_sf$initial[which(lulc_sf$variable=="landscape_div")]),
-                                max(lulc_sf$nac[which(lulc_sf$variable=="landscape_div")]-lulc_sf$initial[which(lulc_sf$variable=="landscape_div")])))
+  scale_fill_gradient2(limits=c(-0.11,0.32), name = NULL,low = "#888888ff", high = "#66cdabff") + theme_void()
 
-
+ggsave("output/map_landscape_div_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 pa_sf <- merge(grid_eu_mainland_biogeo,pa_pls_short,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
   geom_sf(data=pa_sf, aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(pa_sf[,c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
-                                max(na.omit(st_drop_geometry(pa_sf[,c("initial","ssp1","ssp3","nac","nfn","nfs")])))))
+                                max(na.omit(st_drop_geometry(pa_sf[,c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "#66bdcdff") + 
+  theme_void()
 ggplot() + geom_sf() +  
-  geom_sf(data=pa_sf, aes(fill=nac-initial), col = NA) + 
+  geom_sf(data=pa_sf, aes(fill=nfn-initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(0,max(pa_sf$nfn-pa_sf$initial, na.rm=TRUE)))
+  scale_fill_gradient2(limits=c(0,0.25), name = NULL,low = "#888888ff", high = "#66bdcdff") + theme_void()
 
-
+ggsave("output/map_pa_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 climate_sf <- merge(grid_eu_mainland_biogeo,climate_pls,by="PLS",all.x=TRUE)
 climate_sf$d_mean <- climate_sf$mean_t_4_5 - climate_sf$mean_t_2016
@@ -2001,20 +2046,53 @@ ggplot() + geom_sf() +
   geom_sf(data=climate_sf, aes(fill=mean_t_2016), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(climate_sf[,c("mean_t_2016","mean_t_4_5")]))),
-                                max(na.omit(st_drop_geometry(climate_sf[,c("mean_t_2016","mean_t_4_5")])))))
+                                max(na.omit(st_drop_geometry(climate_sf[,c("mean_t_2016","mean_t_4_5")])))), name = NULL,high = "#cd66a6ff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=climate_sf, aes(fill=d_mean), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2()
+  scale_fill_gradient2(name = NULL,high = "#cd66a6ff") + theme_void()
+
+ggsave("output/map_temp_2016.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+
+ggplot() + geom_sf() +  
+  geom_sf(data=climate_sf, aes(fill=sum_p_2016), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(climate_sf[,c("sum_p_2016","sum_p_4_5")]))),
+                                max(na.omit(st_drop_geometry(climate_sf[,c("sum_p_2016","sum_p_4_5")])))), name = NULL,high = "#6f66cdff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=climate_sf, aes(fill=d_sum), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2()
+  scale_fill_gradient2(name = NULL,low = "#888888ff",high = "#6f66cdff") + theme_void()
+
+ggsave("output/map_prec_2016.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+ggplot() + geom_sf() +  
+  geom_sf(data=climate_sf, aes(fill=var_t_2016), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(climate_sf[,c("var_t_2016","var_t_4_5")]))),
+                                max(na.omit(st_drop_geometry(climate_sf[,c("var_t_2016","var_t_4_5")])))), name = NULL,high = "#9966cdff") + 
+  theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=climate_sf, aes(fill=d_var), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2()
+  scale_fill_gradient2(name = NULL,low = "#888888ff",high = "#9966cdff") + theme_void()
 
+ggsave("output/map_var_2016.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
 
 
 
