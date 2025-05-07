@@ -1369,7 +1369,7 @@ res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
 
 #saveRDS(res_gamm_bird,"output/res_gamm_bird2.rds")
 
-#res_gamm_bird<-readRDS("output/res_gamm_bird.rds")
+#res_gamm_bird<-readRDS("output/res_gamm_birdnew.rds")
 
 res_gam_bird <- ddply(subsite_data_mainland_trend,
                       .(sci_name_out),.fun=gam_species_PLS3,
@@ -1379,6 +1379,11 @@ res_gam_bird <- res_gam_bird[which(!is.na(res_gam_bird$PLS)),]
 
 #saveRDS(res_gam_bird,"output/res_gam_bird.rds")
 #res_gam_bird<-readRDS("output/res_gam_bird.rds")
+
+res_gamm_bird_year <- ddply(subsite_data_mainland_trend,
+                       .(sci_name_out),.fun=gam_species_year,
+                       pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                       .progress = "text")
 
 ### select good model fit and compare with PECBMS trends
 
@@ -1393,6 +1398,8 @@ res_gamm_bird_eu <- res_gamm_bird[which(res_gamm_bird$PLS=="europe"),]
 
 res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
 
+res_gamm_bird_eu$PECBMS_slope_mid <- (res_gamm_bird_eu$PECBMS_slope_long + res_gamm_bird_eu$PECBMS_slope_short)/2
+
 plot(exp(year)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.25),])
 
 correl_data <- data.frame(cor=NA,pval=NA,rsq=NA)
@@ -1406,9 +1413,10 @@ res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2),]
 unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
 
 
-### chack with Benoit a priori expectation
+### check with Benoit a priori expectation
 
 expected_effect <- read.csv2("raw_data/pressions_oiseaux.csv")
+expected_effect <- read.csv("raw_data/pressions_oiseaux_gl.csv",sep = "\t")
 
 obs_vs_expected <- merge(res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe"),],expected_effect, by.x = "sci_name_out", by.y="Species", all.x=TRUE)
 
@@ -1473,6 +1481,44 @@ ggplot(obs_vs_expected, aes(x=Aires.protégées, y=`year:protectedarea_perc`)) +
   geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
   geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
 
+# check cluster
+
+## check if data are structured
+test_clust <- res_gamm_bird_correct[res_gamm_bird_correct$PLS=="europe",
+                                    c("milieu_catopenland","milieu_catothers","milieu_caturban",
+                                      "tempsrping","precspring","shannon","drymatter",
+                                      "year:d_impervious","year:d_treedensity",
+                                       "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                       "year:d_agri","year:eulandsystem_farmland_low",
+                                       "year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                                       "year:d_tempsrping","year:d_tempsrpingvar",
+                                       "year:d_precspring","year:d_shannon",
+                                       "year:protectedarea_perc")]
+test_clust[is.na(test_clust)] <- 0
+
+is_clustered <- hopkins::hopkins(test_clust) # < 0.3 so regularly-spaced data
+
+## find optimal number of groups
+
+mat_dist_test_clust <- dist(test_clust)
+
+nc <- NbClust(test_clust,diss=mat_dist_test_clust,distance=NULL,method="ward.D2") # 2-4 groups
+
+## clustering
+
+classif <- pam(mat_dist_test_clust,k=3)
+
+ACP <- rda(test_clust)
+MVA.synt(ACP)
+MVA.plot(ACP, fac = classif$clustering, col=c("green","blue","red"))
+MVA.plot(ACP,"corr")
+
+## lda
+
+anova(betadisper(dist(test_clust),classif$clustering))
+LDA <- lda(test_clust,classif$clustering)
+MVA.plot(LDA,fac=classif$clustering)
+MVA.plot(LDA,"corr")
 
 #### Declining species per PLS
 
@@ -1706,8 +1752,8 @@ ggplot(res_gamm_bird, aes(x= PLS, y=dev_exp, fill=PLS)) +
 
 pressure_EU_bird <- res_gam_bird[which(res_gam_bird$PLS=="europe"),]
 pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe"),]
-pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")])),]
-pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
+pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Farmland")])),]
+pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Forest")])),]
 pressure_EU_bird_long <- reshape::melt(pressure_EU_bird, id.vars=c("sci_name_out","PLS"))
 pressure_EU_bird_long <- pressure_EU_bird_long[which(!pressure_EU_bird_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
 

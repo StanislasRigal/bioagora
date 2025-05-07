@@ -40,9 +40,17 @@ library(mgcv)
 library(paletteer)
 library(viridis)
 library(ggridges)
+library(hopkins)
+library(NbClust)
+library(cluster)
+library(vegan)
+library(RVAideMemoire)
+library(MASS)
 
 # predicted data
 library(ncdf4)
 library(CFtime)
 library(caret)
 library(gamclass)
+library(BSDA)
+

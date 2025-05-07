@@ -2146,6 +2146,73 @@ gam_species_PLS3 <- function(bird_data,pressure_data,site_data,
 }
 
 
+gam_species_year <- function(bird_data,pressure_data,site_data,
+                             min_site_number_per_species = 60,
+                             min_occurence_species=200,
+                             family="quasipoisson"){
+  
+  species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
+                                                   "PLS")])
+  
+  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
+  
+  if(length(table(poisson_df$area_sampled_m2)) > length(unique(poisson_df$scheme_code))){
+    one_scheme_time_area <- 0 
+    poisson_df$area_sampled_m2 <- scale(poisson_df$area_sampled_m2)
+  }else{
+    one_scheme_time_area <- 1
+  }
+  
+  poisson_df$count_scale_all <- poisson_df$count#scales::rescale(poisson_df$count)
+  
+  formula_gam <- "count_scale_all ~ year"
+  
+  col_names <- c("(Intercept)","year")
+  
+  if(nrow(poisson_df) >= min_occurence_species){
+    
+    ### global poisson model (gamm too resource consumming over the whole Europe)
+    
+    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    
+
+      
+      global_mod_coef <- summary(global_mod)$p.table[grep("scheme_code|area_sampled_m2|time_effort|no_",row.names(summary(global_mod)$p.table),invert = TRUE),]
+      
+      global_mod_coef <- rbind(global_mod_coef,c(summary(global_mod)$dev.expl,rep(0,3)),c(summary(global_mod)$n,rep(0,3)))
+      
+      global_mod_coef1 <- global_mod_coef[,1]
+      global_mod_coef1[which(global_mod_coef[,4] > 0.05)] <- NA
+      global_mod_df <- data.frame(t(global_mod_coef1))
+      names(global_mod_df) <- c(col_names,"dev_exp","n_obs")
+      global_mod_df$PLS <- "europe"
+    
+  }else{
+    global_mod_df <- data.frame(t(rep(NA,(length(col_names)+2))))
+    names(global_mod_df) <- c(col_names,"dev_exp","n_obs")
+    global_mod_df$PLS <- NA
+  }
+  
+  return(global_mod_df)
+}
+
 
 butterfly_data <- droplevels(subsite_data_mainland_trend_butterfly[which(subsite_data_mainland_trend_butterfly$species_name == "Aglais io"),])
 pressure_data <- press_mainland_trend_butterfly_scale
@@ -3947,43 +4014,57 @@ overall_mean_sd_trend <- function(data){
   mu_bau <- mean(exp(data$trend_BAU),na.rm=TRUE)
   var_bau <- (sum(data$sd_BAU^2*exp(data$trend_BAU)^2 + exp(data$trend_BAU)^2, na.rm = TRUE))/n - mu_bau^2
   sd_bau <- sqrt(mu_bau^2*var_bau)
+  se_bau <- sd(exp(data$trend_BAU),na.rm=TRUE)/sqrt(n)
   mu_ssp1 <- mean(exp(data$trend_SSP1),na.rm=TRUE)
   var_ssp1 <- (sum(data$sd_SSP1^2*exp(data$trend_SSP1)^2 + exp(data$trend_SSP1)^2, na.rm = TRUE))/n - mu_ssp1^2
   sd_ssp1 <- sqrt(var_ssp1)
+  se_ssp1 <- sd(exp(data$trend_SSP1),na.rm=TRUE)/sqrt(n)
   mu_ssp3 <- mean(exp(data$trend_SSP3),na.rm=TRUE)
   var_ssp3 <- (sum(data$sd_SSP3^2*exp(data$trend_SSP3)^2 + exp(data$trend_SSP3)^2, na.rm = TRUE))/n - mu_ssp3^2
   sd_ssp3 <- sqrt(var_ssp3)
+  se_ssp3 <- sd(exp(data$trend_SSP3),na.rm=TRUE)/sqrt(n)
   mu_nac <- mean(exp(data$trend_nac),na.rm=TRUE)
   var_nac <- (sum(data$sd_nac^2*exp(data$trend_nac)^2 + exp(data$trend_nac)^2, na.rm = TRUE))/n - mu_nac^2
   sd_nac <- sqrt(var_nac)
+  se_nac <- sd(exp(data$trend_nac),na.rm=TRUE)/sqrt(n)
   mu_nfn <- mean(exp(data$trend_nfn),na.rm=TRUE)
   var_nfn <- (sum(data$sd_nfn^2*exp(data$trend_nfn)^2 + exp(data$trend_nfn)^2, na.rm = TRUE))/n - mu_nfn^2
   sd_nfn <- sqrt(var_nfn)
+  se_nfn <- sd(exp(data$trend_nfn),na.rm=TRUE)/sqrt(n)
   mu_nfs <- mean(exp(data$trend_nfs),na.rm=TRUE)
   var_nfs <- (sum(data$sd_nfs^2*exp(data$trend_nfs)^2 + exp(data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2#(sum((data$sd_nfs)^2 + (data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2
   sd_nfs <- sqrt(var_nfs)
+  se_nfs <- sd(exp(data$trend_nfs),na.rm=TRUE)/sqrt(n)
+  
   mu_bau_signif <- mean(exp(data$trend_BAU_signif),na.rm=TRUE)
   var_bau_signif <- (sum(data$sd_BAU_signif^2*exp(data$trend_BAU_signif)^2 + exp(data$trend_BAU_signif)^2, na.rm = TRUE))/n - mu_bau_signif^2
   sd_bau_signif <- sqrt(var_bau_signif)
+  se_bau_signif <- sd(exp(data$trend_BAU_signif),na.rm=TRUE)/sqrt(n)
   mu_ssp1_signif <- mean(exp(data$trend_SSP1_signif),na.rm=TRUE)
   var_ssp1_signif <- (sum(data$sd_SSP1_signif^2*exp(data$trend_SSP1_signif)^2 + exp(data$trend_SSP1_signif)^2, na.rm = TRUE))/n - mu_ssp1_signif^2
   sd_ssp1_signif <- sqrt(var_ssp1_signif)
+  se_ssp1_signif <- sd(exp(data$trend_SSP1_signif),na.rm=TRUE)/sqrt(n)
   mu_ssp3_signif <- mean(exp(data$trend_SSP3_signif),na.rm=TRUE)
   var_ssp3_signif <- (sum(data$sd_SSP3_signif^2*exp(data$trend_SSP3_signif)^2 + exp(data$trend_SSP3_signif)^2, na.rm = TRUE))/n - mu_ssp3_signif^2
   sd_ssp3_signif <- sqrt(var_ssp3_signif)
+  se_ssp3_signif <- sd(exp(data$trend_SSP3_signif),na.rm=TRUE)/sqrt(n)
   mu_nac_signif <- mean(exp(data$trend_nac_signif),na.rm=TRUE)
   var_nac_signif <- (sum(data$sd_nac_signif^2*exp(data$trend_nac_signif)^2 + exp(data$trend_nac_signif)^2, na.rm = TRUE))/n - mu_nac_signif^2
   sd_nac_signif <- sqrt(var_nac_signif)
+  se_nac_signif <- sd(exp(data$trend_nac_signif),na.rm=TRUE)/sqrt(n)
   mu_nfn_signif <- mean(exp(data$trend_nfn_signif),na.rm=TRUE)
   var_nfn_signif <- (sum(data$sd_nfn_signif^2*exp(data$trend_nfn_signif)^2 + exp(data$trend_nfn_signif)^2, na.rm = TRUE))/n - mu_nfn_signif^2
   sd_nfn_signif <- sqrt(var_nfn_signif)
+  se_nfn_signif <- sd(exp(data$trend_nfn_signif),na.rm=TRUE)/sqrt(n)
   mu_nfs_signif <- mean(exp(data$trend_nfs_signif),na.rm=TRUE)
   var_nfs_signif <- (sum(data$sd_nfs_signif^2*exp(data$trend_nfs_signif)^2 + exp(data$trend_nfs_signif)^2, na.rm = TRUE))/n - mu_nfs_signif^2
   sd_nfs_signif <- sqrt(var_nfs_signif)
-  return(data.frame(mu_bau,sd_bau,mu_ssp1,sd_ssp1,mu_ssp3,sd_ssp3,
-                    mu_nac,sd_nac,mu_nfn,sd_nfn,mu_nfs,sd_nfs,
-                    mu_bau_signif,sd_bau_signif,mu_ssp1_signif,sd_ssp1_signif,mu_ssp3_signif,sd_ssp3_signif,
-                    mu_nac_signif,sd_nac_signif,mu_nfn_signif,sd_nfn_signif,mu_nfs_signif,sd_nfs_signif,n))
+  se_nfs_signif <- sd(exp(data$trend_nfs_signif),na.rm=TRUE)/sqrt(n)
+  
+  return(data.frame(mu_bau,sd_bau,se_bau,mu_ssp1,sd_ssp1,se_ssp1,mu_ssp3,sd_ssp3,se_ssp3,
+                    mu_nac,sd_nac,se_nac,mu_nfn,sd_nfn,se_nfn,mu_nfs,sd_nfs,se_nfs,
+                    mu_bau_signif,sd_bau_signif,se_bau_signif,mu_ssp1_signif,sd_ssp1_signif,se_ssp1_signif,mu_ssp3_signif,sd_ssp3_signif,se_ssp3_signif,
+                    mu_nac_signif,sd_nac_signif,se_nac_signif,mu_nfn_signif,sd_nfn_signif,se_nfn_signif,mu_nfs_signif,sd_nfs_signif,se_nfs_signif,n))
 }
 
 
