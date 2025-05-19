@@ -1381,10 +1381,14 @@ europe_all_signif <- data.frame(value = c(overall_trend_all$mu_bau_signif[which(
                                 overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
                          variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_all_signif, aes(x=value,y = variable)) + 
+europe_all_signif2 <- europe_all_signif[which(europe_all_signif$variable != "ssp3"),]
+europe_all_signif2$variable <- factor(europe_all_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_all_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
-  geom_point(size = 3.5, aes(color = variable)) + theme_minimal() + theme(legend.position = "none") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
 ggsave("output/trend_bird_eu_all_signif_error.png",
@@ -1421,11 +1425,12 @@ ggsave("output/trend_bird_eu_all_signif.png",
        dpi = 300
 )
 
-comb_var <- combn(europe_all_signif$variable,2)
+europe_all_signif2$variable <- as.character(europe_all_signif2$variable)
+comb_var <- combn(europe_all_signif2$variable,2)
 test_diff_var_europe_all_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif$value[which(europe_all_signif$variable==comb_var[1,i])],   s.x=europe_all_signif$se[which(europe_all_signif$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
-                                             mean.y=europe_all_signif$value[which(europe_all_signif$variable==comb_var[2,i])],   s.y=europe_all_signif$se[which(europe_all_signif$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+  test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[1,i])],   s.x=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
+                                             mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
   
 }
 
@@ -1451,11 +1456,21 @@ europe_pecbms_signif <- data.frame(value = c(overall_trend_all_eu$mu_bau_signif[
                                        overall_trend_all_eu$se_nfs_signif[which(overall_trend_all_eu$PLS=="europe")]),
                                 variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_pecbms_signif, aes(x=value,y = variable)) + 
+europe_pecbms_signif2 <- europe_pecbms_signif[which(europe_pecbms_signif$variable != "ssp3"),]
+europe_pecbms_signif2$variable <- factor(europe_pecbms_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_pecbms_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
-  geom_point(size = 3.5, aes(color = variable)) + theme_minimal() + theme(legend.position = "none") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
+
+ggsave("output/trend_bird_pecbms_all_signif_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
@@ -1473,11 +1488,12 @@ ggsave("output/trend_bird_pecbms_all_signif.png",
        dpi = 300
 )
 
-comb_var <- combn(europe_pecbms_signif$variable,2)
+europe_pecbms_signif2$variable <- as.character(europe_pecbms_signif2$variable)
+comb_var <- combn(europe_pecbms_signif2$variable,2)
 test_diff_var_europe_pecbms_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_pecbms_signif[i,3] <- tsum.test(mean.x=europe_pecbms_signif$value[which(europe_pecbms_signif$variable==comb_var[1,i])],   s.x=europe_pecbms_signif$se[which(europe_pecbms_signif$variable==comb_var[1,i])], n.x= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")],
-                                             mean.y=europe_pecbms_signif$value[which(europe_pecbms_signif$variable==comb_var[2,i])],   s.y=europe_pecbms_signif$se[which(europe_pecbms_signif$variable==comb_var[2,i])], n.y= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")])$p.value
+  test_diff_var_europe_pecbms_signif[i,3] <- tsum.test(mean.x=europe_pecbms_signif2$value[which(europe_pecbms_signif2$variable==comb_var[1,i])],   s.x=europe_pecbms_signif2$se[which(europe_pecbms_signif2$variable==comb_var[1,i])], n.x= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")],
+                                             mean.y=europe_pecbms_signif2$value[which(europe_pecbms_signif2$variable==comb_var[2,i])],   s.y=europe_pecbms_signif2$se[which(europe_pecbms_signif2$variable==comb_var[2,i])], n.y= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")])$p.value
   
 }
 
@@ -1557,10 +1573,14 @@ europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_bau_sig
                                      overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
                               variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_farmland_signif, aes(x=value,y = variable)) + 
+europe_farmland_signif2 <- europe_farmland_signif[which(europe_farmland_signif$variable != "ssp3"),]
+europe_farmland_signif2$variable <- factor(europe_farmland_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_farmland_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
-  geom_point(size = 3.5, aes(color = variable)) + theme_minimal() + theme(legend.position = "none") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
 ggsave("output/trend_bird_farm_signif_error.png",
@@ -1597,11 +1617,12 @@ ggsave("output/trend_bird_farm_signif.png",
        dpi = 300
 )
 
-comb_var <- combn(europe_farmland_signif$variable,2)
+europe_farmland_signif2$variable <- as.character(europe_farmland_signif2$variable)
+comb_var <- combn(europe_farmland_signif2$variable,2)
 test_diff_var_europe_farmland_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif$value[which(europe_farmland_signif$variable==comb_var[1,i])],   s.x=europe_farmland_signif$se[which(europe_farmland_signif$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")],
-                                             mean.y=europe_farmland_signif$value[which(europe_farmland_signif$variable==comb_var[2,i])],   s.y=europe_farmland_signif$se[which(europe_farmland_signif$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")])$p.value
+  test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[1,i])],   s.x=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")],
+                                             mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")])$p.value
   
 }
 
@@ -1681,10 +1702,14 @@ europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_bau_signif[
                                    overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
                             variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_forest_signif, aes(x=value,y = variable)) + 
+europe_forest_signif2 <- europe_forest_signif[which(europe_forest_signif$variable != "ssp3"),]
+europe_forest_signif2$variable <- factor(europe_forest_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_forest_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
-  geom_point(size = 3.5, aes(color = variable)) + theme_minimal() + theme(legend.position = "none") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
 ggsave("output/trend_bird_forest_signif_error.png",
@@ -1721,11 +1746,12 @@ ggsave("output/trend_bird_forest_signif.png",
        dpi = 300
 )
 
-comb_var <- combn(europe_forest_signif$variable,2)
+europe_forest_signif2$variable <- as.character(europe_forest_signif2$variable)
+comb_var <- combn(europe_forest_signif2$variable,2)
 test_diff_var_europe_forest_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif$value[which(europe_forest_signif$variable==comb_var[1,i])],   s.x=europe_forest_signif$se[which(europe_forest_signif$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
-                                             mean.y=europe_forest_signif$value[which(europe_forest_signif$variable==comb_var[2,i])],   s.y=europe_forest_signif$se[which(europe_forest_signif$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[1,i])],   s.x=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
+                                                         mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
   
 }
 

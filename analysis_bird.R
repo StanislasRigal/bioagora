@@ -1485,8 +1485,8 @@ ggplot(obs_vs_expected, aes(x=Aires.protégées, y=`year:protectedarea_perc`)) +
 
 ## check if data are structured
 test_clust <- res_gamm_bird_correct[res_gamm_bird_correct$PLS=="europe",
-                                    c("milieu_catopenland","milieu_catothers","milieu_caturban",
-                                      "tempsrping","precspring","shannon","drymatter",
+                                    c(#"milieu_catopenland","milieu_catothers","milieu_caturban",
+                                      #"tempsrping","precspring","shannon","drymatter",
                                       "year:d_impervious","year:d_treedensity",
                                        "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
                                        "year:d_agri","year:eulandsystem_farmland_low",
@@ -1494,6 +1494,18 @@ test_clust <- res_gamm_bird_correct[res_gamm_bird_correct$PLS=="europe",
                                        "year:d_tempsrping","year:d_tempsrpingvar",
                                        "year:d_precspring","year:d_shannon",
                                        "year:protectedarea_perc")]
+test_clust <- res_gamm_bird_correct[res_gamm_bird_correct$PLS=="europe",
+                                    c("year:d_impervious","year:d_treedensity",
+                                      "year:d_agri","year:d_shannon")]
+test_clust <- res_gamm_bird_correct[res_gamm_bird_correct$PLS=="europe",
+                                    c("year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                      "year:eulandsystem_farmland_low",
+                                      "year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                                      "year:protectedarea_perc")]
+test_clust <- res_gamm_bird_correct[res_gamm_bird_correct$PLS=="europe",
+                                    c("year:d_tempsrping","year:d_tempsrpingvar",
+                                      "year:d_precspring")]
+
 test_clust[is.na(test_clust)] <- 0
 
 is_clustered <- hopkins::hopkins(test_clust) # < 0.3 so regularly-spaced data
