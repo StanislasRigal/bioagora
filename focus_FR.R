@@ -599,8 +599,8 @@ ggplot(pressure_FR_bird_long_d, aes(x = value, y = variable, fill = variable)) +
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
                       bins = 60, draw_baseline = FALSE) + xlim(c(-0.2,0.2))+
-  stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
-                      quantiles = 2) +
+  #stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
+  #                    quantiles = 2) +
   scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
                                "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
                                "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
@@ -627,8 +627,8 @@ ggplot(pressure_FR_bird_long_s, aes(x = value, y = variable, fill = variable)) +
                             "milieu_caturban" = "Urban vs forest on abundance","shannon" = "Landscape diversity on abundance","drymatter" = "Productivity on abundance")) + 
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
                       bins = 60, draw_baseline = FALSE) + xlim(c(-3,3))+
-  stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
-                      quantiles = 2) +
+  #stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
+  #                    quantiles = 2) +
   scale_fill_manual(values = c("tempsrping"="#1f78b4","precspring"="#1f78b4","milieu_catopenland"="#33a02c","milieu_catothers"="#33a02c",
                                "milieu_caturban"="#33a02c","shannon"="#33a02c","drymatter"="#33a02c")) +
   theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
@@ -731,3 +731,4 @@ ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){FR_all_signif$value[which(FR_all_signif$variable=="s4")]^x/FR_all_signif$value[which(FR_all_signif$variable=="s4")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
+
