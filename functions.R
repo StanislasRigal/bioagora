@@ -3156,7 +3156,7 @@ predict_trend <- function(mod,
   
   nb_rep <- 1000
   
-  beta1_BAU <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
+  beta1_past <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
     mod_coef[which(row.names(mod_coef)=="year:d_impervious"),"Estimate"]*mean(poisson_df$d_impervious) +
     mod_coef[which(row.names(mod_coef)=="year:d_tempsrping"),"Estimate"]*mean(poisson_df$d_tempsrping) +
     mod_coef[which(row.names(mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*mean(poisson_df$d_tempsrpingvar) +
@@ -3171,7 +3171,7 @@ predict_trend <- function(mod,
     mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_medium"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_medium) +
     mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_high"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_high)
   
-  beta1_BAU_sample <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
+  beta1_past_sample <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
     rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_impervious"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_impervious"),"Std. Error"])*mean(poisson_df$d_impervious) +
     rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_tempsrping"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_tempsrping"),"Std. Error"])*mean(poisson_df$d_tempsrping) +
     rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*mean(poisson_df$d_tempsrpingvar) +
@@ -3237,6 +3237,39 @@ predict_trend <- function(mod,
     rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_low"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_low"),"Std. Error"])*(agri_low_ssp1 - eulandsystem_farmland_low_mu)/eulandsystem_farmland_low_si +
     rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_medium"),"Std. Error"])*(agri_medium_ssp1 - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_high"),"Std. Error"])*(agri_high_ssp1 - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
+  
+  
+  beta1_BAU <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
+    mod_coef[which(row.names(mod_coef)=="year:d_impervious"),"Estimate"]*mean(poisson_df$d_impervious) +
+    mod_coef[which(row.names(mod_coef)=="year:d_tempsrping"),"Estimate"]*(d_tempspring_ssp1 - d_tempspring_mu)/d_tempspring_si +
+    mod_coef[which(row.names(mod_coef)=="year:d_tempsrpingvar"),"Estimate"]*(d_tempspringvar_ssp1 - d_tempspringvar_mu)/d_tempspringvar_si +
+    mod_coef[which(row.names(mod_coef)=="year:d_precspring"),"Estimate"]*(d_precspring_ssp1 - d_precspring_mu)/d_precspring_si +
+    mod_coef[which(row.names(mod_coef)=="year:d_shannon"),"Estimate"]*mean(poisson_df$d_shannon) +
+    mod_coef[which(row.names(mod_coef)=="year:protectedarea_perc"),"Estimate"]*(protectedarea_perc_ssp1 - protectedarea_perc_mu)/protectedarea_perc_si +
+    mod_coef[which(row.names(mod_coef)=="year:d_treedensity"),"Estimate"]*mean(poisson_df$d_treedensity) +
+    mod_coef[which(row.names(mod_coef)=="year:eulandsystem_forest_lowmedium"),"Estimate"]*mean(poisson_df$eulandsystem_forest_lowmedium) +
+    mod_coef[which(row.names(mod_coef)=="year:eulandsystem_forest_high"),"Estimate"]*mean(poisson_df$eulandsystem_forest_high) +
+    mod_coef[which(row.names(mod_coef)=="year:d_agri"),"Estimate"]*mean(poisson_df$d_agri) +
+    mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_low"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_low) +
+    mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_medium"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_medium) +
+    mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_high"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_high)
+  
+  beta1_BAU_sample <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_impervious"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_impervious"),"Std. Error"])*mean(poisson_df$d_impervious) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_tempsrping"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_tempsrping"),"Std. Error"])*(d_tempspring_ssp1 - d_tempspring_mu)/d_tempspring_si +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_tempsrpingvar"),"Std. Error"])*(d_tempspringvar_ssp1 - d_tempspringvar_mu)/d_tempspringvar_si +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_precspring"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_precspring"),"Std. Error"])*(d_precspring_ssp1 - d_precspring_mu)/d_precspring_si +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_shannon"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_shannon"),"Std. Error"])*mean(poisson_df$d_shannon) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:protectedarea_perc"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:protectedarea_perc"),"Std. Error"])*(protectedarea_perc_ssp1 - protectedarea_perc_mu)/protectedarea_perc_si +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_treedensity"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_treedensity"),"Std. Error"])*mean(poisson_df$d_treedensity) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_forest_lowmedium"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_forest_lowmedium"),"Std. Error"])*mean(poisson_df$eulandsystem_forest_lowmedium) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_forest_high"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_forest_high"),"Std. Error"])*mean(poisson_df$eulandsystem_forest_high) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:d_agri"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:d_agri"),"Std. Error"])*mean(poisson_df$d_agri) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_low"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_low"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_low) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_medium"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_medium) +
+    rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year:eulandsystem_farmland_high"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_high)
+  
+  
   
   d_impervious_ssp3 <- mean(poisson_df_unscale$impervious_2018)*
     (lulc_pls_short$ssp3[which(lulc_pls_short$PLS==PLS & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS==PLS & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018) 
@@ -3446,7 +3479,7 @@ predict_trend <- function(mod,
   mod_coef_signif <- mod_coef
   mod_coef_signif[which(mod_coef_signif[,c("Pr(>|t|)")] > 0.05),c("Estimate","Std. Error")] <- 0
   
-  beta1_BAU_signif <- mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"] +
+  beta1_past_signif <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"]*mean(poisson_df$d_impervious) +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"]*mean(poisson_df$d_tempsrping) +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"]*mean(poisson_df$d_tempsrpingvar) +
@@ -3461,7 +3494,7 @@ predict_trend <- function(mod,
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_medium) +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_high)
   
-  beta1_BAU_sample_signif <- rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Std. Error"]) +
+  beta1_past_sample_signif <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Std. Error"])*mean(poisson_df$d_impervious) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Std. Error"])*mean(poisson_df$d_tempsrping) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Std. Error"])*mean(poisson_df$d_tempsrpingvar) +
@@ -3476,7 +3509,7 @@ predict_trend <- function(mod,
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_medium) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_high)
   
-  beta1_SSP1_signif <- mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"] +
+  beta1_SSP1_signif <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"]*(d_impervious_ssp1 - d_impervious_mu)/d_impervious_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"]*(d_tempspring_ssp1 - d_tempspring_mu)/d_tempspring_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"]*(d_tempspringvar_ssp1 - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3491,7 +3524,7 @@ predict_trend <- function(mod,
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"]*(agri_medium_ssp1 - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"]*(agri_high_ssp1 - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_SSP1_sample_signif <- rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Std. Error"]) +
+  beta1_SSP1_sample_signif <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Std. Error"])*(d_impervious_ssp1 - d_impervious_mu)/d_impervious_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Std. Error"])*(d_tempspring_ssp1 - d_tempspring_mu)/d_tempspring_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Std. Error"])*(d_tempspringvar_ssp1 - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3506,7 +3539,39 @@ predict_trend <- function(mod,
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Std. Error"])*(agri_medium_ssp1 - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Std. Error"])*(agri_high_ssp1 - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_SSP3_signif <- mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"] +
+  
+  beta1_BAU_signif <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"]*mean(poisson_df$d_impervious) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"]*(d_tempspring_ssp1 - d_tempspring_mu)/d_tempspring_si +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"]*(d_tempspringvar_ssp1 - d_tempspringvar_mu)/d_tempspringvar_si +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_precspring"),"Estimate"]*(d_precspring_ssp1 - d_precspring_mu)/d_precspring_si +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_shannon"),"Estimate"]*mean(poisson_df$d_shannon) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:protectedarea_perc"),"Estimate"]*(protectedarea_perc_ssp1 - protectedarea_perc_mu)/protectedarea_perc_si +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_treedensity"),"Estimate"]*mean(poisson_df$d_treedensity) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_forest_lowmedium"),"Estimate"]*mean(poisson_df$eulandsystem_forest_lowmedium) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_forest_high"),"Estimate"]*mean(poisson_df$eulandsystem_forest_high) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_agri"),"Estimate"]*mean(poisson_df$d_agri) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_low"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_low) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_medium) +
+    mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"]*mean(poisson_df$eulandsystem_farmland_high)
+  
+  beta1_BAU_sample_signif <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Std. Error"])*mean(poisson_df$d_impervious) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Std. Error"])*(d_tempspring_ssp1 - d_tempspring_mu)/d_tempspring_si +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Std. Error"])*(d_tempspringvar_ssp1 - d_tempspringvar_mu)/d_tempspringvar_si +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_precspring"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_precspring"),"Std. Error"])*(d_precspring_ssp1 - d_precspring_mu)/d_precspring_si +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_shannon"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_shannon"),"Std. Error"])*mean(poisson_df$d_shannon) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:protectedarea_perc"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:protectedarea_perc"),"Std. Error"])*(protectedarea_perc_ssp1 - protectedarea_perc_mu)/protectedarea_perc_si +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_treedensity"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_treedensity"),"Std. Error"])*mean(poisson_df$d_treedensity) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_forest_lowmedium"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_forest_lowmedium"),"Std. Error"])*mean(poisson_df$eulandsystem_forest_lowmedium) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_forest_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_forest_high"),"Std. Error"])*mean(poisson_df$eulandsystem_forest_high) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_agri"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_agri"),"Std. Error"])*mean(poisson_df$d_agri) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_low"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_low"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_low) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_medium) +
+    rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Std. Error"])*mean(poisson_df$eulandsystem_farmland_high)
+  
+  
+  beta1_SSP3_signif <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"]*(d_impervious_ssp3 - d_impervious_mu)/d_impervious_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"]*(d_tempspring_ssp3 - d_tempspring_mu)/d_tempspring_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"]*(d_tempspringvar_ssp3 - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3521,7 +3586,7 @@ predict_trend <- function(mod,
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"]*(agri_medium_ssp3 - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"]*(agri_high_ssp3 - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_SSP3_sample_signif <- rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Std. Error"]) +
+  beta1_SSP3_sample_signif <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Std. Error"])*(d_impervious_ssp3 - d_impervious_mu)/d_impervious_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Std. Error"])*(d_tempspring_ssp3 - d_tempspring_mu)/d_tempspring_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Std. Error"])*(d_tempspringvar_ssp3 - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3536,7 +3601,7 @@ predict_trend <- function(mod,
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Std. Error"])*(agri_medium_ssp3 - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Std. Error"])*(agri_high_ssp3 - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_nac_signif <- mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"] +
+  beta1_nac_signif <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"]*(d_impervious_nac - d_impervious_mu)/d_impervious_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"]*(d_tempspring_nac - d_tempspring_mu)/d_tempspring_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"]*(d_tempspringvar_nac - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3551,7 +3616,7 @@ predict_trend <- function(mod,
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"]*(agri_medium_nac - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"]*(agri_high_nac - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_nac_sample_signif <- rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Std. Error"]) +
+  beta1_nac_sample_signif <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Std. Error"])*(d_impervious_nac - d_impervious_mu)/d_impervious_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Std. Error"])*(d_tempspring_nac - d_tempspring_mu)/d_tempspring_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Std. Error"])*(d_tempspringvar_nac - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3566,7 +3631,7 @@ predict_trend <- function(mod,
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Std. Error"])*(agri_medium_nac - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Std. Error"])*(agri_high_nac - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_nfn_signif <- mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"] +
+  beta1_nfn_signif <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"]*(d_impervious_nfn - d_impervious_mu)/d_impervious_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"]*(d_tempspring_nfn - d_tempspring_mu)/d_tempspring_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"]*(d_tempspringvar_nfn - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3581,7 +3646,7 @@ predict_trend <- function(mod,
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"]*(agri_medium_nfn - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"]*(agri_high_nfn - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_nfn_sample_signif <- rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Std. Error"]) +
+  beta1_nfn_sample_signif <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Std. Error"])*(d_impervious_nfn - d_impervious_mu)/d_impervious_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Std. Error"])*(d_tempspring_nfn - d_tempspring_mu)/d_tempspring_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Std. Error"])*(d_tempspringvar_nfn - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3596,7 +3661,7 @@ predict_trend <- function(mod,
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Std. Error"])*(agri_medium_nfn - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Std. Error"])*(agri_high_nfn - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_nfs_signif <- mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"] +
+  beta1_nfs_signif <- mod_coef[which(row.names(mod_coef)=="year"),"Estimate"] +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"]*(d_impervious_nfs - d_impervious_mu)/d_impervious_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"]*(d_tempspring_nfs - d_tempspring_mu)/d_tempspring_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"]*(d_tempspringvar_nfs - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3611,7 +3676,7 @@ predict_trend <- function(mod,
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_medium"),"Estimate"]*(agri_medium_nfs - eulandsystem_farmland_medium_mu)/eulandsystem_farmland_medium_si +
     mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"]*(agri_high_nfs - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
-  beta1_nfs_sample_signif <- rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year"),"Std. Error"]) +
+  beta1_nfs_sample_signif <- rnorm(nb_rep,mod_coef[which(row.names(mod_coef)=="year"),"Estimate"], sd=mod_coef[which(row.names(mod_coef)=="year"),"Std. Error"]) +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_impervious"),"Std. Error"])*(d_impervious_nfs - d_impervious_mu)/d_impervious_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrping"),"Std. Error"])*(d_tempspring_nfs - d_tempspring_mu)/d_tempspring_si +
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:d_tempsrpingvar"),"Std. Error"])*(d_tempspringvar_nfs - d_tempspringvar_mu)/d_tempspringvar_si +
@@ -3627,9 +3692,10 @@ predict_trend <- function(mod,
     rnorm(nb_rep,mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Estimate"], sd=mod_coef_signif[which(row.names(mod_coef_signif)=="year:eulandsystem_farmland_high"),"Std. Error"])*(agri_high_nfs - eulandsystem_farmland_high_mu)/eulandsystem_farmland_high_si
   
   
-  return(data.frame(intercept = summary(mod)$p.table[1,1], trend_BAU=beta1_BAU,sd_BAU=sd(beta1_BAU_sample),trend_SSP1=beta1_SSP1,sd_SSP1=sd(beta1_SSP1_sample),
+  return(data.frame(intercept = summary(mod)$p.table[1,1], trend_past=beta1_past,sd_past=sd(beta1_past_sample), trend_BAU=beta1_BAU,sd_BAU=sd(beta1_BAU_sample),trend_SSP1=beta1_SSP1,sd_SSP1=sd(beta1_SSP1_sample),
                     trend_SSP3=beta1_SSP3,sd_SSP3=sd(beta1_SSP3_sample),trend_nac=beta1_nac,sd_nac=sd(beta1_nac_sample),
                     trend_nfn=beta1_nfn,sd_nfn=sd(beta1_nfn_sample),trend_nfs=beta1_nfs,sd_nfs=sd(beta1_nfs_sample),
+                    trend_past_signif=beta1_past_signif,sd_past_signif=sd(beta1_past_sample_signif),
                     trend_BAU_signif=beta1_BAU_signif,sd_BAU_signif=sd(beta1_BAU_sample_signif),trend_SSP1_signif=beta1_SSP1_signif,sd_SSP1_signif=sd(beta1_SSP1_sample_signif),
                     trend_SSP3_signif=beta1_SSP3_signif,sd_SSP3_signif=sd(beta1_SSP3_sample_signif),trend_nac_signif=beta1_nac_signif,sd_nac_signif=sd(beta1_nac_sample_signif),
                     trend_nfn_signif=beta1_nfn_signif,sd_nfn_signif=sd(beta1_nfn_sample_signif),trend_nfs_signif=beta1_nfs_signif,sd_nfs_signif=sd(beta1_nfs_sample_signif),PLS=PLS))
@@ -3727,9 +3793,10 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
       
       unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
       
-      if_fail <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+      if_fail <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                             trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                             trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                            trend_past_signif=NA,sd_past_signif=NA,
                             trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                             trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                             trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -3777,9 +3844,10 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                                                                                                   PLS=unique(x$PLS))
                                                                                  
                                                                                }else{
-                                                                                 predict_trend_i <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+                                                                                 predict_trend_i <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                                                                                                                trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                                                                                                                trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                                                                                               trend_past_signif=NA,sd_past_signif=NA,
                                                                                                                trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                                                                                                trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                                                                                                trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -3797,9 +3865,10 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
       #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=trend_BAU)) + scale_fill_gradient2()
       
     }else{
-      predict_trend_all <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+      predict_trend_all <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                                       trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                                       trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                      trend_past_signif=NA,sd_past_signif=NA,
                                       trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                       trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                       trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -3807,9 +3876,10 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
     }
     
   }else{
-    predict_trend_all <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+    predict_trend_all <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                                     trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                                     trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                    trend_past_signif=NA,sd_past_signif=NA,
                                     trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                     trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                     trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -3915,9 +3985,10 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
       
       unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
       
-      if_fail <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+      if_fail <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                             trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                             trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                            trend_past_signif=NA,sd_past_signif=NA,
                             trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                             trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                             trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -3965,9 +4036,10 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                                                                                                     PLS=unique(x$PLS))
                                                                                    
                                                                                  }else{
-                                                                                   predict_trend_i <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+                                                                                   predict_trend_i <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                                                                                                                  trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                                                                                                                  trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                                                                                                 trend_past_signif=NA,sd_past_signif=NA,
                                                                                                                  trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                                                                                                  trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                                                                                                  trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -3985,9 +4057,10 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
       #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=trend_BAU)) + scale_fill_gradient2()
       
     }else{
-      predict_trend_all <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+      predict_trend_all <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                                       trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                                       trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                      trend_past_signif=NA,sd_past_signif=NA,
                                       trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                       trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                       trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -3995,9 +4068,10 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
     }
     
   }else{
-    predict_trend_all <- data.frame(intercept=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
+    predict_trend_all <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
                                     trend_SSP3=NA,sd_SSP3=NA,trend_nac=NA,sd_nac=NA,
                                     trend_nfn=NA,sd_nfn=NA,trend_nfs=NA,sd_nfs=NA,
+                                    trend_past_signif=NA,sd_past_signif=NA,
                                     trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                     trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                     trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
@@ -4011,59 +4085,67 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
 
 overall_mean_sd_trend <- function(data){
   n <- length(na.omit(data$trend_BAU))
-  mu_bau <- mean(exp(data$trend_BAU),na.rm=TRUE)
-  var_bau <- (sum(data$sd_BAU^2*exp(data$trend_BAU)^2 + exp(data$trend_BAU)^2, na.rm = TRUE))/n - mu_bau^2
+  mu_past <- exp(mean(data$trend_past,na.rm=TRUE))
+  var_past <- (sum(data$sd_past^2 + data$trend_past^2, na.rm = TRUE))/n - mean(data$trend_past,na.rm=TRUE)^2
+  sd_past <- sqrt(mu_past^2*var_past)
+  se_past <- mu_past/sqrt(n)*sd(data$trend_past)
+  mu_bau <- exp(mean(data$trend_BAU,na.rm=TRUE))
+  var_bau <- (sum(data$sd_BAU^2 + data$trend_BAU^2, na.rm = TRUE))/n - mean(data$trend_BAU,na.rm=TRUE)^2
   sd_bau <- sqrt(mu_bau^2*var_bau)
-  se_bau <- sd(exp(data$trend_BAU),na.rm=TRUE)/sqrt(n)
-  mu_ssp1 <- mean(exp(data$trend_SSP1),na.rm=TRUE)
-  var_ssp1 <- (sum(data$sd_SSP1^2*exp(data$trend_SSP1)^2 + exp(data$trend_SSP1)^2, na.rm = TRUE))/n - mu_ssp1^2
-  sd_ssp1 <- sqrt(var_ssp1)
-  se_ssp1 <- sd(exp(data$trend_SSP1),na.rm=TRUE)/sqrt(n)
-  mu_ssp3 <- mean(exp(data$trend_SSP3),na.rm=TRUE)
-  var_ssp3 <- (sum(data$sd_SSP3^2*exp(data$trend_SSP3)^2 + exp(data$trend_SSP3)^2, na.rm = TRUE))/n - mu_ssp3^2
-  sd_ssp3 <- sqrt(var_ssp3)
-  se_ssp3 <- sd(exp(data$trend_SSP3),na.rm=TRUE)/sqrt(n)
-  mu_nac <- mean(exp(data$trend_nac),na.rm=TRUE)
-  var_nac <- (sum(data$sd_nac^2*exp(data$trend_nac)^2 + exp(data$trend_nac)^2, na.rm = TRUE))/n - mu_nac^2
-  sd_nac <- sqrt(var_nac)
-  se_nac <- sd(exp(data$trend_nac),na.rm=TRUE)/sqrt(n)
-  mu_nfn <- mean(exp(data$trend_nfn),na.rm=TRUE)
-  var_nfn <- (sum(data$sd_nfn^2*exp(data$trend_nfn)^2 + exp(data$trend_nfn)^2, na.rm = TRUE))/n - mu_nfn^2
-  sd_nfn <- sqrt(var_nfn)
-  se_nfn <- sd(exp(data$trend_nfn),na.rm=TRUE)/sqrt(n)
-  mu_nfs <- mean(exp(data$trend_nfs),na.rm=TRUE)
-  var_nfs <- (sum(data$sd_nfs^2*exp(data$trend_nfs)^2 + exp(data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2#(sum((data$sd_nfs)^2 + (data$trend_nfs)^2, na.rm = TRUE))/n - mu_nfs^2
-  sd_nfs <- sqrt(var_nfs)
-  se_nfs <- sd(exp(data$trend_nfs),na.rm=TRUE)/sqrt(n)
+  se_bau <- mu_bau/sqrt(n)*sd(data$trend_BAU)
+  mu_ssp1 <- exp(mean(data$trend_SSP1,na.rm=TRUE))
+  var_ssp1 <- (sum(data$sd_SSP1^2 + data$trend_SSP1^2, na.rm = TRUE))/n - mean(data$trend_SSP1,na.rm=TRUE)^2
+  sd_ssp1 <- sqrt(mu_ssp1^2*var_ssp1)
+  se_ssp1 <- mu_ssp1/sqrt(n)*sd(data$trend_SSP1)
+  mu_ssp3 <- exp(mean(data$trend_SSP3,na.rm=TRUE))
+  var_ssp3 <- (sum(data$sd_SSP3^2 + data$trend_SSP3^2, na.rm = TRUE))/n - mean(data$trend_SSP3,na.rm=TRUE)^2
+  sd_ssp3 <- sqrt(mu_ssp3^2*var_ssp3)
+  se_ssp3 <- mu_ssp3/sqrt(n)*sd(data$trend_SSP3)
+  mu_nac <- exp(mean(data$trend_nac,na.rm=TRUE))
+  var_nac <- (sum(data$sd_nac^2 + data$trend_nac^2, na.rm = TRUE))/n - mean(data$trend_nac,na.rm=TRUE)^2
+  sd_nac <- sqrt(mu_nac^2*var_nac)
+  se_nac <- mu_nac/sqrt(n)*sd(data$trend_nac)
+  mu_nfn <- exp(mean(data$trend_nfn,na.rm=TRUE))
+  var_nfn <- (sum(data$sd_nfn^2 + data$trend_nfn^2, na.rm = TRUE))/n - mean(data$trend_nfn,na.rm=TRUE)^2
+  sd_nfn <- sqrt(mu_nfn^2*var_nfn)
+  se_nfn <- mu_nfn/sqrt(n)*sd(data$trend_nfn)
+  mu_nfs <- exp(mean(data$trend_nfs,na.rm=TRUE))
+  var_nfs <- (sum(data$sd_nfs^2 + data$trend_nfs^2, na.rm = TRUE))/n - mean(data$trend_nfs,na.rm=TRUE)^2
+  sd_nfs <- sqrt(mu_nfs^2*var_nfs)
+  se_nfs <- mu_nfs/sqrt(n)*sd(data$trend_nfs)
   
-  mu_bau_signif <- mean(exp(data$trend_BAU_signif),na.rm=TRUE)
-  var_bau_signif <- (sum(data$sd_BAU_signif^2*exp(data$trend_BAU_signif)^2 + exp(data$trend_BAU_signif)^2, na.rm = TRUE))/n - mu_bau_signif^2
-  sd_bau_signif <- sqrt(var_bau_signif)
-  se_bau_signif <- sd(exp(data$trend_BAU_signif),na.rm=TRUE)/sqrt(n)
-  mu_ssp1_signif <- mean(exp(data$trend_SSP1_signif),na.rm=TRUE)
-  var_ssp1_signif <- (sum(data$sd_SSP1_signif^2*exp(data$trend_SSP1_signif)^2 + exp(data$trend_SSP1_signif)^2, na.rm = TRUE))/n - mu_ssp1_signif^2
-  sd_ssp1_signif <- sqrt(var_ssp1_signif)
-  se_ssp1_signif <- sd(exp(data$trend_SSP1_signif),na.rm=TRUE)/sqrt(n)
-  mu_ssp3_signif <- mean(exp(data$trend_SSP3_signif),na.rm=TRUE)
-  var_ssp3_signif <- (sum(data$sd_SSP3_signif^2*exp(data$trend_SSP3_signif)^2 + exp(data$trend_SSP3_signif)^2, na.rm = TRUE))/n - mu_ssp3_signif^2
-  sd_ssp3_signif <- sqrt(var_ssp3_signif)
-  se_ssp3_signif <- sd(exp(data$trend_SSP3_signif),na.rm=TRUE)/sqrt(n)
-  mu_nac_signif <- mean(exp(data$trend_nac_signif),na.rm=TRUE)
-  var_nac_signif <- (sum(data$sd_nac_signif^2*exp(data$trend_nac_signif)^2 + exp(data$trend_nac_signif)^2, na.rm = TRUE))/n - mu_nac_signif^2
-  sd_nac_signif <- sqrt(var_nac_signif)
-  se_nac_signif <- sd(exp(data$trend_nac_signif),na.rm=TRUE)/sqrt(n)
-  mu_nfn_signif <- mean(exp(data$trend_nfn_signif),na.rm=TRUE)
-  var_nfn_signif <- (sum(data$sd_nfn_signif^2*exp(data$trend_nfn_signif)^2 + exp(data$trend_nfn_signif)^2, na.rm = TRUE))/n - mu_nfn_signif^2
-  sd_nfn_signif <- sqrt(var_nfn_signif)
-  se_nfn_signif <- sd(exp(data$trend_nfn_signif),na.rm=TRUE)/sqrt(n)
-  mu_nfs_signif <- mean(exp(data$trend_nfs_signif),na.rm=TRUE)
-  var_nfs_signif <- (sum(data$sd_nfs_signif^2*exp(data$trend_nfs_signif)^2 + exp(data$trend_nfs_signif)^2, na.rm = TRUE))/n - mu_nfs_signif^2
-  sd_nfs_signif <- sqrt(var_nfs_signif)
-  se_nfs_signif <- sd(exp(data$trend_nfs_signif),na.rm=TRUE)/sqrt(n)
+  mu_past_signif <- exp(mean(data$trend_past_signif,na.rm=TRUE))
+  var_past_signif <- (sum(data$sd_past_signif^2 + data$trend_past_signif^2, na.rm = TRUE))/n - mean(data$trend_past_signif,na.rm=TRUE)^2
+  sd_past_signif <- sqrt(mu_past_signif^2*var_past_signif)
+  se_past_signif <- mu_past_signif/sqrt(n)*sd(data$trend_past_signif)
+  mu_bau_signif <- exp(mean(data$trend_BAU_signif,na.rm=TRUE))
+  var_bau_signif <- (sum(data$sd_BAU_signif^2 + data$trend_BAU_signif^2, na.rm = TRUE))/n - mean(data$trend_BAU_signif,na.rm=TRUE)^2
+  sd_bau_signif <- sqrt(mu_bau_signif^2*var_bau_signif)
+  se_bau_signif <- mu_bau_signif/sqrt(n)*sd(data$trend_BAU_signif)
+  mu_ssp1_signif <- exp(mean(data$trend_SSP1_signif,na.rm=TRUE))
+  var_ssp1_signif <- (sum(data$sd_SSP1_signif^2 + data$trend_SSP1_signif^2, na.rm = TRUE))/n - mean(data$trend_SSP1_signif,na.rm=TRUE)^2
+  sd_ssp1_signif <- sqrt(mu_ssp1_signif^2*var_ssp1_signif)
+  se_ssp1_signif <- mu_ssp1_signif/sqrt(n)*sd(data$trend_SSP1_signif)
+  mu_ssp3_signif <- exp(mean(data$trend_SSP3_signif,na.rm=TRUE))
+  var_ssp3_signif <- (sum(data$sd_SSP3_signif^2 + data$trend_SSP3_signif^2, na.rm = TRUE))/n - mean(data$trend_SSP3_signif,na.rm=TRUE)^2
+  sd_ssp3_signif <- sqrt(mu_ssp3_signif^2*var_ssp3_signif)
+  se_ssp3_signif <- mu_ssp3_signif/sqrt(n)*sd(data$trend_SSP3_signif)
+  mu_nac_signif <- exp(mean(data$trend_nac_signif,na.rm=TRUE))
+  var_nac_signif <- (sum(data$sd_nac_signif^2 + data$trend_nac_signif^2, na.rm = TRUE))/n - mean(data$trend_nac_signif,na.rm=TRUE)^2
+  sd_nac_signif <- sqrt(mu_nac_signif^2*var_nac_signif)
+  se_nac_signif <- mu_nac_signif/sqrt(n)*sd(data$trend_nac_signif)
+  mu_nfn_signif <- exp(mean(data$trend_nfn_signif,na.rm=TRUE))
+  var_nfn_signif <- (sum(data$sd_nfn_signif^2 + data$trend_nfn_signif^2, na.rm = TRUE))/n - mean(data$trend_nfn_signif,na.rm=TRUE)^2
+  sd_nfn_signif <- sqrt(mu_nfn_signif^2*var_nfn_signif)
+  se_nfn_signif <- mu_nfn_signif/sqrt(n)*sd(data$trend_nfn_signif)
+  mu_nfs_signif <- exp(mean(data$trend_nfs_signif,na.rm=TRUE))
+  var_nfs_signif <- (sum(data$sd_nfs_signif^2 + data$trend_nfs_signif^2, na.rm = TRUE))/n - mean(data$trend_nfs_signif,na.rm=TRUE)^2
+  sd_nfs_signif <- sqrt(mu_nfs_signif^2*var_nfs_signif)
+  se_nfs_signif <- mu_nfs_signif/sqrt(n)*sd(data$trend_nfs_signif)
   
-  return(data.frame(mu_bau,sd_bau,se_bau,mu_ssp1,sd_ssp1,se_ssp1,mu_ssp3,sd_ssp3,se_ssp3,
+  return(data.frame(mu_past,sd_past,se_past,mu_bau,sd_bau,se_bau,mu_ssp1,sd_ssp1,se_ssp1,mu_ssp3,sd_ssp3,se_ssp3,
                     mu_nac,sd_nac,se_nac,mu_nfn,sd_nfn,se_nfn,mu_nfs,sd_nfs,se_nfs,
-                    mu_bau_signif,sd_bau_signif,se_bau_signif,mu_ssp1_signif,sd_ssp1_signif,se_ssp1_signif,mu_ssp3_signif,sd_ssp3_signif,se_ssp3_signif,
+                    mu_past_signif,sd_past_signif,se_past_signif,mu_bau_signif,sd_bau_signif,se_bau_signif,mu_ssp1_signif,sd_ssp1_signif,se_ssp1_signif,mu_ssp3_signif,sd_ssp3_signif,se_ssp3_signif,
                     mu_nac_signif,sd_nac_signif,se_nac_signif,mu_nfn_signif,sd_nfn_signif,se_nfn_signif,mu_nfs_signif,sd_nfs_signif,se_nfs_signif,n))
 }
 

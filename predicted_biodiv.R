@@ -1189,8 +1189,8 @@ predict_trend_all_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
                                 .progress = "text")
 predict_trend_all_butterfly <- predict_trend_all_butterfly[which(!is.na(predict_trend_all_butterfly$PLS)),]
 
-saveRDS(predict_trend_all_butterfly,"output/predict_trend_all_butterfly.rds")
-
+#saveRDS(predict_trend_all_butterfly,"output/predict_trend_all_butterfly.rds")
+#predict_trend_all_butterfly <- readRDS("output/predict_trend_all_butterflynew_past.rds")
 
 
 
@@ -1202,6 +1202,25 @@ predict_trend_all_bird_correct <- merge(res_gamm_bird_correct,predict_trend_all_
 #weight_species <- bird_data_mainland[which(bird_data_mainland$year < 2005),] %>% group_by(sci_name_out) %>% summarise(ab_tot = sum(count)/5)
 
 #predict_trend_all_bird_correct <- merge(predict_trend_all_bird_correct,weight_species, by=c("sci_name_out"),all.x=TRUE)
+
+
+predict_trend_all_bird_correct <- ddply(predict_trend_all_bird_correct,
+                                             .(PLS),.fun=function(x){
+                                               for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
+                                                 #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
+                                                 x[which(x[,i]>0.5),i] <- 0.06
+                                                 x[which(x[,i]<(-0.5)),i] <- -0.06
+                                               }
+                                               for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
+                                                 #x[which(x[,i]>max(x$trend_past_signif)),i] <- max(x$trend_past_signif)
+                                                 #x[which(x[,i]<min(x$trend_past_signif)),i] <- min(x$trend_past_signif)
+                                                 #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
+                                                 x[which(x[,i]>0.5),i] <- 0.06
+                                                 x[which(x[,i]<(-0.5)),i] <- -0.06
+                                               }
+                                               return(x)
+                                             },
+                                             .progress = "text")
 
 predict_trend_all_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe"),]
 
@@ -1221,13 +1240,11 @@ overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS"
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_all_sf, aes(fill=mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_all_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_all_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")])))),
-                       midpoint = 1, transform = "log", breaks=c(0.5,1,2), name = NULL) + theme_void()
+  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_all_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.4, 1.4),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.09, 0.035),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_all_bau.png",
        width = 8,
@@ -1245,21 +1262,13 @@ overall_trend_farmland <- ddply(predict_trend_farmland,
 
 overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_bau), col = NA) + 
+  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")])))))+
-  theme_void()
-ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_bau_signif), col = NA) + 
-  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")])))),
-                       midpoint = 1, transform = "log", breaks=c(0.5,1,2), name = NULL) + theme_void()
+  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.4, 1.4),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.45, 0.2),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_farm_bau.png",
        width = 8,
@@ -1273,20 +1282,13 @@ overall_trend_forest <- ddply(predict_trend_forest,
 
 overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_bau), col = NA) + 
+  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")])))))
-ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_bau_signif), col = NA) + 
-  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")])))),
-                       midpoint = 1, transform = "log", breaks=c(0.5,1,2), name = NULL) + theme_void()
+  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.45, 1.4),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.1, 0.1),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_forest_bau.png",
        width = 8,
@@ -1296,55 +1298,55 @@ ggsave("output/map_pred_forest_bau.png",
 
 
 
-europe_all <- data.frame(value = c(overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],
-                                        overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
-                                        overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe")],
-                                        overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],
-                                        overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],
-                                        overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]),
-                              sd = c(overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe")],
-                                     overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe")],
-                                     overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe")],
-                                     overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe")],
-                                     overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe")],
-                                     overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe")]),
-                         se = c(overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],
+
+europe_all <- data.frame(value = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]),
+                         sd = c(overall_trend_all$sd_past[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe")]),
+                         se = c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$se_ssp3[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]),
-                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                         variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_all, aes(x=value,y = variable)) + 
+europe_all2 <- europe_all[which(europe_all$variable %in% c("past","bau","ssp1","nfn","nfs","nac")),]
+europe_all2$variable <- factor(europe_all2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_all2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
-  #geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate")
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
 
-init_val <- mean(predict_trend_all_bird_eu$intercept)
-intercept_init <- init_val-europe_all$value[which(europe_all$variable=="bau")]*2000
-
-ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]*x+intercept_init}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]*x+intercept_init}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="ssp1")]*x+intercept_init+europe_all$value[which(europe_all$variable=="bau")]*2023-europe_all$value[which(europe_all$variable=="ssp1")]*2023}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfn")]*x+intercept_init+europe_all$value[which(europe_all$variable=="bau")]*2023-europe_all$value[which(europe_all$variable=="nfn")]*2023}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfs")]*x+intercept_init+europe_all$value[which(europe_all$variable=="bau")]*2023-europe_all$value[which(europe_all$variable=="nfs")]*2023}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nac")]*x+intercept_init+europe_all$value[which(europe_all$variable=="bau")]*2023-europe_all$value[which(europe_all$variable=="nac")]*2023}, colour = "lightgreen", xlim=c(2023,2050)) + 
-  theme_minimal() + xlab("Year") + ylab("Log abundance")
+ggsave("output/trend_bird_eu_all_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]^x/europe_all$value[which(europe_all$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]^x/europe_all$value[which(europe_all$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="ssp1")]^x/europe_all$value[which(europe_all$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfn")]^x/europe_all$value[which(europe_all$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfs")]^x/europe_all$value[which(europe_all$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nac")]^x/europe_all$value[which(europe_all$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="past")]^x/europe_all$value[which(europe_all$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]^x/europe_all$value[which(europe_all$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="ssp1")]^x/europe_all$value[which(europe_all$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfn")]^x/europe_all$value[which(europe_all$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfs")]^x/europe_all$value[which(europe_all$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nac")]^x/europe_all$value[which(europe_all$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
-
 
 ggsave("output/trend_bird_eu_all.png",
        width = 5,
@@ -1356,38 +1358,41 @@ comb_var <- combn(europe_all$variable,2)
 test_diff_var_europe_all <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
   test_diff_var_europe_all[i,3] <- tsum.test(mean.x=europe_all$value[which(europe_all$variable==comb_var[1,i])],   s.x=europe_all$se[which(europe_all$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
-            mean.y=europe_all$value[which(europe_all$variable==comb_var[2,i])],   s.y=europe_all$se[which(europe_all$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+                                             mean.y=europe_all$value[which(europe_all$variable==comb_var[2,i])],   s.y=europe_all$se[which(europe_all$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
   
 }
 
 
-europe_all_signif <- data.frame(value = c(overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                         sd = c(overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                         se = c(overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                         variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+europe_all_signif <- data.frame(value = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],
+                                          overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],
+                                          overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                          overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe")],
+                                          overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],
+                                          overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],
+                                          overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                                sd = c(overall_trend_all$sd_past_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                                se = c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_ssp3_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                                variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_all_signif2 <- europe_all_signif[which(europe_all_signif$variable != "ssp3"),]
-europe_all_signif2$variable <- factor(europe_all_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
+europe_all_signif2 <- europe_all_signif[which(europe_all_signif$variable %in% c("past","bau","ssp1","nfn","nfs","nac")),]
+europe_all_signif2$variable <- factor(europe_all_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_all_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -1397,25 +1402,13 @@ ggsave("output/trend_bird_eu_all_signif_error.png",
        dpi = 300
 )
 
-init_val <- mean(predict_trend_all_bird_eu$intercept)
-intercept_init <- init_val-europe_all_signif$value[which(europe_all_signif$variable=="bau")]*2000
-
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]*x+intercept_init}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]*x+intercept_init}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]*x+intercept_init+europe_all_signif$value[which(europe_all_signif$variable=="bau")]*2023-europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]*2023}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]*x+intercept_init+europe_all_signif$value[which(europe_all_signif$variable=="bau")]*2023-europe_all_signif$value[which(europe_all_signif$variable=="nfn")]*2023}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]*x+intercept_init+europe_all_signif$value[which(europe_all_signif$variable=="bau")]*2023-europe_all_signif$value[which(europe_all_signif$variable=="nfs")]*2023}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]*x+intercept_init+europe_all_signif$value[which(europe_all_signif$variable=="bau")]*2023-europe_all_signif$value[which(europe_all_signif$variable=="nac")]*2023}, colour = "lightgreen", xlim=c(2023,2050)) + 
-  theme_minimal() + xlab("Year") + ylab("Log abundance")
-
-ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="past")]^x/europe_all_signif$value[which(europe_all_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1430,59 +1423,126 @@ comb_var <- combn(europe_all_signif2$variable,2)
 test_diff_var_europe_all_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
   test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[1,i])],   s.x=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
-                                             mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+                                                    mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
   
 }
 
 
 
-europe_pecbms_signif <- data.frame(value = c(overall_trend_all_eu$mu_bau_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                          overall_trend_all_eu$mu_ssp1_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                          overall_trend_all_eu$mu_ssp3_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                          overall_trend_all_eu$mu_nac_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                          overall_trend_all_eu$mu_nfn_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                          overall_trend_all_eu$mu_nfs_signif[which(overall_trend_all_eu$PLS=="europe")]),
-                                sd = c(overall_trend_all_eu$sd_bau_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$sd_ssp1_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$sd_ssp3_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$sd_nac_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$sd_nfn_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$sd_nfs_signif[which(overall_trend_all_eu$PLS=="europe")]),
-                                se = c(overall_trend_all_eu$se_bau_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$se_ssp1_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$se_ssp3_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$se_nac_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$se_nfn_signif[which(overall_trend_all_eu$PLS=="europe")],
-                                       overall_trend_all_eu$se_nfs_signif[which(overall_trend_all_eu$PLS=="europe")]),
-                                variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+europe_pecbms <- data.frame(value = c(overall_trend_all_eu$mu_past[which(overall_trend_all_eu$PLS=="europe")],
+                                   overall_trend_all_eu$mu_bau[which(overall_trend_all_eu$PLS=="europe")],
+                                   overall_trend_all_eu$mu_ssp1[which(overall_trend_all_eu$PLS=="europe")],
+                                   overall_trend_all_eu$mu_ssp3[which(overall_trend_all_eu$PLS=="europe")],
+                                   overall_trend_all_eu$mu_nac[which(overall_trend_all_eu$PLS=="europe")],
+                                   overall_trend_all_eu$mu_nfn[which(overall_trend_all_eu$PLS=="europe")],
+                                   overall_trend_all_eu$mu_nfs[which(overall_trend_all_eu$PLS=="europe")]),
+                         sd = c(overall_trend_all_eu$sd_past[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$sd_bau[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$sd_ssp1[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$sd_ssp3[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$sd_nac[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$sd_nfn[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$sd_nfs[which(overall_trend_all_eu$PLS=="europe")]),
+                         se = c(overall_trend_all_eu$se_past[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$se_bau[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$se_ssp1[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$se_ssp3[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$se_nac[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$se_nfn[which(overall_trend_all_eu$PLS=="europe")],
+                                overall_trend_all_eu$se_nfs[which(overall_trend_all_eu$PLS=="europe")]),
+                         variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_pecbms_signif2 <- europe_pecbms_signif[which(europe_pecbms_signif$variable != "ssp3"),]
-europe_pecbms_signif2$variable <- factor(europe_pecbms_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
-ggplot(europe_pecbms_signif2, aes(x=value,y = variable)) + 
+europe_pecbms2 <- europe_pecbms[which(europe_pecbms$variable != "ssp3"),]
+europe_pecbms2$variable <- factor(europe_pecbms2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_pecbms2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
-ggsave("output/trend_bird_pecbms_all_signif_error.png",
+ggsave("output/trend_bird_eu_pecbms_error.png",
        width = 3,
        height = 5,
        dpi = 300
 )
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="ssp1")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfn")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfs")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nac")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_pecbms$value[which(europe_pecbms$variable=="past")]^x/europe_pecbms$value[which(europe_pecbms$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_pecbms$value[which(europe_pecbms$variable=="bau")]^x/europe_pecbms$value[which(europe_pecbms$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms$value[which(europe_pecbms$variable=="ssp1")]^x/europe_pecbms$value[which(europe_pecbms$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms$value[which(europe_pecbms$variable=="nfn")]^x/europe_pecbms$value[which(europe_pecbms$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms$value[which(europe_pecbms$variable=="nfs")]^x/europe_pecbms$value[which(europe_pecbms$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms$value[which(europe_pecbms$variable=="nac")]^x/europe_pecbms$value[which(europe_pecbms$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
-ggsave("output/trend_bird_pecbms_all_signif.png",
+ggsave("output/trend_bird_eu_pecbms.png",
+       width = 5,
+       height = 3,
+       dpi = 300
+)
+
+comb_var <- combn(europe_pecbms$variable,2)
+test_diff_var_europe_pecbms <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_pecbms[i,3] <- tsum.test(mean.x=europe_pecbms$value[which(europe_pecbms$variable==comb_var[1,i])],   s.x=europe_pecbms$se[which(europe_pecbms$variable==comb_var[1,i])], n.x= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")],
+                                             mean.y=europe_pecbms$value[which(europe_pecbms$variable==comb_var[2,i])],   s.y=europe_pecbms$se[which(europe_pecbms$variable==comb_var[2,i])], n.y= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")])$p.value
+  
+}
+
+
+europe_pecbms_signif <- data.frame(value = c(overall_trend_all_eu$mu_past_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                          overall_trend_all_eu$mu_bau_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                          overall_trend_all_eu$mu_ssp1_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                          overall_trend_all_eu$mu_ssp3_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                          overall_trend_all_eu$mu_nac_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                          overall_trend_all_eu$mu_nfn_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                          overall_trend_all_eu$mu_nfs_signif[which(overall_trend_all_eu$PLS=="europe")]),
+                                sd = c(overall_trend_all_eu$sd_past_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$sd_bau_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$sd_ssp1_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$sd_ssp3_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$sd_nac_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$sd_nfn_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$sd_nfs_signif[which(overall_trend_all_eu$PLS=="europe")]),
+                                se = c(overall_trend_all_eu$se_past_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$se_bau_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$se_ssp1_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$se_ssp3_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$se_nac_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$se_nfn_signif[which(overall_trend_all_eu$PLS=="europe")],
+                                       overall_trend_all_eu$se_nfs_signif[which(overall_trend_all_eu$PLS=="europe")]),
+                                variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+
+europe_pecbms_signif2 <- europe_pecbms_signif[which(europe_pecbms_signif$variable != "ssp3"),]
+europe_pecbms_signif2$variable <- factor(europe_pecbms_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_pecbms_signif2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
+
+ggsave("output/trend_bird_eu_pecbms_signif_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
+
+ggplot(data.frame(x = 2000:2050), aes(x)) +
+  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="past")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="ssp1")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfn")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfs")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nac")]^x/europe_pecbms_signif$value[which(europe_pecbms_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
+  coord_trans(y='log') +
+  theme_minimal() + xlab("Year") + ylab("Abundance")
+
+ggsave("output/trend_bird_eu_pecbms_signif.png",
        width = 5,
        height = 3,
        dpi = 300
@@ -1492,58 +1552,58 @@ europe_pecbms_signif2$variable <- as.character(europe_pecbms_signif2$variable)
 comb_var <- combn(europe_pecbms_signif2$variable,2)
 test_diff_var_europe_pecbms_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_pecbms_signif[i,3] <- tsum.test(mean.x=europe_pecbms_signif2$value[which(europe_pecbms_signif2$variable==comb_var[1,i])],   s.x=europe_pecbms_signif2$se[which(europe_pecbms_signif2$variable==comb_var[1,i])], n.x= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")],
-                                             mean.y=europe_pecbms_signif2$value[which(europe_pecbms_signif2$variable==comb_var[2,i])],   s.y=europe_pecbms_signif2$se[which(europe_pecbms_signif2$variable==comb_var[2,i])], n.y= overall_trend_all_eu$n[which(overall_trend_all_eu$PLS=="europe")])$p.value
+  test_diff_var_europe_pecbms_signif[i,3] <- tsum.test(mean.x=europe_pecbms_signif2$value[which(europe_pecbms_signif2$variable==comb_var[1,i])],   s.x=europe_pecbms_signif2$se[which(europe_pecbms_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
+                                                    mean.y=europe_pecbms_signif2$value[which(europe_pecbms_signif2$variable==comb_var[2,i])],   s.y=europe_pecbms_signif2$se[which(europe_pecbms_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
   
 }
 
 
-
-europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
+europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              sd = c(overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe")],
+                              sd = c(overall_trend_farmland$sd_past[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_ssp1[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_ssp3[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_nac[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_nfn[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              se = c(overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],
+                              se = c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$se_ssp3[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                              variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_farmland, aes(x=value,y = variable)) + 
+europe_farmland2 <- europe_farmland[which(europe_farmland$variable != "ssp3"),]
+europe_farmland2$variable <- factor(europe_farmland2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_farmland2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate") 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
 
-init_val <- mean(predict_trend_all_bird_eu$intercept[which(predict_trend_all_bird_eu$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")]))])
-intercept_init <- init_val-europe_farmland$value[which(europe_farmland$variable=="bau")]*2000
-
-ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]*x+intercept_init}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]*x+intercept_init}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="ssp1")]*x+intercept_init+europe_farmland$value[which(europe_farmland$variable=="bau")]*2023-europe_farmland$value[which(europe_farmland$variable=="ssp1")]*2023}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfn")]*x+intercept_init+europe_farmland$value[which(europe_farmland$variable=="bau")]*2023-europe_farmland$value[which(europe_farmland$variable=="nfn")]*2023}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfs")]*x+intercept_init+europe_farmland$value[which(europe_farmland$variable=="bau")]*2023-europe_farmland$value[which(europe_farmland$variable=="nfs")]*2023}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nac")]*x+intercept_init+europe_farmland$value[which(europe_farmland$variable=="bau")]*2023-europe_farmland$value[which(europe_farmland$variable=="nac")]*2023}, colour = "lightgreen", xlim=c(2023,2050)) + 
-  theme_minimal() + xlab("Year") + ylab("Log abundance")
+ggsave("output/trend_bird_farm_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]^x/europe_farmland$value[which(europe_farmland$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]^x/europe_farmland$value[which(europe_farmland$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="ssp1")]^x/europe_farmland$value[which(europe_farmland$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfn")]^x/europe_farmland$value[which(europe_farmland$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfs")]^x/europe_farmland$value[which(europe_farmland$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nac")]^x/europe_farmland$value[which(europe_farmland$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="past")]^x/europe_farmland$value[which(europe_farmland$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]^x/europe_farmland$value[which(europe_farmland$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="ssp1")]^x/europe_farmland$value[which(europe_farmland$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfn")]^x/europe_farmland$value[which(europe_farmland$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfs")]^x/europe_farmland$value[which(europe_farmland$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nac")]^x/europe_farmland$value[which(europe_farmland$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1553,33 +1613,36 @@ ggsave("output/trend_bird_farm.png",
        dpi = 300
 )
 
-europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                              sd = c(overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                              se = c(overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],
+                                               overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+                                               overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                               overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
+                                               overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],
+                                               overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
+                                               overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                                     sd = c(overall_trend_farmland$sd_past_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                                     se = c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                                     variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_farmland_signif2 <- europe_farmland_signif[which(europe_farmland_signif$variable != "ssp3"),]
-europe_farmland_signif2$variable <- factor(europe_farmland_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
+europe_farmland_signif2$variable <- factor(europe_farmland_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_farmland_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -1589,25 +1652,13 @@ ggsave("output/trend_bird_farm_signif_error.png",
        dpi = 300
 )
 
-init_val <- mean(predict_trend_all_bird_eu$intercept[which(predict_trend_all_bird_eu$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")]))])
-intercept_init <- init_val-europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]*2000
-
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]*x+intercept_init}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]*x+intercept_init}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]*x+intercept_init+europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]*2023-europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]*2023}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]*x+intercept_init+europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]*2023-europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]*2023}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]*x+intercept_init+europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]*2023-europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]*2023}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]*x+intercept_init+europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]*2023-europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]*2023}, colour = "lightgreen", xlim=c(2023,2050)) + 
-  theme_minimal() + xlab("Year") + ylab("Log abundance")
-
-ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1622,57 +1673,59 @@ comb_var <- combn(europe_farmland_signif2$variable,2)
 test_diff_var_europe_farmland_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
   test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[1,i])],   s.x=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")],
-                                             mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")])$p.value
+                                                         mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")])$p.value
   
 }
 
 
 
-europe_forest <- data.frame(value = c(overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],
-                                        overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                        overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                        overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],
-                                        overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],
-                                        overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]),
-                              sd = c(overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe")],
-                                     overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                     overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                     overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe")],
-                                     overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe")],
-                                     overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe")]),
-                            se = c(overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],
+europe_forest <- data.frame(value = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]),
+                            sd = c(overall_trend_forest$sd_past[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe")]),
+                            se = c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$se_ssp3[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]),
-                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_forest, aes(x=value,y = variable)) + 
+europe_forest2 <- europe_forest[which(europe_forest$variable != "ssp3"),]
+europe_forest2$variable <- factor(europe_forest2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_forest2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate")
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
 
-init_val <- mean(predict_trend_all_bird_eu$intercept[which(predict_trend_all_bird_eu$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")]))])
-intercept_init <- init_val-europe_forest$value[which(europe_forest$variable=="bau")]*2000
+ggsave("output/trend_bird_forest_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
-ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]*x+intercept_init}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]*x+intercept_init}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="ssp1")]*x+intercept_init+europe_forest$value[which(europe_forest$variable=="bau")]*2023-europe_forest$value[which(europe_forest$variable=="ssp1")]*2023}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfn")]*x+intercept_init+europe_forest$value[which(europe_forest$variable=="bau")]*2023-europe_forest$value[which(europe_forest$variable=="nfn")]*2023}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfs")]*x+intercept_init+europe_forest$value[which(europe_forest$variable=="bau")]*2023-europe_forest$value[which(europe_forest$variable=="nfs")]*2023}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nac")]*x+intercept_init+europe_forest$value[which(europe_forest$variable=="bau")]*2023-europe_forest$value[which(europe_forest$variable=="nac")]*2023}, colour = "lightgreen", xlim=c(2023,2050)) + 
-  theme_minimal() + xlab("Year") + ylab("Log abundance")
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]^x/europe_forest$value[which(europe_forest$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]^x/europe_forest$value[which(europe_forest$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="ssp1")]^x/europe_forest$value[which(europe_forest$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfn")]^x/europe_forest$value[which(europe_forest$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfs")]^x/europe_forest$value[which(europe_forest$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nac")]^x/europe_forest$value[which(europe_forest$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="past")]^x/europe_forest$value[which(europe_forest$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]^x/europe_forest$value[which(europe_forest$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="ssp1")]^x/europe_forest$value[which(europe_forest$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfn")]^x/europe_forest$value[which(europe_forest$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfs")]^x/europe_forest$value[which(europe_forest$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nac")]^x/europe_forest$value[which(europe_forest$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1682,33 +1735,45 @@ ggsave("output/trend_bird_forest.png",
        dpi = 300
 )
 
-europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                            sd = c(overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                            se = c(overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                            variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+europe_forest2$variable <- as.character(europe_forest2$variable)
+comb_var <- combn(europe_forest2$variable,2)
+test_diff_var_europe_forest <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_forest[i,3] <- tsum.test(mean.x=europe_forest2$value[which(europe_forest2$variable==comb_var[1,i])],   s.x=europe_forest2$se[which(europe_forest2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
+                                                mean.y=europe_forest2$value[which(europe_forest2$variable==comb_var[2,i])],   s.y=europe_forest2$se[which(europe_forest2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  
+}
+
+europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],
+                                             overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],
+                                             overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                             overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
+                                             overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],
+                                             overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],
+                                             overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                                   sd = c(overall_trend_forest$sd_past_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                                   se = c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                                   variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_forest_signif2 <- europe_forest_signif[which(europe_forest_signif$variable != "ssp3"),]
-europe_forest_signif2$variable <- factor(europe_forest_signif2$variable, levels = c("bau","ssp1","nfn","nfs","nac"))
+europe_forest_signif2$variable <- factor(europe_forest_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_forest_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -1718,25 +1783,14 @@ ggsave("output/trend_bird_forest_signif_error.png",
        dpi = 300
 )
 
-init_val <- mean(predict_trend_all_bird_eu$intercept[which(predict_trend_all_bird_eu$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")]))])
-intercept_init <- init_val-europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]*2000
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]*x+intercept_init}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]*x+intercept_init}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]*x+intercept_init+europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]*2023-europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]*2023}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]*x+intercept_init+europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]*2023-europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]*2023}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]*x+intercept_init+europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]*2023-europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]*2023}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]*x+intercept_init+europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]*2023-europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]*2023}, colour = "lightgreen", xlim=c(2023,2050)) + 
-  theme_minimal() + xlab("Year") + ylab("Log abundance")
-
-ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1751,18 +1805,39 @@ comb_var <- combn(europe_forest_signif2$variable,2)
 test_diff_var_europe_forest_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
   test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[1,i])],   s.x=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
-                                                         mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+                                                       mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
   
 }
-
 
 #butterfly
 
 
 predict_trend_all_butterfly_correct <- merge(res_gamm_butterfly_correct,predict_trend_all_butterfly, by=c("species_name","PLS"),all.x=TRUE)
+
+
+predict_trend_all_butterfly_correct <- ddply(predict_trend_all_butterfly_correct,
+                                        .(PLS),.fun=function(x){
+                                          for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
+                                            #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
+                                            x[which(x[,i]>0.5),i] <- 0.14 #quantile(predict_trend_all_butterfly_eu$trend_past_signif)
+                                            x[which(x[,i]<(-0.5)),i] <- -0.14
+                                          }
+                                          for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
+                                            #x[which(x[,i]>max(x$trend_past_signif)),i] <- max(x$trend_past_signif)
+                                            #x[which(x[,i]<min(x$trend_past_signif)),i] <- min(x$trend_past_signif)
+                                            #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
+                                            x[which(x[,i]>0.5),i] <- 0.14
+                                            x[which(x[,i]<(-0.5)),i] <- -0.14
+                                          }
+                                          return(x)
+                                        },
+                                        .progress = "text")
+
+
 predict_trend_all_butterfly_eu <- predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$PLS=="europe"),]
 predict_trend_farmland <- predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$species_name %in% grassland_species),]
 predict_trend_forest <- predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$species_name %in% woodland_ind_species),]
+
 
 
 overall_trend_all <- ddply(predict_trend_all_butterfly_correct,
@@ -1771,15 +1846,13 @@ overall_trend_all <- ddply(predict_trend_all_butterfly_correct,
 overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS",all.x=TRUE)
 
 ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_all_sf, aes(fill=mu_bau_signif), col = NA) + 
+  geom_sf(data=overall_trend_all_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_all_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_all_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")])))),
-                       midpoint = 1, transform = "log", breaks=c(0.5,1,2), name = NULL) + theme_void()
+  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_all_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.4, 1.4),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.35, 0.15),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_all_bau.png",
        width = 8,
@@ -1797,21 +1870,13 @@ overall_trend_farmland <- ddply(predict_trend_farmland,
 
 overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_bau), col = NA) + 
+  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")])))))+
-  theme_void()
-ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_bau_signif), col = NA) + 
-  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_farmland_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")])))),
-                       midpoint = 1, transform = "log", breaks=c(0.5,1,2), name = NULL) + theme_void()
+  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.6, 2.6),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.12, 0.12),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_farm_bau.png",
        width = 8,
@@ -1825,20 +1890,13 @@ overall_trend_forest <- ddply(predict_trend_forest,
 
 overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_bau), col = NA) + 
+  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau","mu_ssp1","mu_ssp3","mu_nac","mu_nfn","mu_nfs")])))))
-ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_bau_signif), col = NA) + 
-  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")]))),
-                                max(na.omit(st_drop_geometry(overall_trend_forest_sf[,c("mu_bau_signif","mu_ssp1_signif","mu_nac_signif","mu_nfn_signif","mu_nfs_signif")])))),
-                       midpoint = 1, transform = "log", breaks=c(0.5,1,2), name = NULL) + theme_void()
+  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-1, 1.5),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.35, 0.25),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_forest_bau.png",
        width = 8,
@@ -1848,36 +1906,54 @@ ggsave("output/map_pred_butterfly_forest_bau.png",
 
 
 
-europe_all <- data.frame(value = c(overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],
+europe_all <- data.frame(value = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],
+                                   overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],
                                    overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
                                    overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe")],
                                    overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],
                                    overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],
                                    overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]),
-                         sd = c(overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe")],
+                         sd = c(overall_trend_all$sd_past[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe")],
                                 overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe")]),
-                         variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                         se = c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$se_ssp3[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],
+                                overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]),
+                         variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_all, aes(x=value,y = variable)) + 
-  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
-  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+europe_all2 <- europe_all[which(europe_all$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_all2$variable <- factor(europe_all2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_all2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate")
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
+
+ggsave("output/trend_butterfly_eu_all_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]^x/europe_all$value[which(europe_all$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]^x/europe_all$value[which(europe_all$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="ssp1")]^x/europe_all$value[which(europe_all$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfn")]^x/europe_all$value[which(europe_all$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfs")]^x/europe_all$value[which(europe_all$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nac")]^x/europe_all$value[which(europe_all$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="past")]^x/europe_all$value[which(europe_all$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="bau")]^x/europe_all$value[which(europe_all$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="ssp1")]^x/europe_all$value[which(europe_all$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfn")]^x/europe_all$value[which(europe_all$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nfs")]^x/europe_all$value[which(europe_all$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all$value[which(europe_all$variable=="nac")]^x/europe_all$value[which(europe_all$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
-
 
 ggsave("output/trend_butterfly_eu_all.png",
        width = 5,
@@ -1885,34 +1961,61 @@ ggsave("output/trend_butterfly_eu_all.png",
        dpi = 300
 )
 
+comb_var <- combn(europe_all$variable,2)
+test_diff_var_europe_all <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_all[i,3] <- tsum.test(mean.x=europe_all$value[which(europe_all$variable==comb_var[1,i])],   s.x=europe_all$se[which(europe_all$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
+                                             mean.y=europe_all$value[which(europe_all$variable==comb_var[2,i])],   s.y=europe_all$se[which(europe_all$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+  
+}
 
-europe_all_signif <- data.frame(value = c(overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],
+
+europe_all_signif <- data.frame(value = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],
+                                          overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],
                                           overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
                                           overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe")],
                                           overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],
                                           overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],
                                           overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                                sd = c(overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe")],
+                                sd = c(overall_trend_all$sd_past_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe")],
                                        overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe")],
                                        overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe")],
                                        overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe")],
                                        overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe")],
                                        overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                                variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                                se = c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_ssp3_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                                variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_all_signif, aes(x=value,y = variable)) + 
-  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
-  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+europe_all_signif2 <- europe_all_signif[which(europe_all_signif$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_all_signif2$variable <- factor(europe_all_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_all_signif2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate")
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
+
+ggsave("output/trend_butterfly_eu_all_signif_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="past")]^x/europe_all_signif$value[which(europe_all_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1922,34 +2025,62 @@ ggsave("output/trend_butterfly_eu_all_signif.png",
        dpi = 300
 )
 
-europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
+europe_all_signif2$variable <- as.character(europe_all_signif2$variable)
+comb_var <- combn(europe_all_signif2$variable,2)
+test_diff_var_europe_all_signif <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[1,i])],   s.x=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
+                                                    mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+  
+}
+
+
+europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],
+                                        overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],
                                         overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              sd = c(overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe")],
+                              sd = c(overall_trend_farmland$sd_past[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_ssp1[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_ssp3[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_nac[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_nfn[which(overall_trend_farmland$PLS=="europe")],
                                      overall_trend_farmland$sd_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                              se = c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$se_ssp3[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],
+                                     overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]),
+                              variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_farmland, aes(x=value,y = variable)) + 
-  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
-  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+europe_farmland2 <- europe_farmland[which(europe_farmland$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_farmland2$variable <- factor(europe_farmland2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_farmland2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate") 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
 
+ggsave("output/trend_butterfly_farm_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]^x/europe_farmland$value[which(europe_farmland$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]^x/europe_farmland$value[which(europe_farmland$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="ssp1")]^x/europe_farmland$value[which(europe_farmland$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfn")]^x/europe_farmland$value[which(europe_farmland$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfs")]^x/europe_farmland$value[which(europe_farmland$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nac")]^x/europe_farmland$value[which(europe_farmland$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="past")]^x/europe_farmland$value[which(europe_farmland$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="bau")]^x/europe_farmland$value[which(europe_farmland$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="ssp1")]^x/europe_farmland$value[which(europe_farmland$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfn")]^x/europe_farmland$value[which(europe_farmland$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nfs")]^x/europe_farmland$value[which(europe_farmland$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland$value[which(europe_farmland$variable=="nac")]^x/europe_farmland$value[which(europe_farmland$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1959,33 +2090,52 @@ ggsave("output/trend_butterfly_farm.png",
        dpi = 300
 )
 
-europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],
+                                               overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],
                                                overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
                                                overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
                                                overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],
                                                overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
                                                overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                                     sd = c(overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+                                     sd = c(overall_trend_farmland$sd_past_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe")],
                                             overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
                                             overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
                                             overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe")],
                                             overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
                                             overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                                     variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                                     se = c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
+                                            overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                                     variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_farmland_signif, aes(x=value,y = variable)) + 
-  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
-  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+europe_farmland_signif2 <- europe_farmland_signif[which(europe_farmland_signif$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_farmland_signif2$variable <- factor(europe_farmland_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_farmland_signif2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate")
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
+
+ggsave("output/trend_butterfly_farm_signif_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1995,33 +2145,64 @@ ggsave("output/trend_butterfly_farm_signif.png",
        dpi = 300
 )
 
-europe_forest <- data.frame(value = c(overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],
+europe_farmland_signif2$variable <- as.character(europe_farmland_signif2$variable)
+comb_var <- combn(europe_farmland_signif2$variable,2)
+test_diff_var_europe_farmland_signif <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[1,i])],   s.x=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")],
+                                                         mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")])$p.value
+  
+}
+
+
+
+europe_forest <- data.frame(value = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],
+                                      overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],
                                       overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
                                       overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe")],
                                       overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],
                                       overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],
                                       overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]),
-                            sd = c(overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe")],
+                            sd = c(overall_trend_forest$sd_past[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe")],
                                    overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe")]),
-                            variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                            se = c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$se_ssp3[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],
+                                   overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]),
+                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_forest, aes(x=value,y = variable)) + 
-  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
-  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+europe_forest2 <- europe_forest[which(europe_forest$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_forest2$variable <- factor(europe_forest2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_forest2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate")
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
+
+ggsave("output/trend_butterfly_forest_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
+
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]^x/europe_forest$value[which(europe_forest$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]^x/europe_forest$value[which(europe_forest$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="ssp1")]^x/europe_forest$value[which(europe_forest$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfn")]^x/europe_forest$value[which(europe_forest$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfs")]^x/europe_forest$value[which(europe_forest$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nac")]^x/europe_forest$value[which(europe_forest$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="past")]^x/europe_forest$value[which(europe_forest$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="bau")]^x/europe_forest$value[which(europe_forest$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="ssp1")]^x/europe_forest$value[which(europe_forest$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfn")]^x/europe_forest$value[which(europe_forest$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nfs")]^x/europe_forest$value[which(europe_forest$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest$value[which(europe_forest$variable=="nac")]^x/europe_forest$value[which(europe_forest$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2031,33 +2212,62 @@ ggsave("output/trend_butterfly_forest.png",
        dpi = 300
 )
 
-europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],
+europe_forest2$variable <- as.character(europe_forest2$variable)
+comb_var <- combn(europe_forest2$variable,2)
+test_diff_var_europe_forest <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_forest[i,3] <- tsum.test(mean.x=europe_forest2$value[which(europe_forest2$variable==comb_var[1,i])],   s.x=europe_forest2$se[which(europe_forest2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
+                                                mean.y=europe_forest2$value[which(europe_forest2$variable==comb_var[2,i])],   s.y=europe_forest2$se[which(europe_forest2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  
+}
+
+europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],
+                                             overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],
                                              overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
                                              overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
                                              overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],
                                              overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],
                                              overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                                   sd = c(overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe")],
+                                   sd = c(overall_trend_forest$sd_past_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe")],
                                           overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
                                           overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
                                           overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe")],
                                           overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe")],
                                           overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                                   variable = c("bau","ssp1","ssp3","nac","nfn","nfs"))
+                                   se = c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],
+                                          overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                                   variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-ggplot(europe_forest_signif, aes(x=value,y = variable)) + 
-  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
-  geom_errorbarh(aes(xmax = value-sd, xmin = value+sd), linewidth = .5, height = .2, color = "gray50") +
+europe_forest_signif2 <- europe_forest_signif[which(europe_forest_signif$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_forest_signif2$variable <- factor(europe_forest_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_forest_signif2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  xlab("Estimate")
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  theme_minimal() + theme(legend.position = "none") +
+  xlab("Slope") + ylab("Scenarios")
+
+ggsave("output/trend_butterfly_forest_signif_error.png",
+       width = 3,
+       height = 5,
+       dpi = 300
+)
+
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2023*100}, colour = "red", linetype=2, xlim=c(2000,2022)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2023*100}, colour = "red", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2023*100}, colour = "blue", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2023*100}, colour = "darkgreen", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2023*100}, colour = "green", xlim=c(2023,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2023*100}, colour = "lightgreen", xlim=c(2023,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2066,6 +2276,15 @@ ggsave("output/trend_butterfly_forest_signif.png",
        height = 3,
        dpi = 300
 )
+
+europe_forest_signif2$variable <- as.character(europe_forest_signif2$variable)
+comb_var <- combn(europe_forest_signif2$variable,2)
+test_diff_var_europe_forest_signif <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[1,i])],   s.x=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
+                                                       mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  
+}
 
 
 # plot pressure change

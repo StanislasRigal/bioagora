@@ -1400,7 +1400,7 @@ res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
 
 res_gamm_bird_eu$PECBMS_slope_mid <- (res_gamm_bird_eu$PECBMS_slope_long + res_gamm_bird_eu$PECBMS_slope_short)/2
 
-plot(exp(year)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.25),])
+plot(exp(year)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.25),]) + abline(h = 1,v=1)
 
 correl_data <- data.frame(cor=NA,pval=NA,rsq=NA)
 for(i in seq(0,0.5, by=0.01)){
@@ -1409,6 +1409,7 @@ for(i in seq(0,0.5, by=0.01)){
 }
 
 res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2),]
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2 & res_gamm_bird$sci_name_out %in% pecbms_trend_class$sci_name_out),]
 
 unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
 

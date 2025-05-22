@@ -431,6 +431,8 @@ res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
 #res_gamm_butterfly <- readRDS("output/res_gamm_butterfly.rds")
 
 res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.2),]
+res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.2 & res_gamm_butterfly$species_name %in% c(grassland_species, woodland_species, woodland_ind_species, wetland_species)),]
+
 
 
 res_gam_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
