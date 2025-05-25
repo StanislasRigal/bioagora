@@ -557,12 +557,102 @@ climate_pls <- data.frame(PLS = c(as.character(c(1:19,21:25)),"europe"),
 
 saveRDS(climate_pls,"output/climate_pls.rds")
 
+# represent changes
+
+plot_scenario <- reshape2::melt(climate_pls[which(climate_pls$PLS=="europe"),c("PLS","mean_t_2016","mean_t_4_5","sum_p_2016","sum_p_4_5","var_t_2016","var_t_4_5")],id.vars="PLS")
+plot_scenario <- data.frame(PLS="europe", variable=c("Temperature","Precipitation","Temperature variance"), initial=plot_scenario$value[which(plot_scenario$variable %in% c("mean_t_2016","var_t_2016","sum_p_2016"))],
+                            nac=plot_scenario$value[which(plot_scenario$variable %in% c("mean_t_4_5","var_t_4_5","sum_p_4_5"))])
+plot_scenario$nfn <- plot_scenario$nfs <- plot_scenario$ssp1 <- plot_scenario$ssp3 <- plot_scenario$nac
+plot_scenario <- rbind(lulc_pls_short[which(lulc_pls_short$PLS=="europe"),],pa_pls_short[which(pa_pls_short$PLS=="europe"),],plot_scenario)
+plot_scenario$PLS <- plot_scenario$ssp3 <- NULL
+plot_scenario <- rbind(plot_scenario,data.frame(variable = "farmland",t(apply(plot_scenario[which(plot_scenario$variable %in% c("farmland_low","farmland_medium","farmland_high")),-1],2,sum))),
+                       data.frame(variable = "forest",t(apply(plot_scenario[which(plot_scenario$variable %in% c("forest_lowmedium","forest_high")),-1],2,sum))))
+plot_scenario$nac <- plot_scenario$nac - plot_scenario$initial
+plot_scenario$nfn <- plot_scenario$nfn - plot_scenario$initial
+plot_scenario$nfs <- plot_scenario$nfs - plot_scenario$initial
+plot_scenario$ssp1 <- plot_scenario$ssp1 - plot_scenario$initial
+plot_scenario$initial <- NULL
+plot_scenario <- reshape2::melt(plot_scenario, id.vars="variable")
+names(plot_scenario)[2] <- "scenario"
+
+
+plot_scenario <- data.frame(scenario = c("bau","ssp1","nac","nfn","nfs"),
+                            d_impervious = c(mean(press_mainland_trend$d_impervious, na.rm=TRUE),
+                                             mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
+                                             mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
+                                             mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
+                                             mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018)),
+                            d_shannon = c(mean(press_mainland_trend$d_shannon, na.rm=TRUE),
+                                          mean(press_mainland_trend$shannon_2018)*(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018),
+                                          mean(press_mainland_trend$shannon_2018)*(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018),
+                                          mean(press_mainland_trend$shannon_2018)*(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018),
+                                          mean(press_mainland_trend$shannon_2018)*(lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("landscape_div"))]-1)/(2050-2018)),
+                            protectedarea_perc = c(mean(press_mainland_trend$protectedarea_perc),
+                                                   mean(press_mainland_trend$protectedarea_perc)*pa_pls_short$ssp1[which(pa_pls_short$PLS=="europe")]/pa_pls_short$initial[which(pa_pls_short$PLS=="europe")],
+                                                   mean(press_mainland_trend$protectedarea_perc)*pa_pls_short$nac[which(pa_pls_short$PLS=="europe")]/pa_pls_short$initial[which(pa_pls_short$PLS=="europe")],
+                                                   mean(press_mainland_trend$protectedarea_perc)*pa_pls_short$nfn[which(pa_pls_short$PLS=="europe")]/pa_pls_short$initial[which(pa_pls_short$PLS=="europe")],
+                                                   mean(press_mainland_trend$protectedarea_perc)*pa_pls_short$nfs[which(pa_pls_short$PLS=="europe")]/pa_pls_short$initial[which(pa_pls_short$PLS=="europe")]),
+                            d_agri = c(mean(press_mainland_trend$d_agri, na.rm=TRUE),
+                                       mean(press_mainland_trend$agri_2018)*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018),
+                                       mean(press_mainland_trend$agri_2018)*(sum(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018),
+                                       mean(press_mainland_trend$agri_2018)*(sum(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018),
+                                       mean(press_mainland_trend$agri_2018)*(sum(lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low","farmland_medium","farmland_high"))])-1)/(2050-2018)),
+                            agri_low = c(mean(press_mainland_trend$eulandsystem_farmland_low),
+                                         mean(press_mainland_trend$eulandsystem_farmland_low)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))],
+                                         mean(press_mainland_trend$eulandsystem_farmland_low)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))],
+                                         mean(press_mainland_trend$eulandsystem_farmland_low)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))],
+                                         mean(press_mainland_trend$eulandsystem_farmland_low)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_low"))]),
+                            agri_medium = c(mean(press_mainland_trend$eulandsystem_farmland_medium),
+                                            mean(press_mainland_trend$eulandsystem_farmland_medium)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))],
+                                            mean(press_mainland_trend$eulandsystem_farmland_medium)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))],
+                                            mean(press_mainland_trend$eulandsystem_farmland_medium)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))],
+                                            mean(press_mainland_trend$eulandsystem_farmland_medium)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_medium"))]),
+                            agri_high = c(mean(press_mainland_trend$eulandsystem_farmland_high),
+                                          mean(press_mainland_trend$eulandsystem_farmland_high)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))],
+                                          mean(press_mainland_trend$eulandsystem_farmland_high)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))],
+                                          mean(press_mainland_trend$eulandsystem_farmland_high)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))],
+                                          mean(press_mainland_trend$eulandsystem_farmland_high)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]),
+                            d_treedensity = c(mean(press_mainland_trend$d_treedensity, na.rm=TRUE),
+                                              mean(press_mainland_trend$treedensity_2018)*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018),
+                                              mean(press_mainland_trend$treedensity_2018)*(sum(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018),
+                                              mean(press_mainland_trend$treedensity_2018)*(sum(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018),
+                                              mean(press_mainland_trend$treedensity_2018)*(sum(lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018)),
+                            forest_lowmedium = c(mean(press_mainland_trend$eulandsystem_forest_lowmedium),
+                                                 mean(press_mainland_trend$eulandsystem_forest_lowmedium)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))],
+                                                 mean(press_mainland_trend$eulandsystem_forest_lowmedium)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))],
+                                                 mean(press_mainland_trend$eulandsystem_forest_lowmedium)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))],
+                                                 mean(press_mainland_trend$eulandsystem_forest_lowmedium)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium"))]),
+                            forest_high = c(mean(press_mainland_trend$eulandsystem_forest_high),
+                                            mean(press_mainland_trend$eulandsystem_forest_high)*lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))],
+                                            mean(press_mainland_trend$eulandsystem_forest_high)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))],
+                                            mean(press_mainland_trend$eulandsystem_forest_high)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))],
+                                            mean(press_mainland_trend$eulandsystem_forest_high)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_high"))]),
+                            d_tempspring = c(rep(mean(press_mainland_trend$tempspring_2020, na.rm =TRUE)*(climate_pls$mean_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$mean_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2018),5)),
+                            d_tempspringvar = c(rep(mean(press_mainland_trend$tempspringvar_2020, na.rm =TRUE)*(climate_pls$var_t_4_5[which(climate_pls$PLS=="europe")]/climate_pls$var_t_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2018),5)),
+                            d_precspring = c(rep(mean(press_mainland_trend$precspring_2020, na.rm =TRUE)*(climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]/climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2018),5))
+                            )
+plot_scenario <- reshape2::melt(plot_scenario, id.vars="scenario")
+
+
+ggplot(plot_scenario, aes(fill=scenario, y=value, x=scenario)) + 
+  geom_bar(position="dodge", stat="identity") +
+  facet_wrap(~variable, scales="free_y") +
+  theme(legend.position="none") +
+  xlab("")
+europe_all2$variable <- factor(europe_all2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
+ggplot(europe_all2, aes(x=value,y = variable)) + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  
+
+
 # load pressure estimate for 2050
 
 lulc_pls_short <- readRDS("output/lulc_pls_short.rds")
 pa_pls_short <- readRDS("output/pa_pls_short.rds")
 climate_pls <- readRDS("output/climate_pls.rds")
-
 
 # load bird data
 
@@ -1178,7 +1268,7 @@ predict_trend_all_bird <- ddply(subsite_data_mainland_trend,
 predict_trend_all_bird <- predict_trend_all_bird[which(!is.na(predict_trend_all_bird$PLS)),]
 
 #saveRDS(predict_trend_all_bird,"output/predict_trend_all_bird.rds")
-#predict_trend_all_bird <- readRDS("output/predict_trend_all_bird.rds")
+#predict_trend_all_bird <- readRDS("output/predict_trend_all_birdnew_past.rds")
 
 
 predict_trend_all_butterfly <- ddply(subsite_data_mainland_trend_butterfly,

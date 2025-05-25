@@ -1751,7 +1751,7 @@ ggsave("output/control_ab_bird_eu.png",
 ### check by species type
 
 
-species_habitat <- read.csv2("raw_data/Habitat_class_PECBMS.csv")
+species_habitat <- read.csv("raw_data/Habitat_class_PECBMS.csv")
 res_gam_bird_farmland <- res_gam_bird[which(res_gam_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")])),]
 res_gam_bird_forest <- res_gam_bird[which(res_gam_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
 
