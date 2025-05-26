@@ -1903,6 +1903,48 @@ ggsave("output/main_pressure_neg_bird_lulc.png",
        dpi = 300
 )
 
+matrix_pressure_PLS <- data.frame(res_gamm_bird_correct[which(res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Farmland")])),] %>% group_by(PLS) %>%
+                                    summarise(d_impervious = mean(`year:d_impervious`,na.rm=TRUE),
+                                                                                        d_agri = mean(`year:d_agri`,na.rm=TRUE),
+                                                                                        d_treedensity = mean(`year:d_treedensity`,na.rm=TRUE),
+                                                                                        forest_lowmedium_ef = mean(`year:eulandsystem_forest_lowmedium`,na.rm=TRUE),
+                                                                                        forest_high_ef = mean(`year:eulandsystem_forest_high`,na.rm=TRUE),
+                                                                                        agri_low = mean(`year:eulandsystem_farmland_low`,na.rm=TRUE),
+                                                                                        agri_medium = mean(`year:eulandsystem_farmland_medium`,na.rm=TRUE),
+                                                                                        agri_high = mean(`year:eulandsystem_farmland_high`,na.rm=TRUE),
+                                                                                        d_tempsrping = mean(`year:d_tempsrping`,na.rm=TRUE),
+                                                                                        d_tempsrpingvar = mean(`year:d_tempsrpingvar`,na.rm=TRUE),
+                                                                                        d_precspring = mean(`year:d_precspring`,na.rm=TRUE),
+                                                                                        d_shannon = mean(`year:d_shannon`,na.rm=TRUE),
+                                                                                        protectedarea_perc = mean(`year:protectedarea_perc`,na.rm=TRUE)))
+
+matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
+ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
+  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=d_agri), col=NA) + 
+  scale_fill_gradient2(low= "red",high = "blue") +
+  theme_void()
+
+link_rep_effect <- merge(overall_trend_farmland[,c("PLS","mu_past_signif","mu_nfn_signif","mu_ssp1_signif")],matrix_pressure_PLS,by="PLS",all.x=TRUE)
+summary(lm(mu_past_signif ~ d_impervious+d_agri+d_treedensity+d_shannon, link_rep_effect))
+summary(lm(mu_past_signif ~ forest_lowmedium+forest_high+agri_low+agri_medium+agri_high, link_rep_effect))
+summary(lm(mu_past_signif ~ d_tempsrping + d_tempsrpingvar + d_precspring, link_rep_effect))
+
+link_rep_effect <- merge(lulc_pls_compare,matrix_pressure_PLS,by="PLS",all.x=TRUE)
+link_rep_effect$urban_effect <- link_rep_effect$urban*link_rep_effect$d_impervious
+link_rep_effect$agri_effect <- link_rep_effect$farmland*link_rep_effect$d_agri
+link_rep_effect$forest_effect <- link_rep_effect$forest*link_rep_effect$d_treedensity
+link_rep_effect$forest_lowmedium_effect <- link_rep_effect$forest_lowmedium*link_rep_effect$forest_lowmedium_ef
+link_rep_effect$forest_high_effect <- link_rep_effect$forest_high*link_rep_effect$forest_high_ef
+link_rep_effect$agri_low_effect <- link_rep_effect$farmland_low*link_rep_effect$agri_low
+link_rep_effect$agri_medium_effect <- link_rep_effect$farmland_medium*link_rep_effect$agri_medium
+link_rep_effect$agri_high_effect <- link_rep_effect$farmland_high*link_rep_effect$agri_high
+link_rep_effect$landscape_div_effect <- link_rep_effect$landscape_div*link_rep_effect$d_shannon
+
+link_rep_effect <- merge(overall_trend_farmland[,c("PLS","mu_past_signif","mu_nfn_signif","mu_ssp1_signif")],link_rep_effect,by="PLS",all.x=TRUE)
+summary(lm(mu_past_signif ~ urban_effect+forest_effect+agri_effect+landscape_div_effect, link_rep_effect))
+summary(lm(mu_past_signif ~ forest_lowmedium_effect+forest_high_effect+agri_low_effect+agri_medium_effect+agri_high_effect, link_rep_effect))
+
+
 
 grid_eu_mainland_biogeo_plot <- grid_eu_mainland_biogeo
 grid_eu_mainland_biogeo_plot$color <- as.character(c(rep(1,5), rep(2,5), rep(3,5), rep(4,5), rep(5,5)))#grid_eu_mainland_biogeo_plot$PLS %% 2 == 0

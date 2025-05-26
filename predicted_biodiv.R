@@ -576,7 +576,7 @@ plot_scenario <- reshape2::melt(plot_scenario, id.vars="variable")
 names(plot_scenario)[2] <- "scenario"
 
 
-plot_scenario <- data.frame(scenario = c("bau","ssp1","nac","nfn","nfs"),
+plot_scenario <- data.frame(scenario = c("BAU","SSP1","NAC","NFN","NFS"),
                             d_impervious = c(mean(press_mainland_trend$d_impervious, na.rm=TRUE),
                                              mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
                                              mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
@@ -632,20 +632,118 @@ plot_scenario <- data.frame(scenario = c("bau","ssp1","nac","nfn","nfs"),
                             d_precspring = c(rep(mean(press_mainland_trend$precspring_2020, na.rm =TRUE)*(climate_pls$sum_p_4_5[which(climate_pls$PLS=="europe")]/climate_pls$sum_p_2016[which(climate_pls$PLS=="europe")]-1)/(2050-2018),5))
                             )
 plot_scenario <- reshape2::melt(plot_scenario, id.vars="scenario")
+plot_scenario$scenario <- factor(plot_scenario$scenario, levels = c("BAU","SSP1","NFN","NFS","NAC"))
+plot_scenario$variable <- factor(plot_scenario$variable, levels = c("d_impervious","d_agri","agri_high","agri_medium","agri_low",
+                                                                    "d_treedensity","forest_high","forest_lowmedium",
+                                                                    "d_shannon","protectedarea_perc","d_tempspring","d_tempspringvar","d_precspring"))
+plot_scenario$variable <- recode(plot_scenario$variable, d_impervious = "D urbanisation",d_agri="D agricultural surface",agri_high = "High intensive farmland",
+                                 agri_medium = "Medium intensive farmland", agri_low = "Low intensive farmland", d_treedensity = "D tree density",
+                                 forest_high = "High intensive forest", forest_lowmedium = "Low/medium intensive forest", d_shannon = "D landscape diversity",
+                                 protectedarea_perc = "Protected area percent", d_tempspring ="D temperature", d_tempspringvar = "D temperature variation", d_precspring= "D precipitation")
 
-
-ggplot(plot_scenario, aes(fill=scenario, y=value, x=scenario)) + 
+ggplot(plot_scenario[which(plot_scenario$variable %in% c("D urbanisation","D agricultural surface","D tree density","D landscape diversity")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="dodge", stat="identity") +
-  facet_wrap(~variable, scales="free_y") +
-  theme(legend.position="none") +
-  xlab("")
-europe_all2$variable <- factor(europe_all2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
-ggplot(europe_all2, aes(x=value,y = variable)) + 
-  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
-  geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
-  geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
-  
+  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  facet_wrap(~variable, scales="free_y", nrow=1) +
+  theme_minimal() +
+  theme(legend.position="none") + xlab("") + ylab("")
+
+ggsave("output/scenario_detail1.png",
+       width = 10,
+       height = 4,
+       dpi = 300
+)
+
+ggplot(plot_scenario[which(plot_scenario$variable %in% c("Low intensive farmland","Medium intensive farmland","High intensive farmland")),], aes(fill=scenario, y=value, x=scenario)) + 
+  geom_bar(position="fill", stat="identity", aes(alpha=variable)) +
+  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_manual (values = c("Low intensive farmland"=1,"Medium intensive farmland"=0.7,"High intensive farmland"=0.5)) +
+  theme_minimal() +
+  theme(legend.position="none") + xlab("") + ylab("")
+
+ggsave("output/scenario_detail_agri.png",
+       width = 2.5,
+       height = 4,
+       dpi = 300
+)
+
+ggplot(plot_scenario[which(plot_scenario$variable %in% c("Low/medium intensive forest","High intensive forest")),], aes(fill=scenario, y=value, x=scenario)) + 
+  geom_bar(position="fill", stat="identity", aes(alpha=variable)) +
+  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_manual (values = c("Low/medium intensive forest" = 1,"High intensive forest" = 0.5)) +
+  theme_minimal() +
+  theme(legend.position="none") + xlab("") + ylab("")
+
+ggsave("output/scenario_detail_foret.png",
+       width = 2.5,
+       height = 4,
+       dpi = 300
+)
+
+ggplot(plot_scenario[which(plot_scenario$variable %in% c("Protected area percent")),], aes(fill=scenario, y=value, x=scenario)) + 
+  geom_bar(position="dodge", stat="identity") +
+  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  theme_minimal() +
+  theme(legend.position="none") + xlab("") + ylab("")
+
+ggsave("output/scenario_detail_pa.png",
+       width = 2.5,
+       height = 4,
+       dpi = 300
+)
+
+ggplot(plot_scenario[which(plot_scenario$variable %in% c("D temperature", "D temperature variation", "D precipitation")),], aes(y=value, x=variable)) + 
+  geom_bar(position="dodge", stat="identity") + theme_minimal() +
+  theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) + xlab("") + ylab("")
+
+ggsave("output/scenario_detail_climat.png",
+       width = 2.5,
+       height = 4,
+       dpi = 300
+)
+
+
+pls_scenario <- climate_pls
+pls_scenario$temp_change <- pls_scenario$mean_t_4_5-pls_scenario$mean_t_2016
+pls_scenario$tempvar_change <- pls_scenario$var_t_4_5-pls_scenario$var_t_2016
+pls_scenario$prec_change <- pls_scenario$sum_p_4_5-pls_scenario$sum_p_2016
+pls_scenario <- pls_scenario[,c("PLS","temp_change","tempvar_change","prec_change")]
+
+pls_scenario2 <- lulc_pls_short_farm_for
+pls_scenario2$change <- pls_scenario2$nfn - pls_scenario2$initial
+pls_scenario2 <- pls_scenario2[,c("PLS","variable","change")]
+pls_scenario2 <- reshape2::dcast(pls_scenario2, PLS~variable, value.var="change")
+
+pls_scenario3 <- pa_pls_short
+pls_scenario3$pa_change <- pls_scenario3$nfn - pls_scenario3$initial
+
+pls_scenario_all <- merge(pls_scenario,pls_scenario2,by="PLS")
+pls_scenario_all <- merge(pls_scenario_all,pls_scenario3[,c("PLS","pa_change")],by="PLS")
+
+value_pls <- merge(pls_scenario_all,overall_trend_farmland[,c("PLS","mu_nfn_signif")],by="PLS", all.x=TRUE)
+
+ACP <- rda(pls_scenario_all[-1], scale=TRUE)
+MVA.synt(ACP)
+MVA.plot(ACP)
+MVA.plot(ACP, fac = sign(log(value_pls$mu_nfn_signif)), col=c("red","blue"))
+MVA.plot(ACP,"corr")
+
+## lda
+exp_impact_FaB <- c("green","green","red","red","green","red","green","red","red","red","red","grey","green")
+exp_impact_FoB <- c("green","green","red","red","red","green","grey","red","red","red","red","grey","green")
+exp_impact_GB <- c("red","grey","red","green","green","red","grey","green","red","grey","green","green","green")
+exp_impact_WB <- c("green","green","red","green","grey","grey","grey","red","grey","grey","grey","red","red")
+
+lda_data <- pls_scenario_all[which(!is.na(value_pls$mu_nfn_signif)),c("temp_change","tempvar_change","prec_change","urban","farmland","forest","farmland_low",
+                                                                      "farmland_medium","farmland_high","forest_lowmedium","forest_high","landscape_div","pa_change")]
+names(lda_data) <- c("Temperature change","Temperature variance change","Precipitation change","Urbanisation","Agricultural surface change","Forest cover change","Low intensive farmland change",
+                     "Medium intensive farmland change","High intensive farmland change","Low/medium intensive forest change","High intensive forest change","Landscape diversity change","Protected area change")
+#anova(betadisper(dist(pls_scenario_all[-1]),sign(log(value_pls$mu_nfn_signif))))
+LDA <- lda(lda_data,sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif))])))
+MVA.plot(LDA,fac=sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif))])))
+MVA.plot(LDA,"corr", col=exp_impact_WB)
+
+
 
 
 # load pressure estimate for 2050
@@ -2380,6 +2478,20 @@ for(i in 1:dim(comb_var)[2]){
 # plot pressure change
 
 lulc_sf <- merge(grid_eu_mainland_biogeo,lulc_pls_short,by="PLS",all.x=TRUE)
+
+lulc_pls_short_farm_for <- reshape2::melt(lulc_pls_short, id.vars=c("PLS","variable"))
+names(lulc_pls_short_farm_for)[3] <- "scenario"
+lulc_pls_short_farm_for <- reshape2::dcast(lulc_pls_short_farm_for, PLS + scenario ~ variable, value.var = "value")
+lulc_pls_short_farm_for$farmland <- lulc_pls_short_farm_for$farmland_low + lulc_pls_short_farm_for$farmland_medium + lulc_pls_short_farm_for$farmland_high
+lulc_pls_short_farm_for$forest <- lulc_pls_short_farm_for$forest_lowmedium + lulc_pls_short_farm_for$forest_high
+lulc_pls_short_farm_for <- reshape2::melt(lulc_pls_short_farm_for, id.vars=c("PLS","scenario"))
+lulc_pls_short_farm_for <- reshape2::dcast(lulc_pls_short_farm_for, PLS + variable ~ scenario, value.var = "value")
+lulc_sf_farm_for <- merge(grid_eu_mainland_biogeo,lulc_pls_short_farm_for,by="PLS",all.x=TRUE)
+
+lulc_pls_compare <- reshape2::melt(lulc_pls_short_farm_for[,c("PLS","variable","initial")], id.vars=c("PLS","variable"))
+lulc_pls_compare <- reshape2::dcast(lulc_pls_compare[,-3], PLS ~ variable, value.var = "value")
+
+
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="urban"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
@@ -2449,6 +2561,24 @@ ggsave("output/map_farmland_high_bau.png",
 )
 
 ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="farmland"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="farmland"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="farmland"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "yellow") + 
+  theme_void()
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="farmland"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(-0.32,0.2), name = NULL,low = "#888888ff", high = "yellow") + theme_void()
+
+ggsave("output/map_farmland_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+
+ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),], aes(fill=initial), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
   scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf[which(lulc_sf$variable=="forest_lowmedium"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
@@ -2481,6 +2611,25 @@ ggsave("output/map_forest_high_bau.png",
        height = 8,
        dpi = 300
 )
+
+
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="forest"),], aes(fill=initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(na.omit(st_drop_geometry(lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="forest"),c("initial","ssp1","ssp3","nac","nfn","nfs")]))),
+                                max(na.omit(st_drop_geometry(lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="forest"),c("initial","ssp1","ssp3","nac","nfn","nfs")])))), name = NULL,high = "green") + 
+  theme_void()
+ggplot() + geom_sf() +  
+  geom_sf(data=lulc_sf_farm_for[which(lulc_sf_farm_for$variable=="forest"),], aes(fill=ssp1-initial), col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(-0.2,0.2), name = NULL,low = "#888888ff", high = "green") + theme_void()
+
+ggsave("output/map_forest_bau.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
 
 ggplot() + geom_sf() +  
   geom_sf(data=lulc_sf[which(lulc_sf$variable=="landscape_div"),], aes(fill=initial), col = NA) + 
