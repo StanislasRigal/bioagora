@@ -1170,6 +1170,38 @@ ggsave("output/PECBMS_site_selected.png",
        dpi = 300
 )
 
+
+site_pls <- unique(press_mainland_trend_scale[,c("siteID","PLS")])
+year_site_pls <- merge(subsite_data_mainland_trend,site_pls, by="siteID")
+year_site <- data.frame(year_site_pls %>% group_by(siteID,scheme,year) %>% summarise(count=n()))
+year_site <- data.frame(year_site %>% group_by(scheme,year) %>% summarise(count=n()))
+year_site <- data.frame(year_site %>% group_by(scheme) %>% mutate(label=case_when(year==max(year) ~ scheme)))
+year_site2 <- data.frame(year_site_pls %>% group_by(siteID,PLS,year) %>% summarise(count=n()))
+year_site2 <- na.omit(data.frame(year_site2 %>% group_by(PLS,year) %>% summarise(count=n())))
+year_site2$PLS <- factor(as.character(year_site2$PLS), levels = as.character(c(1:25)))
+year_site2 <- data.frame(year_site2 %>% group_by(PLS) %>% mutate(label=case_when(year==max(year) ~ PLS)))
+
+ggplot(year_site, aes(y=count, col=scheme, x=year)) +
+  geom_line() +
+  scale_y_log10(name = "Number of sites") + 
+  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = label),nudge_x = 4,na.rm = TRUE) +
+  theme_modern() +
+  theme(legend.position = "none")
+
+ggplot(year_site2, aes(x=year,y=count, col=PLS)) +
+  geom_line() +
+  scale_y_log10(name = "Number of sites") + scale_color_viridis_d() +
+  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = label),nudge_x = 4,na.rm = TRUE) +
+  theme_modern() +
+  theme(legend.position = "none")
+
+ggsave("output/site_year_scheme.png",
+       width = 12,
+       height = 8,
+       dpi = 300
+)
+
+
 ## get value per year per pressure
 
 press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.keep_all=TRUE), .(siteID,year),
@@ -1369,6 +1401,18 @@ res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
 
 #saveRDS(res_gamm_bird,"output/res_gamm_bird2.rds")
 
+for(i in sort(unique(res_gamm_bird_correct$sci_name_out))){
+  print(i)
+  plot_check <- gam_species_PLS2_check(subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out == i),],
+                         pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj)
+  ggsave(plot=plot_check,
+         filename = paste0("output/plot_check_",i,".png"),
+         width=8, height=4, dpi=200)
+  }
+
+
+
+
 #res_gamm_bird<-readRDS("output/res_gamm_birdnew.rds")
 
 res_gam_bird <- ddply(subsite_data_mainland_trend,
@@ -1395,12 +1439,35 @@ pecbms_trend_class$PECBMS_slope_long[which(pecbms_trend_class$sci_name_out=="Stu
 pecbms_trend_class$PECBMS_slope_short[which(pecbms_trend_class$sci_name_out=="Chloris chloris")] <- 0.98
 
 res_gamm_bird_eu <- res_gamm_bird[which(res_gamm_bird$PLS=="europe"),]
+res_gamm_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe"),]
 
 res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
 
 res_gamm_bird_eu$PECBMS_slope_mid <- (res_gamm_bird_eu$PECBMS_slope_long + res_gamm_bird_eu$PECBMS_slope_short)/2
 
 plot(exp(year)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.25),]) + abline(h = 1,v=1)
+plot(exp(trend_past)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]) + abline(h = 1,v=1)
+plot(exp(trend_past)~PECBMS_slope_short,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]) + abline(h = 1,v=1)
+plot(exp(trend_past)~PECBMS_slope_mid,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]) + abline(h = 1,v=1)
+
+data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]
+data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","PECBMS_slope_long","PECBMS_slope_short")], id.var=c("sci_name_out","trend_past"))
+
+ggplot(data_plot, aes(y=exp(trend_past))) + 
+  geom_vline(xintercept = 1, linetype = 2) +
+  geom_hline(yintercept = 1, linetype = 2) +
+  geom_point(aes(x=value, col=variable), alpha = 0.5) +
+  geom_smooth(aes(x=value, col=variable),method = "lm", se = FALSE) +
+  xlab("Slope from PECBMS") + ylab("Observed slope (2000-2021)") +
+  #geom_abline(intercept = 0, slope = 1) +
+  xlim(c(0.86,1.07)) +
+  scale_color_discrete(labels= c("PECBMS_slope_long" = "Long-term slope (1980-2023)", "PECBMS_slope_short" = "Ten-year slope (2014-2023)")) +
+  theme_minimal() + theme(legend.title = element_blank(), legend.position = c(0.3, 0.8))
+
+ggsave("output/bird_trend_pecbms.png",
+       width = 6,
+       height = 6,
+       dpi = 300)
 
 correl_data <- data.frame(cor=NA,pval=NA,rsq=NA)
 for(i in seq(0,0.5, by=0.01)){
@@ -1755,11 +1822,52 @@ species_habitat <- read.csv("raw_data/Habitat_class_PECBMS.csv")
 res_gam_bird_farmland <- res_gam_bird[which(res_gam_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")])),]
 res_gam_bird_forest <- res_gam_bird[which(res_gam_bird$sci_name_out %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")])),]
 
+give.n <- function(x){
+  return(c(y = median(x)*1.1, label = length(x))) 
+  # experiment with the multiplier to find the perfect position
+}
 
-ggplot(res_gamm_bird, aes(x= PLS, y=dev_exp, fill=PLS)) + 
-  geom_boxplot() + ylim(c(0,0.75)) + 
+data_plot_r2 <- res_gamm_bird
+data_plot_r2 <- res_gamm_bird_correct
+data_plot_r2$PLS <- factor(data_plot_r2$PLS, levels = c(as.character(c(1:25)),"europe"))
+ggplot(data_plot_r2, aes(x= PLS, y=dev_exp, fill=PLS)) + 
+  geom_boxplot() + ylim(c(0,0.75)) + xlab("Biophysical region") + ylab("Explained deviance") +
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
-  theme_minimal()
+  stat_summary(fun.data = give.n, geom = "text", fun = median, 
+               position = position_dodge(width = 0.75)) +
+  theme_minimal() + theme(legend.position = "none")
+
+ggsave("output/deviance_bird_before.png",
+       width = 8,
+       height = 4,
+       dpi = 300)
+
+
+table_species_bird <- data.frame(Species = unique(res_gamm_bird$sci_name_out))
+table_species_bird$`Habitat indicator`[which(table_species_bird$Species %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")]))] <- "Farmland"
+table_species_bird$`Habitat indicator`[which(table_species_bird$Species %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")]))] <- "Forest"
+table_species_bird$`All bird index`[which(table_species_bird$Species %in% unique(species_habitat$Species))] <- "ABI"
+
+
+write.csv(table_species_bird,"output/table_species_bird.csv", row.names = FALSE)
+
+table_species_bird2 <- read.csv("output/table_species_bird2.csv", header=TRUE)
+pressure_EU_bird <- pressure_EU_bird[,c("sci_name_out","milieu_catopenland","milieu_caturban","tempsrping","precspring","shannon","drymatter",
+                                        "year:d_impervious","year:d_treedensity",
+                                        "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri","year:eulandsystem_farmland_low",
+                                        "year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                                        "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",         
+                                        "year:d_shannon","year:protectedarea_perc","dev_exp")]
+names(pressure_EU_bird) <- c("Species","open_vs_forest","urban_vs_forest",
+                             "spring_mean_temperature","spring_rainfall","landscape_diversity",
+                             "primary_productivity","urbanisation_increase_effect_on_trend","treedensity_increase_effect_on_trend",
+                             "non_intensively_managed_forest_effect_on_trend","intensively_managed_forest_effect_on_trend","farmland_increase_effect_on_trend",
+                             "low_intensively_managed_farmland_effect_on_trend","medium_intensively_managed_farmland_effect_on_trend","high_intensively_managed_farmland_effect_on_trend",
+                             "temperature_increase_effect_on_trend","temperature_variation_increase_effect_on_trend","rainfall_increase_effect_on_trend",
+                             "landscape_diversity_increase_effect_on_trend","protected_area_effect_on_trend","dev_exp")
+table_species_bird2 <- merge(table_species_bird2,pressure_EU_bird, by="Species", all.x=TRUE)
+write.csv(table_species_bird2,"output/table_species_bird3.csv", row.names = FALSE)
+
 
 # other representation
 
@@ -1814,10 +1922,12 @@ pressure_EU_bird_long_d$variable <- factor(pressure_EU_bird_long_d$variable , le
                                                                                          "year:eulandsystem_farmland_high"))
 
 ggplot(pressure_EU_bird_long_d, aes(x = value, y = variable, fill = variable)) +
-  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
-                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity" = "D tree density on trend","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests on trend", "year:eulandsystem_forest_high" = "High intensive forests on trend",
-                            "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
-                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
+  #scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend","year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity" = "D tree density on trend","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests on trend", "year:eulandsystem_forest_high" = "High intensive forests on trend","year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend","year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
+  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
+                            "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests on trend (Foh)",
+                            "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland (Fam)", "year:eulandsystem_farmland_high" = "High intensive farmland (Fah)")) + 
+  
   geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
                       bins = 60, draw_baseline = FALSE) + xlim(c(-0.2,0.2))+
   stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,

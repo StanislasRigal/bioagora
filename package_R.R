@@ -46,6 +46,8 @@ library(cluster)
 library(vegan)
 library(RVAideMemoire)
 library(MASS)
+library("ggrepel")
+library(ggpubr)
 
 # predicted data
 library(ncdf4)

@@ -258,6 +258,37 @@ ggsave("output/EBMS_site_selected.png",
        dpi = 300
 )
 
+
+site_pls <- unique(press_mainland_trend_butterfly_scale[,c("transect_id","PLS")])
+year_site_pls <- merge(subsite_data_mainland_trend_butterfly,site_pls, by="transect_id")
+year_site <- data.frame(year_site_pls %>% group_by(transect_id,bms_id,year) %>% summarise(count=n()))
+year_site <- data.frame(year_site %>% group_by(bms_id,year) %>% summarise(count=n()))
+year_site <- data.frame(year_site %>% group_by(bms_id) %>% mutate(label=case_when(year==max(year) ~ bms_id)))
+year_site2 <- data.frame(year_site_pls %>% group_by(transect_id,PLS,year) %>% summarise(count=n()))
+year_site2 <- na.omit(data.frame(year_site2 %>% group_by(PLS,year) %>% summarise(count=n())))
+year_site2$PLS <- factor(as.character(year_site2$PLS), levels = as.character(c(1:25)))
+year_site2 <- data.frame(year_site2 %>% group_by(PLS) %>% mutate(label=case_when(year==max(year) ~ PLS)))
+
+ggplot(year_site, aes(y=count, col=bms_id, x=year)) +
+  geom_line() +
+  scale_y_log10(name = "Number of sites") + 
+  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = label),nudge_x = 4,na.rm = TRUE) +
+  theme_modern() +
+  theme(legend.position = "none")
+
+ggplot(year_site2, aes(x=year,y=count, col=PLS)) +
+  geom_line() +
+  scale_y_log10(name = "Number of sites") + scale_color_viridis_d() +
+  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = label),nudge_x = 4,na.rm = TRUE) +
+  theme_modern() +
+  theme(legend.position = "none")
+
+ggsave("output/site_year_scheme_butterfly.png",
+       width = 12,
+       height = 8,
+       dpi = 300
+)
+
 ## get value per year per pressure
 
 press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend_butterfly,transect_id,year,.keep_all=TRUE), .(transect_id,year),
@@ -428,7 +459,17 @@ res_gamm_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
 res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
 
 #saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly2.rds")
-#res_gamm_butterfly <- readRDS("output/res_gamm_butterfly.rds")
+
+for(i in sort(unique(res_gamm_butterfly_correct$species_name))){
+  print(i)
+  plot_check <- gam_species_PLS2b_check(subsite_data_mainland_trend_butterfly[which(subsite_data_mainland_trend_butterfly$species_name == i),],
+                                       pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly)
+  ggsave(plot=plot_check,
+         filename = paste0("output/plot_check_",i,".png"),
+         width=8, height=4, dpi=200)
+}
+
+#res_gamm_butterfly <- readRDS("output/res_gamm_butterflynew.rds")
 
 res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.2),]
 res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.2 & res_gamm_butterfly$species_name %in% c(grassland_species, woodland_species, woodland_ind_species, wetland_species)),]
@@ -632,6 +673,54 @@ res_gam_butterfly_grassland <- res_gam_butterfly[which(res_gam_butterfly$species
 res_gam_butterfly_woodland <- res_gam_butterfly[which(res_gam_butterfly$species_name %in% woodland_species),]
 res_gam_butterfly_woodland_ind <- res_gam_butterfly[which(res_gam_butterfly$species_name %in% woodland_ind_species),]
 res_gam_butterfly_wetland <- res_gam_butterfly[which(res_gam_butterfly$species_name %in% wetland_species),]
+
+
+data_plot_r2 <- res_gamm_butterfly
+data_plot_r2 <- res_gamm_butterfly_correct
+data_plot_r2$PLS <- factor(data_plot_r2$PLS, levels = c(as.character(c(1:25)),"europe"))
+ggplot(data_plot_r2, aes(x= PLS, y=dev_exp, fill=PLS)) + 
+  geom_boxplot() + ylim(c(0,1)) + xlab("Biophysical region") + ylab("Explained deviance") +
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
+  stat_summary(fun.data = give.n, geom = "text", fun = median, 
+               position = position_dodge(width = 0.75)) +
+  theme_minimal() + theme(legend.position = "none")
+
+ggsave("output/deviance_butterfly_before.png",
+       width = 8,
+       height = 4,
+       dpi = 300)
+
+
+table_species_butterfly <- data.frame(Species = unique(res_gamm_butterfly$species_name), Indicator = NA)
+table_species_butterfly$Indicator[which(table_species_butterfly$Species %in% grassland_species)] <- "Grassland"
+table_species_butterfly$Indicator[which(table_species_butterfly$Species %in% woodland_ind_species)] <- "Woodland"
+table_species_butterfly$Indicator[which(table_species_butterfly$Species %in% wetland_species)] <- "Wetland"
+
+write.csv(table_species_butterfly,"output/table_species_butterfly.csv", row.names = FALSE)
+
+table_species_butterfly2 <- read.csv("output/table_species_butterfly2.csv", header=TRUE)
+table_species_butterfly2$Habitat.indicator <- table_species_butterfly2$Indicator
+table_species_butterfly2$Habitat.indicator[which(table_species_butterfly2$Habitat.indicator == "Wetland")] <- NA
+table_species_butterfly2$All.butterfly.indicator <- table_species_butterfly2$Indicator
+table_species_butterfly2$All.butterfly.indicator[which(table_species_butterfly2$All.butterfly.indicator %in% c("Wetland","Grassland","Woodland"))] <- "ABI"
+table_species_butterfly2$Indicator <- NULL
+
+pressure_EU_butterfly <- pressure_EU_butterfly[,c("species_name","milieu_catopenland","milieu_caturban","tempsrping","precspring","shannon","drymatter",
+                                        "year:d_impervious","year:d_treedensity",
+                                        "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri","year:eulandsystem_farmland_low",
+                                        "year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                                        "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",         
+                                        "year:d_shannon","year:protectedarea_perc","dev_exp")]
+names(pressure_EU_butterfly) <- c("Species","open_vs_forest","urban_vs_forest",
+                             "spring_mean_temperature","spring_rainfall","landscape_diversity",
+                             "primary_productivity","urbanisation_increase_effect_on_trend","treedensity_increase_effect_on_trend",
+                             "non_intensively_managed_forest_effect_on_trend","intensively_managed_forest_effect_on_trend","farmland_increase_effect_on_trend",
+                             "low_intensively_managed_farmland_effect_on_trend","medium_intensively_managed_farmland_effect_on_trend","high_intensively_managed_farmland_effect_on_trend",
+                             "temperature_increase_effect_on_trend","temperature_variation_increase_effect_on_trend","rainfall_increase_effect_on_trend",
+                             "landscape_diversity_increase_effect_on_trend","protected_area_effect_on_trend","dev_exp")
+table_species_butterfly2 <- merge(table_species_butterfly2,pressure_EU_butterfly, by="Species", all.x=TRUE)
+write.csv(table_species_butterfly2,"output/table_species_butterfly3.csv", row.names = FALSE)
+
 
 # boxplot r2 by pls
 

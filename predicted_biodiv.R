@@ -1440,9 +1440,9 @@ ggsave("output/map_pred_all_bau.png",
        dpi = 300
 )
 
-overall_trend_all_eu <- ddply(predict_trend_all_bird_correct_pecbms,
-                           .(PLS),.fun=overall_mean_sd_trend,
-                           .progress = "text")
+overall_trend_all_eu <- overall_mean_sd_trend(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe"),])
+
+
 
 overall_trend_farmland <- ddply(predict_trend_farmland,
                                 .(PLS),.fun=overall_mean_sd_trend,

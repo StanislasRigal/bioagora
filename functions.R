@@ -1771,8 +1771,8 @@ gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
     }
     
     #global_vif <- max(car::vif(lm(as.formula(formula_gam), data=poisson_df), type="predictor")$GVIF)
-    
-    #res_data <- merge(site_data,data.frame(siteID=poisson_df$siteID,year=poisson_df$year,res=residuals(global_mod,type="deviance")),by="siteID")
+    #res_data <- data.frame(data.frame(siteID=poisson_df$siteID,year=poisson_df$year,res=residuals(global_mod,type="deviance")) %>% group_by(siteID) %>% summarise(res=mean(res)))
+    #res_data <- merge(site_data,res_data,by="siteID")
     #gam.check(global_mod)
     #ggplot(grid_eu_mainland_outline) +  geom_sf() + geom_sf(data=res_data,aes(col=res), size=0.5) + scale_color_gradient2() + theme_minimal()
     
@@ -2143,6 +2143,89 @@ gam_species_PLS3 <- function(bird_data,pressure_data,site_data,
   }
   
   return(res.poisson_df)
+}
+
+
+gam_species_PLS2_check <- function(bird_data,pressure_data,site_data,
+                             pressure_name = c("d_impervious","d_treedensity","d_agri",
+                                               "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                               "d_shannon","shannon","drymatter","protectedarea_perc",
+                                               "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                               "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
+                             min_site_number_per_species = 60,
+                             min_occurence_species=200,
+                             family="quasipoisson"){
+  
+  species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
+                                                   pressure_name,"PLS")])
+  
+  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
+  
+  if(length(table(poisson_df$area_sampled_m2)) > length(unique(poisson_df$scheme_code))){
+    one_scheme_time_area <- 0 
+    poisson_df$area_sampled_m2 <- scale(poisson_df$area_sampled_m2)
+  }else{
+    one_scheme_time_area <- 1
+  }
+  
+  poisson_df$count_scale_all <- poisson_df$count#scales::rescale(poisson_df$count)
+  
+  if(length(pressure_name) > 1){
+    formula_gam <- "count_scale_all ~ year + year:d_impervious + year:d_treedensity +
+    year:eulandsystem_forest_lowmedium + year:eulandsystem_forest_high +
+    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_medium + year:eulandsystem_farmland_high +
+    year:d_tempsrping + year:d_tempsrpingvar + year:d_precspring + year:d_shannon + year:protectedarea_perc +
+    milieu_cat + tempsrping + precspring + shannon + drymatter"
+  }else{
+    formula_gam <- paste("count_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
+  }
+  
+  col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
+                 "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_treedensity",
+                 "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
+                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                 "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc")
+  
+  
+  if(nrow(poisson_df) >= min_occurence_species){
+    
+    ### global poisson model (gamm too resource consumming over the whole Europe)
+    
+    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    
+
+    fv <- predict(global_mod, type = "response")
+    res_data <- data.frame(data.frame(siteID=poisson_df$siteID,year=poisson_df$year,res=residuals(global_mod,type="deviance")) %>% group_by(siteID) %>% summarise(res=mean(res)))
+    res_data <- merge(site_data,res_data,by="siteID")
+    
+    p1 <- ggplot(data.frame(x = as.numeric(fv), y=napredict(global_mod$na.action, global_mod$y)), aes(x,y)) + geom_point() + theme_minimal() + labs(x = "Fitted Values", y = paste0("Response ",unique(bird_data$sci_name_out)), title = "Response vs. Fitted Values")
+    
+    p2 <- ggplot(data.frame(y=residuals(global_mod, type = "deviance")), aes(sample = y)) + stat_qq() + theme_minimal() + labs(x="Theoretical quantile",y="deviance residuals",title = "Normal Q-Q plot")
+    
+    p3 <- ggplot(grid_eu_mainland_outline) +  geom_sf() + geom_sf(data=res_data,aes(col=res), size=0.5) + scale_color_gradient2() + theme_void() + theme(legend.position = c(0.1,0.8), legend.title = element_blank())
+    
+    figure <- ggarrange(p1, p2, p3, ncol = 3, nrow = 1)
+  }
+  
+  return(figure)
+  
 }
 
 
@@ -2665,6 +2748,88 @@ gam_species_PLS2b <- function(butterfly_data,pressure_data,site_data,
   }
   
   return(res.poisson_df)
+}
+
+
+gam_species_PLS2b_check <- function(butterfly_data,pressure_data,site_data,
+                              pressure_name = c("d_impervious","d_treedensity","d_agri",
+                                                "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                                "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
+                                                "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
+                              min_site_number_per_species = 60,
+                              min_occurence_species=200,
+                              family="quasipoisson"){
+  
+  species_press_data_year <- merge(butterfly_data, pressure_data[which(pressure_data$transect_id %in% unique(butterfly_data$transect_id) & pressure_data$year %in% unique(butterfly_data$year)),], by =c("transect_id","year"), all.x=TRUE)
+  
+  poisson_df <- na.omit(species_press_data_year[,c("transect_id","count_corrected","year","transect_length","bms_id","Long_LAEA","Lat_LAEA",
+                                                   pressure_name,"PLS")])
+  
+  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
+  
+  if(length(table(poisson_df$transect_length)) > length(unique(poisson_df$bms_id))){
+    one_scheme_time_area <- 0 
+    poisson_df$transect_length <- scale(poisson_df$transect_length)
+  }else{
+    one_scheme_time_area <- 1
+  }
+  
+  poisson_df$count_corrected_scale_all <- poisson_df$count_corrected#scales::rescale(poisson_df$count_corrected)
+  
+  if(length(pressure_name) > 1){
+    formula_gam <- "count_corrected_scale_all ~ year + year:d_impervious + year:d_treedensity +
+    year:eulandsystem_forest_lowmedium + year:eulandsystem_forest_high +
+    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_medium + year:eulandsystem_farmland_high +
+    year:d_tempsrping + year:d_tempsrpingvar + year:d_precspring + year:d_shannon + year:protectedarea_perc +
+    milieu_cat + tempsrping + precspring + shannon + drymatter"
+  }else{
+    formula_gam <- paste("count_corrected_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
+  }
+  
+  col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
+                 "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_treedensity",
+                 "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
+                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                 "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc")
+  
+  if(nrow(poisson_df) >= min_occurence_species){
+    
+    ### global poisson model (gamm too resource consumming over the whole Europe)
+    
+    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 0){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 1){
+      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
+                        family=family, data=poisson_df)
+    }
+    
+    
+    fv <- predict(global_mod, type = "response")
+    res_data <- data.frame(data.frame(transect_id=poisson_df$transect_id,year=poisson_df$year,res=residuals(global_mod,type="deviance")) %>% group_by(transect_id) %>% summarise(res=mean(res)))
+    res_data <- merge(site_data,res_data,by="transect_id")
+    
+    p1 <- ggplot(data.frame(x = as.numeric(fv), y=napredict(global_mod$na.action, global_mod$y)), aes(x,y)) + geom_point() + theme_minimal() + labs(x = "Fitted Values", y = paste0("Response ",unique(butterfly_data$species_name)), title = "Response vs. Fitted Values")
+    
+    p2 <- ggplot(data.frame(y=residuals(global_mod, type = "deviance")), aes(sample = y)) + stat_qq() + theme_minimal() + labs(x="Theoretical quantile",y="deviance residuals",title = "Normal Q-Q plot")
+    
+    p3 <- ggplot(grid_eu_mainland_outline) +  geom_sf() + geom_sf(data=res_data,aes(col=res), size=0.5) + scale_color_gradient2() + theme_void() + theme(legend.position = c(0.1,0.8), legend.title = element_blank())
+    
+    figure <- ggarrange(p1, p2, p3, ncol = 3, nrow = 1)
+  }
+  
+  return(figure)
+  
 }
 
 
