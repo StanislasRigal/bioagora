@@ -81,6 +81,12 @@ lightpollution_2013 <- rast(raster(x = "raw_data/light_pollution/9828827/Harmoni
 
 clc_land_cover <- raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
 
+temp1 <- exact_extract(clc_land_cover,grid_eu_mainland_outline,fun="frac")
+clc_table <- data.frame(value=t(temp1),type=c(rep("Urban",11),rep("Agricultural land",11),rep("Forest",7),rep("Other natural land",15),NA,NA))
+clc_table <- na.omit(clc_table)
+clc_table2 <- data.frame(clc_table %>% group_by(type) %>% summarize(percent=sum(value)))
+
+
 #### Example to download eurostat data of population counts by NUTS-3 region
 #euro_pop <- get_eurostat('demo_r_pjanaggr3', stringsAsFactors = FALSE) %>%  filter(sex == 'T', str_length(geo) == 5, age == 'TOTAL') # NUTS-3
 

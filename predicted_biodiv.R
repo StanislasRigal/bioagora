@@ -1396,15 +1396,16 @@ predict_trend_all_bird_correct <- ddply(predict_trend_all_bird_correct,
                                              .(PLS),.fun=function(x){
                                                for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
                                                  #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                                 x[which(x[,i]>0.5),i] <- 0.06
-                                                 x[which(x[,i]<(-0.5)),i] <- -0.06
+                                                 value_max <- max(abs(quantile(predict_trend_all_bird_eu$trend_past_signif,0.25)),abs(quantile(predict_trend_all_bird_eu$trend_past_signif,0.75)))
+                                                 x[which(x[,i]>value_max),i] <- value_max
+                                                 x[which(x[,i]<(-value_max)),i] <- -value_max
                                                }
                                                for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
                                                  #x[which(x[,i]>max(x$trend_past_signif)),i] <- max(x$trend_past_signif)
                                                  #x[which(x[,i]<min(x$trend_past_signif)),i] <- min(x$trend_past_signif)
                                                  #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                                 x[which(x[,i]>0.5),i] <- 0.06
-                                                 x[which(x[,i]<(-0.5)),i] <- -0.06
+                                                 x[which(x[,i]>value_max),i] <- value_max
+                                                 x[which(x[,i]<(-value_max)),i] <- -value_max
                                                }
                                                return(x)
                                              },
@@ -1456,7 +1457,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.45, 0.2),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.1, 0.05),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_farm_bau.png",
        width = 8,
@@ -1476,7 +1477,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.1, 0.1),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.03, 0.03),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_forest_bau.png",
        width = 8,
@@ -2007,15 +2008,16 @@ predict_trend_all_butterfly_correct <- ddply(predict_trend_all_butterfly_correct
                                         .(PLS),.fun=function(x){
                                           for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
                                             #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                            x[which(x[,i]>0.5),i] <- 0.14 #quantile(predict_trend_all_butterfly_eu$trend_past_signif)
-                                            x[which(x[,i]<(-0.5)),i] <- -0.14
+                                            value_max <- max(abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.25)),abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.75)))
+                                            x[which(x[,i]>value_max),i] <- value_max #quantile(predict_trend_all_butterfly_eu$trend_past_signif)
+                                            x[which(x[,i]<(-value_max)),i] <- -value_max
                                           }
                                           for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
                                             #x[which(x[,i]>max(x$trend_past_signif)),i] <- max(x$trend_past_signif)
                                             #x[which(x[,i]<min(x$trend_past_signif)),i] <- min(x$trend_past_signif)
                                             #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                            x[which(x[,i]>0.5),i] <- 0.14
-                                            x[which(x[,i]<(-0.5)),i] <- -0.14
+                                            x[which(x[,i]>value_max),i] <- value_max
+                                            x[which(x[,i]<(-value_max)),i] <- -value_max
                                           }
                                           return(x)
                                         },
@@ -2064,7 +2066,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.12, 0.12),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.01, 0.03),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_farm_bau.png",
        width = 8,
@@ -2084,7 +2086,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.35, 0.25),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.15, 0.10),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_forest_bau.png",
        width = 8,
