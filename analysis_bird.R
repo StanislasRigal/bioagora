@@ -1450,7 +1450,7 @@ plot(exp(trend_past)~PECBMS_slope_long,res_gamm_bird_eu[which(res_gamm_bird_eu$d
 plot(exp(trend_past)~PECBMS_slope_short,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]) + abline(h = 1,v=1)
 plot(exp(trend_past)~PECBMS_slope_mid,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]) + abline(h = 1,v=1)
 
-data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]
+data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.15),]
 data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","PECBMS_slope_long","PECBMS_slope_short")], id.var=c("sci_name_out","trend_past"))
 
 ggplot(data_plot, aes(y=exp(trend_past))) + 
@@ -1475,8 +1475,8 @@ for(i in seq(0,0.5, by=0.01)){
   correl_data[which(seq(0,0.6, by=0.01)==i),] <- c(correl$coefficients[2,1],correl$coefficients[2,4],correl$r.squared)
 }
 
-res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2),]
-res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2 & res_gamm_bird$sci_name_out %in% pecbms_trend_class$sci_name_out),]
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15),]
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15 & res_gamm_bird$sci_name_out %in% pecbms_trend_class$sci_name_out),]
 
 unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
 

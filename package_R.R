@@ -21,6 +21,7 @@ library(stars)
 library(readr)
 library(bioregion)
 library(eSDM)
+library(rbms)
 
 # EVA_bioregion
 library(alphahull)

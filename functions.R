@@ -3285,9 +3285,17 @@ predict_trend <- function(mod,
                           climate_pls,
                           pa_pls_short,
                           PLS,
-                          nb_rep=1000){
+                          nb_rep=1000,
+                          pressure_remove = NULL){
   
   mod_coef <- summary(mod)$p.table[grep("year",row.names(summary(mod)$p.table)),]
+  
+  if(!is.null(pressure_remove)){
+    mod_coef[pressure_remove,c("Estimate","Std. Error")] <- 0
+    pressure_removed <- c("year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+    "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+    "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high")[i]
+  }else{pressure_removed <- "none"}
   
   year_si <- sd(na.omit(pressure_data_unscale$year))
   d_impervious_si <- sd(na.omit(pressure_data_unscale$d_impervious))
@@ -3863,7 +3871,7 @@ predict_trend <- function(mod,
                     trend_past_signif=beta1_past_signif,sd_past_signif=sd(beta1_past_sample_signif),
                     trend_BAU_signif=beta1_BAU_signif,sd_BAU_signif=sd(beta1_BAU_sample_signif),trend_SSP1_signif=beta1_SSP1_signif,sd_SSP1_signif=sd(beta1_SSP1_sample_signif),
                     trend_SSP3_signif=beta1_SSP3_signif,sd_SSP3_signif=sd(beta1_SSP3_sample_signif),trend_nac_signif=beta1_nac_signif,sd_nac_signif=sd(beta1_nac_sample_signif),
-                    trend_nfn_signif=beta1_nfn_signif,sd_nfn_signif=sd(beta1_nfn_sample_signif),trend_nfs_signif=beta1_nfs_signif,sd_nfs_signif=sd(beta1_nfs_sample_signif),PLS=PLS))
+                    trend_nfn_signif=beta1_nfn_signif,sd_nfn_signif=sd(beta1_nfn_sample_signif),trend_nfs_signif=beta1_nfs_signif,sd_nfs_signif=sd(beta1_nfs_sample_signif),PLS=PLS, pressure_removed))
 }
 
 bird_data <- droplevels(subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out == "Alauda arvensis"),])
@@ -3956,6 +3964,20 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                             pa_pls_short,
                                             PLS="europe")
       
+      for(i in 1:14){
+        predict_trend_europe_temp <- predict_trend(mod=global_mod,
+                                                   pressure_data_unscale,
+                                                   poisson_df_unscale,
+                                                   poisson_df,
+                                                   lulc_pls_short,
+                                                   climate_pls,
+                                                   pa_pls_short,
+                                                   PLS="europe",
+                                                   pressure_remove = i)
+        
+        predict_trend_europe <- rbind(predict_trend_europe,predict_trend_europe_temp)
+      }
+      
       unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
       
       if_fail <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
@@ -3965,7 +3987,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                             trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                             trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                             trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                            PLS=NA)
+                            PLS=NA,pressure_removed=NA)
       
       predict_trend_pls <- ddply(unique_poisson_df,.(PLS),.fun=purrr::possibly(otherwise=if_fail,
                                                                              .f=function(x,min_site_number_per_species,poisson_df){
@@ -4016,7 +4038,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                                                                                                trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                                                                                                trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                                                                                                trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                                                                                               PLS=unique(x$PLS))
+                                                                                                               PLS=unique(x$PLS),pressure_removed=NA)
                                                                                }
                                                                                  
                                                                                return(predict_trend_i)
@@ -4037,7 +4059,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                       trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                       trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                       trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                      PLS=NA)
+                                      PLS=NA,pressure_removed=NA)
     }
     
   }else{
@@ -4048,7 +4070,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,sit
                                     trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                     trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                     trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                    PLS=NA)
+                                    PLS=NA,pressure_removed=NA)
   }
   
   return(predict_trend_all)
@@ -4148,6 +4170,20 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                             pa_pls_short,
                                             PLS="europe")
       
+      for(i in 1:14){
+        predict_trend_europe_temp <- predict_trend(mod=global_mod,
+                                              pressure_data_unscale,
+                                              poisson_df_unscale,
+                                              poisson_df,
+                                              lulc_pls_short,
+                                              climate_pls,
+                                              pa_pls_short,
+                                              PLS="europe",
+                                              pressure_remove = i)
+        
+        predict_trend_europe <- rbind(predict_trend_europe,predict_trend_europe_temp)
+      }
+      
       unique_poisson_df <- distinct(poisson_df, Long_LAEA, Lat_LAEA,.keep_all = TRUE)
       
       if_fail <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
@@ -4157,7 +4193,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                             trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                             trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                             trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                            PLS=NA)
+                            PLS=NA,pressure_removed=NA)
       
       predict_trend_pls <- ddply(unique_poisson_df,.(PLS),.fun=purrr::possibly(otherwise=if_fail,
                                                                                .f=function(x,min_site_number_per_species,poisson_df){
@@ -4208,7 +4244,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                                                                                                  trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                                                                                                  trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                                                                                                  trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                                                                                                 PLS=unique(x$PLS))
+                                                                                                                 PLS=unique(x$PLS),pressure_removed=NA)
                                                                                  }
                                                                                  
                                                                                  return(predict_trend_i)
@@ -4229,7 +4265,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                       trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                       trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                       trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                      PLS=NA)
+                                      PLS=NA,pressure_removed=NA)
     }
     
   }else{
@@ -4240,7 +4276,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                     trend_BAU_signif=NA,sd_BAU_signif=NA,trend_SSP1_signif=NA,sd_SSP1_signif=NA,
                                     trend_SSP3_signif=NA,sd_SSP3_signif=NA,trend_nac_signif=NA,sd_nac_signif=NA,
                                     trend_nfn_signif=NA,sd_nfn_signif=NA,trend_nfs_signif=NA,sd_nfs_signif=NA,
-                                    PLS=NA)
+                                    PLS=NA,pressure_removed=NA)
   }
   
   return(predict_trend_all)

@@ -160,6 +160,26 @@ res_gam_bird_FR2$PECBMS_slope_mid <- (res_gam_bird_FR2$PECBMS_slope_long + res_g
 
 plot(exp(year)~PECBMS_slope_long,res_gam_bird_FR2)
 
+
+data_plot <- res_gam_bird_FR2[which(res_gam_bird_FR2$dev_exp > 0.15 & res_gam_bird_FR2$n_obs > 400),]
+data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","PECBMS_slope_long","PECBMS_slope_short")], id.var=c("sci_name_out","trend_past"))
+
+ggplot(data_plot, aes(y=exp(trend_past_signif))) + 
+  geom_vline(xintercept = 1, linetype = 2) +
+  geom_hline(yintercept = 1, linetype = 2) +
+  geom_point(aes(x=value, col=variable), alpha = 0.5) +
+  geom_smooth(aes(x=value, col=variable),method = "lm", se = FALSE) +
+  xlab("Slope from PECBMS") + ylab("Observed slope (2000-2021)") +
+  #geom_abline(intercept = 0, slope = 1) +
+  xlim(c(0.86,1.07)) + ylim(c(0.65,1.2)) +
+  scale_color_discrete(labels= c("PECBMS_slope_long" = "Long-term slope (1980-2023)", "PECBMS_slope_short" = "Ten-year slope (2014-2023)")) +
+  theme_minimal() + theme(legend.title = element_blank(), legend.position = c(0.3, 0.8))
+
+ggsave("output/bird_trend_FR_pecbms.png",
+       width = 6,
+       height = 6,
+       dpi = 300)
+
 res_gam_bird_FR_correct <- res_gam_bird_FR[which(res_gam_bird_FR$dev_exp > 0.15 & res_gam_bird_FR$n_obs > 400),]
 res_gam_bird_FR_correct <- res_gam_bird_FR[which(res_gam_bird_FR$dev_exp > 0.2),]
 
@@ -877,3 +897,13 @@ ggsave("output/trend_bird_FR_signif.png",
        height = 3,
        dpi = 300
 )
+
+
+FR_all_signif$variable <- as.character(FR_all_signif$variable)
+comb_var <- combn(FR_all_signif$variable,2)
+test_diff_var_FR_all_signif <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_FR_all_signif[i,3] <- tsum.test(mean.x=FR_all_signif$value[which(FR_all_signif$variable==comb_var[1,i])],   s.x=FR_all_signif$se[which(FR_all_signif$variable==comb_var[1,i])], n.x= overall_trend_all$n,
+                                                       mean.y=FR_all_signif$value[which(FR_all_signif$variable==comb_var[2,i])],   s.y=FR_all_signif$se[which(FR_all_signif$variable==comb_var[2,i])], n.y= overall_trend_all$n)$p.value
+  
+}

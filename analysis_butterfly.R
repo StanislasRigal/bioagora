@@ -471,8 +471,8 @@ for(i in sort(unique(res_gamm_butterfly_correct$species_name))){
 
 #res_gamm_butterfly <- readRDS("output/res_gamm_butterflynew.rds")
 
-res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.2),]
-res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.2 & res_gamm_butterfly$species_name %in% c(grassland_species, woodland_species, woodland_ind_species, wetland_species)),]
+res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.15),]
+res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.15 & res_gamm_butterfly$species_name %in% c(grassland_species, woodland_species, woodland_ind_species, wetland_species)),]
 
 
 
