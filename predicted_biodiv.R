@@ -730,9 +730,9 @@ MVA.plot(ACP,"corr")
 
 ## lda
 exp_impact_FaB <- c("green","green","red","red","green","red","green","red","red","red","red","grey","green")
-exp_impact_FoB <- c("green","green","red","red","red","green","grey","red","red","red","red","grey","green")
-exp_impact_GB <- c("red","grey","red","green","green","red","grey","green","red","grey","green","green","green")
-exp_impact_WB <- c("green","green","red","green","grey","grey","grey","red","grey","grey","grey","red","red")
+exp_impact_FoB <- c("green","green","red","red","red","green","red","red","red","red","red","red","green")
+exp_impact_GB <- c("red","grey","red","green","green","grey","green","green","red","grey","green","green","green")
+exp_impact_WB <- c("green","green","grey","green","grey","grey","green","grey","grey","grey","red","red","red")
 
 lda_data <- pls_scenario_all[which(!is.na(value_pls$mu_nfn_signif)),c("temp_change","tempvar_change","prec_change","urban","farmland","forest","farmland_low",
                                                                       "farmland_medium","farmland_high","forest_lowmedium","forest_high","landscape_div","pa_change")]
@@ -1411,7 +1411,7 @@ predict_trend_all_bird_correct <- ddply(predict_trend_all_bird_correct,
                                              },
                                              .progress = "text")
 
-predict_trend_all_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe"),]
+predict_trend_all_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe" & predict_trend_all_bird_correct$pressure_removed=="none"),]
 
 
 species_habitat <- read.csv("raw_data/Habitat_class_PECBMS.csv")
@@ -1422,7 +1422,7 @@ predict_trend_all_bird_correct_pecbms <- predict_trend_all_bird_correct[which(pr
 
 
 overall_trend_all <- ddply(predict_trend_all_bird_correct,
-                                .(PLS),.fun=overall_mean_sd_trend,
+                                .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
 overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS",all.x=TRUE)
 
@@ -1441,12 +1441,12 @@ ggsave("output/map_pred_all_bau.png",
        dpi = 300
 )
 
-overall_trend_all_eu <- overall_mean_sd_trend(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe"),])
+overall_trend_all_eu <- overall_mean_sd_trend(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe" & predict_trend_all_bird_correct$pressure_removed =="none"),])
 
 
 
 overall_trend_farmland <- ddply(predict_trend_farmland,
-                                .(PLS),.fun=overall_mean_sd_trend,
+                                .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
 
 overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
@@ -1466,7 +1466,7 @@ ggsave("output/map_pred_farm_bau.png",
 )
 
 overall_trend_forest <- ddply(predict_trend_forest,
-                                .(PLS),.fun=overall_mean_sd_trend,
+                                .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
 
 overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
@@ -1486,29 +1486,32 @@ ggsave("output/map_pred_forest_bau.png",
 )
 
 
+pressure_removed <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                      "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                      "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                      "eulandsystem_farmland_high")[1]
 
-
-europe_all <- data.frame(value = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]),
-                         sd = c(overall_trend_all$sd_past[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe")]),
-                         se = c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_ssp3[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]),
+europe_all <- data.frame(value = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)]),
+                         sd = c(overall_trend_all$sd_past[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)]),
+                         se = c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_ssp3[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)]),
                          variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_all2 <- europe_all[which(europe_all$variable %in% c("past","bau","ssp1","nfn","nfs","nac")),]
@@ -1552,27 +1555,91 @@ for(i in 1:dim(comb_var)[2]){
 }
 
 
-europe_all_signif <- data.frame(value = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                                sd = c(overall_trend_all$sd_past_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                                se = c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_all$pressure_removed[which(overall_trend_all$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                              overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")])-1.96*c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
+                                                     overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                               overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")])+1.96*c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
+                                                      overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_bird_eu_all_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+
+
+
+europe_all_signif <- data.frame(value = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)]),
+                                sd = c(overall_trend_all$sd_past_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)]),
+                                se = c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_ssp3_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)]),
                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_all_signif2 <- europe_all_signif[which(europe_all_signif$variable %in% c("past","bau","ssp1","nfn","nfs","nac")),]
@@ -1615,6 +1682,63 @@ for(i in 1:dim(comb_var)[2]){
                                                     mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
   
 }
+
+
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_all$pressure_removed[which(overall_trend_all$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                              overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")])-1.96*c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                                                                                                                                                                                                                         overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                               overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")])+1.96*c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                                                                                                                                                                                                                          overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_bird_eu_all_signif_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
 
 
 
@@ -1747,27 +1871,27 @@ for(i in 1:dim(comb_var)[2]){
 }
 
 
-europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              sd = c(overall_trend_farmland$sd_past[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_ssp1[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_ssp3[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nac[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nfn[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              se = c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_ssp3[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]),
+europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                              sd = c(overall_trend_farmland$sd_past[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_ssp1[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_ssp3[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_nac[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_nfn[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_nfs[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                              se = c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_ssp3[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
                               variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_farmland2 <- europe_farmland[which(europe_farmland$variable != "ssp3"),]
@@ -1802,27 +1926,89 @@ ggsave("output/trend_bird_farm.png",
        dpi = 300
 )
 
-europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                                     sd = c(overall_trend_farmland$sd_past_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                                     se = c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_farmland$pressure_removed[which(overall_trend_farmland$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                       overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                              overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")])-1.96*c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                         overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                               overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")])+1.96*c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                          overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_bird_eu_farmland_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+
+europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                                     sd = c(overall_trend_farmland$sd_past_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                                     se = c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_ssp3_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
                                      variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_farmland_signif2 <- europe_farmland_signif[which(europe_farmland_signif$variable != "ssp3"),]
@@ -1866,29 +2052,89 @@ for(i in 1:dim(comb_var)[2]){
   
 }
 
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_farmland$pressure_removed[which(overall_trend_farmland$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                       overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                              overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")])-1.96*c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                                              overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                               overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")])+1.96*c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                                               overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]))
 
 
-europe_forest <- data.frame(value = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]),
-                            sd = c(overall_trend_forest$sd_past[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe")]),
-                            se = c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]),
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_bird_eu_farmland_signif_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+
+europe_forest <- data.frame(value = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                            sd = c(overall_trend_forest$sd_past[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                            se = c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_ssp3[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
                             variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_forest2 <- europe_forest[which(europe_forest$variable != "ssp3"),]
@@ -1933,27 +2179,89 @@ for(i in 1:dim(comb_var)[2]){
   
 }
 
-europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                                   sd = c(overall_trend_forest$sd_past_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                                   se = c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_forest$pressure_removed[which(overall_trend_forest$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                       overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                              overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")])-1.96*c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                         overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                               overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")])+1.96*c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                          overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_bird_eu_forest_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                                   sd = c(overall_trend_forest$sd_past_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                                   se = c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_ssp3_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
                                    variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
 europe_forest_signif2 <- europe_forest_signif[which(europe_forest_signif$variable != "ssp3"),]
@@ -1998,6 +2306,66 @@ for(i in 1:dim(comb_var)[2]){
   
 }
 
+
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_forest$pressure_removed[which(overall_trend_forest$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                       overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                              overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")])-1.96*c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                                              overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                               overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")])+1.96*c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                                               overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_bird_eu_forest_signif_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
 #butterfly
 
 
@@ -2031,7 +2399,7 @@ predict_trend_forest <- predict_trend_all_butterfly_correct[which(predict_trend_
 
 
 overall_trend_all <- ddply(predict_trend_all_butterfly_correct,
-                           .(PLS),.fun=overall_mean_sd_trend,
+                           .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                            .progress = "text")
 overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS",all.x=TRUE)
 
@@ -2051,11 +2419,11 @@ ggsave("output/map_pred_butterfly_all_bau.png",
 )
 
 overall_trend_all_eu <- ddply(predict_trend_all_butterfly_eu,
-                              .(PLS),.fun=overall_mean_sd_trend,
+                              .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                               .progress = "text")
 
 overall_trend_farmland <- ddply(predict_trend_farmland,
-                                .(PLS),.fun=overall_mean_sd_trend,
+                                .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
 
 overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
@@ -2066,7 +2434,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.01, 0.03),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.10, 0.06),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_farm_bau.png",
        width = 8,
@@ -2075,7 +2443,7 @@ ggsave("output/map_pred_butterfly_farm_bau.png",
 )
 
 overall_trend_forest <- ddply(predict_trend_forest,
-                              .(PLS),.fun=overall_mean_sd_trend,
+                              .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                               .progress = "text")
 
 overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
@@ -2086,7 +2454,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.15, 0.10),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.10, 0.08),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_forest_bau.png",
        width = 8,
@@ -2096,30 +2464,35 @@ ggsave("output/map_pred_butterfly_forest_bau.png",
 
 
 
-europe_all <- data.frame(value = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],
-                                   overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]),
-                         sd = c(overall_trend_all$sd_past[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe")]),
-                         se = c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_ssp3[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],
-                                overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]),
+pressure_removed <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                      "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                      "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                      "eulandsystem_farmland_high")[1]
+
+europe_all <- data.frame(value = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_ssp3[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                   overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)]),
+                         sd = c(overall_trend_all$sd_past[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_bau[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_ssp1[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_ssp3[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_nac[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_nfn[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$sd_nfs[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)]),
+                         se = c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_ssp3[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)],
+                                overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe"  & overall_trend_all$pressure_removed == pressure_removed)]),
                          variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_all2 <- europe_all[which(europe_all$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_all2 <- europe_all[which(europe_all$variable %in% c("past","bau","ssp1","nfn","nfs","nac")),]
 europe_all2$variable <- factor(europe_all2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_all2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
@@ -2160,30 +2533,94 @@ for(i in 1:dim(comb_var)[2]){
 }
 
 
-europe_all_signif <- data.frame(value = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                          overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                                sd = c(overall_trend_all$sd_past_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe")]),
-                                se = c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_ssp3_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],
-                                       overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_all$pressure_removed[which(overall_trend_all$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                              overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")])-1.96*c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
+                                                                                                                                                                                                                                         overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_all$mu_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1[which(overall_trend_all$PLS=="europe")],
+                               overall_trend_all$mu_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs[which(overall_trend_all$PLS=="europe")])+1.96*c(overall_trend_all$se_past[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1[which(overall_trend_all$PLS=="europe")],
+                                                                                                                                                                                                                                          overall_trend_all$se_nac[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs[which(overall_trend_all$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_butterfly_eu_all_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+
+
+
+europe_all_signif <- data.frame(value = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_ssp3_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                          overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)]),
+                                sd = c(overall_trend_all$sd_past_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_bau_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_ssp1_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_ssp3_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_nac_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_nfn_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$sd_nfs_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)]),
+                                se = c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_ssp3_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                       overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)]),
                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_all_signif2 <- europe_all_signif[which(europe_all_signif$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_all_signif2 <- europe_all_signif[which(europe_all_signif$variable %in% c("past","bau","ssp1","nfn","nfs","nac")),]
 europe_all_signif2$variable <- factor(europe_all_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_all_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
@@ -2225,30 +2662,87 @@ for(i in 1:dim(comb_var)[2]){
 }
 
 
-europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],
-                                        overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              sd = c(overall_trend_farmland$sd_past[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_ssp1[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_ssp3[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nac[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nfn[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$sd_nfs[which(overall_trend_farmland$PLS=="europe")]),
-                              se = c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_ssp3[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],
-                                     overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]),
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_all$pressure_removed[which(overall_trend_all$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                       overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                              overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")])-1.96*c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                                                                                                                                                                                                                                              overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_all$mu_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                               overall_trend_all$mu_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$mu_nfs_signif[which(overall_trend_all$PLS=="europe")])+1.96*c(overall_trend_all$se_past_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_bau_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_ssp1_signif[which(overall_trend_all$PLS=="europe")],
+                                                                                                                                                                                                                                                               overall_trend_all$se_nac_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfn_signif[which(overall_trend_all$PLS=="europe")],overall_trend_all$se_nfs_signif[which(overall_trend_all$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_butterfly_eu_all_signif_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+europe_farmland <- data.frame(value = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_ssp3[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                        overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                              sd = c(overall_trend_farmland$sd_past[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_bau[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_ssp1[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_ssp3[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_nac[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_nfn[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$sd_nfs[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                              se = c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_ssp3[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                     overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
                               variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_farmland2 <- europe_farmland[which(europe_farmland$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_farmland2 <- europe_farmland[which(europe_farmland$variable != "ssp3"),]
 europe_farmland2$variable <- factor(europe_farmland2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_farmland2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
@@ -2280,30 +2774,92 @@ ggsave("output/trend_butterfly_farm.png",
        dpi = 300
 )
 
-europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                               overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                                     sd = c(overall_trend_farmland$sd_past_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
-                                     se = c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_ssp3_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],
-                                            overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_farmland$pressure_removed[which(overall_trend_farmland$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                       overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                              overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")])-1.96*c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                                                       overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_farmland$mu_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                               overall_trend_farmland$mu_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs[which(overall_trend_farmland$PLS=="europe")])+1.96*c(overall_trend_farmland$se_past[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                                                        overall_trend_farmland$se_nac[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs[which(overall_trend_farmland$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_butterfly_eu_farmland_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+
+europe_farmland_signif <- data.frame(value = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_ssp3_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                               overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                                     sd = c(overall_trend_farmland$sd_past_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_bau_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_ssp1_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_ssp3_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_nac_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_nfn_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$sd_nfs_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
+                                     se = c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_ssp3_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                            overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)]),
                                      variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_farmland_signif2 <- europe_farmland_signif[which(europe_farmland_signif$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_farmland_signif2 <- europe_farmland_signif[which(europe_farmland_signif$variable != "ssp3"),]
 europe_farmland_signif2$variable <- factor(europe_farmland_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_farmland_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
@@ -2344,32 +2900,92 @@ for(i in 1:dim(comb_var)[2]){
   
 }
 
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_farmland$pressure_removed[which(overall_trend_farmland$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                       overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                              overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")])-1.96*c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                                                                            overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_farmland$mu_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                               overall_trend_farmland$mu_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$mu_nfs_signif[which(overall_trend_farmland$PLS=="europe")])+1.96*c(overall_trend_farmland$se_past_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_bau_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_ssp1_signif[which(overall_trend_farmland$PLS=="europe")],
+                                                                                                                                                                                                                                                                                             overall_trend_farmland$se_nac_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfn_signif[which(overall_trend_farmland$PLS=="europe")],overall_trend_farmland$se_nfs_signif[which(overall_trend_farmland$PLS=="europe")]))
 
 
-europe_forest <- data.frame(value = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],
-                                      overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]),
-                            sd = c(overall_trend_forest$sd_past[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe")]),
-                            se = c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_ssp3[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],
-                                   overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]),
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_butterfly_eu_farmland_signif_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+
+europe_forest <- data.frame(value = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_ssp3[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                      overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                            sd = c(overall_trend_forest$sd_past[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_bau[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_ssp1[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_ssp3[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_nac[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_nfn[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$sd_nfs[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                            se = c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_ssp3[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                   overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
                             variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_forest2 <- europe_forest[which(europe_forest$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_forest2 <- europe_forest[which(europe_forest$variable != "ssp3"),]
 europe_forest2$variable <- factor(europe_forest2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_forest2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
@@ -2411,30 +3027,92 @@ for(i in 1:dim(comb_var)[2]){
   
 }
 
-europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                             overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                                   sd = c(overall_trend_forest$sd_past_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
-                                   se = c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_ssp3_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],
-                                          overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_forest$pressure_removed[which(overall_trend_forest$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                       overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                              overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")])-1.96*c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                                           overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_forest$mu_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1[which(overall_trend_forest$PLS=="europe")],
+                               overall_trend_forest$mu_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs[which(overall_trend_forest$PLS=="europe")])+1.96*c(overall_trend_forest$se_past[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                                            overall_trend_forest$se_nac[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs[which(overall_trend_forest$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_butterfly_eu_forest_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
+
+
+
+
+
+
+europe_forest_signif <- data.frame(value = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_ssp3_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                             overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                                   sd = c(overall_trend_forest$sd_past_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_bau_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_ssp1_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_ssp3_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_nac_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_nfn_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$sd_nfs_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
+                                   se = c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_ssp3_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                          overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)]),
                                    variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
 
-europe_forest_signif2 <- europe_forest_signif[which(europe_forest_signif$variable %in% c("past","bau","ssp1","nac","nfn","nfs")),]
+europe_forest_signif2 <- europe_forest_signif[which(europe_forest_signif$variable != "ssp3"),]
 europe_forest_signif2$variable <- factor(europe_forest_signif2$variable, levels = c("past","bau","ssp1","nfn","nfs","nac"))
 ggplot(europe_forest_signif2, aes(x=value,y = variable)) + 
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
@@ -2475,6 +3153,63 @@ for(i in 1:dim(comb_var)[2]){
                                                        mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
   
 }
+
+
+boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+               "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+               "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+               "eulandsystem_farmland_high")
+
+df <- data.frame(yAxis = length(boxLabels):1,
+                 Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("SSP1",length(boxLabels)),rep("NAC",length(boxLabels)),rep("NFN",length(boxLabels)),rep("NFS",length(boxLabels))),
+                 Variable = rep(overall_trend_forest$pressure_removed[which(overall_trend_forest$PLS=="europe")],6),
+                 box_estimate_main = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                       overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")]), 
+                 boxCILow = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                              overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")])-1.96*c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                                                                overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]),
+                 boxCIHigh = c(overall_trend_forest$mu_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                               overall_trend_forest$mu_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$mu_nfs_signif[which(overall_trend_forest$PLS=="europe")])+1.96*c(overall_trend_forest$se_past_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_bau_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_ssp1_signif[which(overall_trend_forest$PLS=="europe")],
+                                                                                                                                                                                                                                                                                 overall_trend_forest$se_nac_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfn_signif[which(overall_trend_forest$PLS=="europe")],overall_trend_forest$se_nfs_signif[which(overall_trend_forest$PLS=="europe")]))
+
+
+df$Attribute <- factor(df$Attribute, levels = c("Past", "BAU","SSP1","NAC","NFN","NFS"))
+df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
+                                              "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
+                                              "eulandsystem_farmland_high"))
+df_signif <- ddply(df, .(Attribute), .fun = function(x){
+  mean_y <- x$box_estimate_main[which(x$Variable == "none")]
+  se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
+  return(data.frame(x %>% group_by(Variable) %>% mutate(pvalue = tsum.test(mean.x=box_estimate_main,   s.x=((boxCIHigh - mean_y)/1.96), n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],
+                                                                           mean.y=mean_y,s.y=se_y, n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == "none")],)$p.value)))})
+
+df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
+
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+                            "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
+                            "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
+                            "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") +
+  xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
+
+
+ggsave("output/trend_butterfly_eu_forest_signif_effect.png",
+       width = 9,
+       height = 6,
+       dpi = 300
+)
 
 
 # plot pressure change

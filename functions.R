@@ -3294,7 +3294,7 @@ predict_trend <- function(mod,
     mod_coef[pressure_remove,c("Estimate","Std. Error")] <- 0
     pressure_removed <- c("year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
     "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
-    "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high")[i]
+    "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high")[pressure_remove]
   }else{pressure_removed <- "none"}
   
   year_si <- sd(na.omit(pressure_data_unscale$year))
