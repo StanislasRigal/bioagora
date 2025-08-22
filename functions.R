@@ -1862,22 +1862,26 @@ gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
         
         if(dim(result_all_site)[3] > 1){
           res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1,])))
+          res.poisson_sd <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)),2,])))
           res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4,])))
         }
         if(dim(result_all_site)[3] == 1){
           res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1])))
+          res.poisson_sd <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)),2])))
           res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4])))
         }
       }
       
       if(is.na(dim(result_all_site)[3])){
         res.poisson_df <- data.frame(matrix(NA,nrow=1,ncol=(length(col_names)+2)))
+        res.poisson_sd <- data.frame(matrix(NA,nrow=1,ncol=(length(col_names))))
         res.poisson_pval <- matrix(1,nrow=1,ncol=(length(col_names)+2))
       }
       
       
       
-      res.poisson_df[res.poisson_pval > 0.05] <- NA 
+      res.poisson_df[res.poisson_pval > 0.05] <- NA
+      res.poisson_sd[res.poisson_pval[,1:length(col_names)] > 0.05] <- NA 
       
       if(is.na(dim(result_all_site)[3])){
         
@@ -1886,8 +1890,14 @@ gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
       }else{
         
         res.poisson_df$PLS <- gsub("X","",row.names(res.poisson_df))
-        
+
       }
+      
+      names(res.poisson_sd) <- c(paste0(col_names,"_sd"))
+      
+      res.poisson_df <- cbind(res.poisson_df,res.poisson_sd)
+      
+      
       
       global_mod_coef <- summary(global_mod)$p.table[grep("scheme_code|area_sampled_m2|time_effort|no_",row.names(summary(global_mod)$p.table),invert = TRUE),]
       
@@ -1908,21 +1918,26 @@ gam_species_PLS2 <- function(bird_data,pressure_data,site_data,
       names(global_mod_df) <- c(col_names,"dev_exp","n_obs")
       global_mod_df$PLS <- "europe"
       
+      global_mod_coef2 <- global_mod_coef[1:length(col_names),2]
+      global_mod_coef2[which(global_mod_coef[,4] > 0.05)] <- NA
+      global_mod_sd <- data.frame(t(global_mod_coef2))
+      names(global_mod_sd) <- c(paste0(col_names,"_sd"))
+      
+      global_mod_df <- cbind(global_mod_df,global_mod_sd)
+
       res.poisson_df <- rbind(res.poisson_df,global_mod_df)
       
       #res.poisson_sf <- merge(grid_eu_mainland_biogeo,res.poisson_df,by="PLS")
       #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=exp(`treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
       
     }else{
-      res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
-      names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
-      res.poisson_df$PLS <- NA
+      res.poisson_df <- data.frame(t(rep(NA,(2*length(col_names)+3))))
+      names(res.poisson_df) <- c(col_names,"dev_exp","n_obs","PLS",paste0(col_names,"_sd"))
     }
     
   }else{
-    res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
-    names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
-    res.poisson_df$PLS <- NA
+    res.poisson_df <- data.frame(t(rep(NA,(2*length(col_names)+3))))
+    names(res.poisson_df) <- c(col_names,"dev_exp","n_obs","PLS",paste0(col_names,"_sd"))
   }
   
   return(res.poisson_df)
@@ -2684,22 +2699,26 @@ gam_species_PLS2b <- function(butterfly_data,pressure_data,site_data,
         
         if(dim(result_all_site)[3] > 1){
           res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1,])))
+          res.poisson_sd <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)),2,])))
           res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4,])))
         }
         if(dim(result_all_site)[3] == 1){
           res.poisson_df <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),1])))
+          res.poisson_sd <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)),2])))
           res.poisson_pval <- as.data.frame(t(data.frame(result_all_site[1:(length(col_names)+2),4])))
         }
       }
       
       if(is.na(dim(result_all_site)[3])){
         res.poisson_df <- data.frame(matrix(NA,nrow=1,ncol=(length(col_names)+2)))
+        res.poisson_sd <- data.frame(matrix(NA,nrow=1,ncol=(length(col_names))))
         res.poisson_pval <- matrix(1,nrow=1,ncol=(length(col_names)+2))
       }
       
       
       
-      res.poisson_df[res.poisson_pval > 0.05] <- NA 
+      res.poisson_df[res.poisson_pval > 0.05] <- NA
+      res.poisson_sd[res.poisson_pval[,1:length(col_names)] > 0.05] <- NA
       
       if(is.na(dim(result_all_site)[3])){
         
@@ -2710,6 +2729,10 @@ gam_species_PLS2b <- function(butterfly_data,pressure_data,site_data,
         res.poisson_df$PLS <- gsub("X","",row.names(res.poisson_df))
         
       }
+      
+      names(res.poisson_sd) <- c(paste0(col_names,"_sd"))
+      
+      res.poisson_df <- cbind(res.poisson_df,res.poisson_sd)
       
       global_mod_coef <- summary(global_mod)$p.table[grep("bms_id|transect_length|time_effort|no_",row.names(summary(global_mod)$p.table),invert = TRUE),]
       
@@ -2730,21 +2753,26 @@ gam_species_PLS2b <- function(butterfly_data,pressure_data,site_data,
       names(global_mod_df) <- c(col_names,"dev_exp","n_obs")
       global_mod_df$PLS <- "europe"
       
+      global_mod_coef2 <- global_mod_coef[1:length(col_names),2]
+      global_mod_coef2[which(global_mod_coef[,4] > 0.05)] <- NA
+      global_mod_sd <- data.frame(t(global_mod_coef2))
+      names(global_mod_sd) <- c(paste0(col_names,"_sd"))
+      
+      global_mod_df <- cbind(global_mod_df,global_mod_sd)
+      
       res.poisson_df <- rbind(res.poisson_df,global_mod_df)
       
       #res.poisson_sf <- merge(grid_eu_mainland_biogeo,res.poisson_df,by="PLS")
       #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=exp(`treedensity`))) + scale_fill_gradientn(colors = sf.colors(20))
       
     }else{
-      res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
-      names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
-      res.poisson_df$PLS <- NA
+      res.poisson_df <- data.frame(t(rep(NA,(2*length(col_names)+3))))
+      names(res.poisson_df) <- c(col_names,"dev_exp","n_obs","PLS",paste0(col_names,"_sd"))
     }
     
   }else{
-    res.poisson_df <- data.frame(t(rep(NA,(length(col_names)+2))))
-    names(res.poisson_df) <- c(col_names,"dev_exp","n_obs")
-    res.poisson_df$PLS <- NA
+    res.poisson_df <- data.frame(t(rep(NA,(2*length(col_names)+3))))
+    names(res.poisson_df) <- c(col_names,"dev_exp","n_obs","PLS",paste0(col_names,"_sd"))
   }
   
   return(res.poisson_df)
@@ -4394,6 +4422,76 @@ overall_mean_sd_trend_weigthed <- function(data){
                     mu_bau_signif,sd_bau_signif,mu_ssp1_signif,sd_ssp1_signif,mu_ssp3_signif,sd_ssp3_signif,
                     mu_nac_signif,sd_nac_signif,mu_nfn_signif,sd_nfn_signif,mu_nfs_signif,sd_nfs_signif,n))
 }
+
+
+mean_pressure <- function(data){
+  data[abs(data)>1.5] <- NA
+  n <- nrow(data)#length(na.omit(data$`year:d_impervious`))
+  mu_d_impervious <- exp(mean(data$`year:d_impervious`,na.rm=TRUE))
+  #var_d_impervious <- (sum(data$`year:d_impervious_sd`^2 + data$`year:d_impervious`^2, na.rm = TRUE))/n - mean(data$`year:d_impervious`,na.rm=TRUE)^2
+  #sd_d_impervious <- sqrt(mu_d_impervious^2*var_d_impervious)
+  se_d_impervious <- mu_d_impervious/sqrt(n)*sd(data$`year:d_impervious`,na.rm=TRUE)
+  mu_d_tempsrping <- exp(mean(data$`year:d_tempsrping`,na.rm=TRUE))
+  #var_d_tempsrping <- (sum(data$`year:d_tempsrping_sd`^2 + data$`year:d_tempsrping`^2, na.rm = TRUE))/n - mean(data$`year:d_tempsrping`,na.rm=TRUE)^2
+  #sd_d_tempsrping <- sqrt(mu_d_tempsrping^2*var_d_tempsrping)
+  se_d_tempsrping <- mu_d_tempsrping/sqrt(n)*sd(data$`year:d_tempsrping`,na.rm=TRUE)
+  mu_d_tempsrpingvar <- exp(mean(data$`year:d_tempsrpingvar`,na.rm=TRUE))
+  #var_d_tempsrpingvar <- (sum(data$`year:d_tempsrpingvar_sd`^2 + data$`year:d_tempsrpingvar`^2, na.rm = TRUE))/n - mean(data$`year:d_tempsrpingvar`,na.rm=TRUE)^2
+  #sd_d_tempsrpingvar <- sqrt(mu_d_tempsrpingvar^2*var_d_tempsrpingvar)
+  se_d_tempsrpingvar <- mu_d_tempsrpingvar/sqrt(n)*sd(data$`year:d_tempsrpingvar`,na.rm=TRUE)
+  mu_d_precspring <- exp(mean(data$`year:d_precspring`,na.rm=TRUE))
+  #var_d_precspring <- (sum(data$`year:d_precspring_sd`^2 + data$`year:d_precspring`^2, na.rm = TRUE))/n - mean(data$`year:d_precspring`,na.rm=TRUE)^2
+  #sd_d_precspring <- sqrt(mu_d_precspring^2*var_d_precspring)
+  se_d_precspring <- mu_d_precspring/sqrt(n)*sd(data$`year:d_precspring`,na.rm=TRUE)
+  mu_d_shannon <- exp(mean(data$`year:d_shannon`,na.rm=TRUE))
+  #var_d_shannon <- (sum(data$`year:d_shannon_sd`^2 + data$`year:d_shannon`^2, na.rm = TRUE))/n - mean(data$`year:d_shannon`,na.rm=TRUE)^2
+  #sd_d_shannon <- sqrt(mu_d_shannon^2*var_d_shannon)
+  se_d_shannon <- mu_d_shannon/sqrt(n)*sd(data$`year:d_shannon`,na.rm=TRUE)
+  mu_protectedarea_perc <- exp(mean(data$`year:protectedarea_perc`,na.rm=TRUE))
+  #var_protectedarea_perc <- (sum(data$`year:protectedarea_perc_sd`^2 + data$`year:protectedarea_perc`^2, na.rm = TRUE))/n - mean(data$`year:protectedarea_perc`,na.rm=TRUE)^2
+  #sd_protectedarea_perc <- sqrt(mu_protectedarea_perc^2*var_protectedarea_perc)
+  se_protectedarea_perc <- mu_protectedarea_perc/sqrt(n)*sd(data$`year:protectedarea_perc`,na.rm=TRUE)
+  mu_d_treedensity <- exp(mean(data$`year:d_treedensity`,na.rm=TRUE))
+  #var_d_treedensity <- (sum(data$`year:d_treedensity_sd`^2 + data$`year:d_treedensity`^2, na.rm = TRUE))/n - mean(data$`year:d_treedensity`,na.rm=TRUE)^2
+  #sd_d_treedensity <- sqrt(mu_d_treedensity^2*var_d_treedensity)
+  se_d_treedensity <- mu_d_treedensity/sqrt(n)*sd(data$`year:d_treedensity`,na.rm=TRUE)
+  mu_eulandsystem_forest_lowmedium <- exp(mean(data$`year:eulandsystem_forest_lowmedium`,na.rm=TRUE))
+  #var_eulandsystem_forest_lowmedium <- (sum(data$`year:eulandsystem_forest_lowmedium_sd`^2 + data$`year:eulandsystem_forest_lowmedium`^2, na.rm = TRUE))/n - mean(data$`year:eulandsystem_forest_lowmedium`,na.rm=TRUE)^2
+  #sd_eulandsystem_forest_lowmedium <- sqrt(mu_eulandsystem_forest_lowmedium^2*var_eulandsystem_forest_lowmedium)
+  se_eulandsystem_forest_lowmedium <- mu_eulandsystem_forest_lowmedium/sqrt(n)*sd(data$`year:eulandsystem_forest_lowmedium`,na.rm=TRUE)
+  mu_eulandsystem_forest_high <- exp(mean(data$`year:eulandsystem_forest_high`,na.rm=TRUE))
+  #var_eulandsystem_forest_high <- (sum(data$`year:eulandsystem_forest_high_sd`^2 + data$`year:eulandsystem_forest_high`^2, na.rm = TRUE))/n - mean(data$`year:eulandsystem_forest_high`,na.rm=TRUE)^2
+  #sd_eulandsystem_forest_high <- sqrt(mu_eulandsystem_forest_high^2*var_eulandsystem_forest_high)
+  se_eulandsystem_forest_high <- mu_eulandsystem_forest_high/sqrt(n)*sd(data$`year:eulandsystem_forest_high`,na.rm=TRUE)
+  mu_d_agri <- exp(mean(data$`year:d_agri`,na.rm=TRUE))
+  #var_d_agri <- (sum(data$`year:d_agri_sd`^2 + data$`year:d_agri`^2, na.rm = TRUE))/n - mean(data$`year:d_agri`,na.rm=TRUE)^2
+  #sd_d_agri <- sqrt(mu_d_agri^2*var_d_agri)
+  se_d_agri <- mu_d_agri/sqrt(n)*sd(data$`year:d_agri`,na.rm=TRUE)
+  mu_eulandsystem_farmland_low <- exp(mean(data$`year:eulandsystem_farmland_low`,na.rm=TRUE))
+  #var_eulandsystem_farmland_low <- (sum(data$`year:eulandsystem_farmland_low_sd`^2 + data$`year:eulandsystem_farmland_low`^2, na.rm = TRUE))/n - mean(data$`year:eulandsystem_farmland_low`,na.rm=TRUE)^2
+  #sd_eulandsystem_farmland_low <- sqrt(mu_eulandsystem_farmland_low^2*var_eulandsystem_farmland_low)
+  se_eulandsystem_farmland_low <- mu_eulandsystem_farmland_low/sqrt(n)*sd(data$`year:eulandsystem_farmland_low`,na.rm=TRUE)
+  mu_eulandsystem_farmland_medium <- exp(mean(data$`year:eulandsystem_farmland_medium`,na.rm=TRUE))
+  #var_eulandsystem_farmland_medium <- (sum(data$`year:eulandsystem_farmland_medium_sd`^2 + data$`year:eulandsystem_farmland_medium`^2, na.rm = TRUE))/n - mean(data$`year:eulandsystem_farmland_medium`,na.rm=TRUE)^2
+  #sd_eulandsystem_farmland_medium <- sqrt(mu_eulandsystem_farmland_medium^2*var_eulandsystem_farmland_medium)
+  se_eulandsystem_farmland_medium <- mu_eulandsystem_farmland_medium/sqrt(n)*sd(data$`year:eulandsystem_farmland_medium`,na.rm=TRUE)
+  mu_eulandsystem_farmland_high <- exp(mean(data$`year:eulandsystem_farmland_high`,na.rm=TRUE))
+  #var_eulandsystem_farmland_high <- (sum(data$`year:eulandsystem_farmland_high_sd`^2 + data$`year:eulandsystem_farmland_high`^2, na.rm = TRUE))/n - mean(data$`year:eulandsystem_farmland_high`,na.rm=TRUE)^2
+  #sd_eulandsystem_farmland_high <- sqrt(mu_eulandsystem_farmland_high^2*var_eulandsystem_farmland_high)
+  se_eulandsystem_farmland_high <- mu_eulandsystem_farmland_high/sqrt(n)*sd(data$`year:eulandsystem_farmland_high`,na.rm=TRUE)
+  
+  return(data.frame(mean_value = c(mu_d_impervious, mu_d_tempsrping,mu_d_tempsrpingvar,mu_d_precspring,mu_d_shannon,mu_protectedarea_perc,
+                                   mu_d_treedensity,mu_eulandsystem_forest_lowmedium,mu_eulandsystem_forest_high,mu_d_agri,mu_eulandsystem_farmland_low,
+                                   mu_eulandsystem_farmland_medium,mu_eulandsystem_farmland_high),
+                    se_value = c(se_d_impervious, se_d_tempsrping,se_d_tempsrpingvar,se_d_precspring,se_d_shannon,se_protectedarea_perc,
+                                 se_d_treedensity,se_eulandsystem_forest_lowmedium,se_eulandsystem_forest_high,se_d_agri,se_eulandsystem_farmland_low,
+                                 se_eulandsystem_farmland_medium,se_eulandsystem_farmland_high),
+                    variable = c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                 "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                 "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
+                                 "year:eulandsystem_farmland_high")))
+}
+
 
 
 ### France

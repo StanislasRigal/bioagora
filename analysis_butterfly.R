@@ -269,10 +269,31 @@ year_site2 <- na.omit(data.frame(year_site2 %>% group_by(PLS,year) %>% summarise
 year_site2$PLS <- factor(as.character(year_site2$PLS), levels = as.character(c(1:25)))
 year_site2 <- data.frame(year_site2 %>% group_by(PLS) %>% mutate(label=case_when(year==max(year) ~ PLS)))
 
+year_site$country <- year_site$label
+year_site$country[which(year_site$country=="BEBMS")] <- "Belgium"
+year_site$country[which(year_site$country=="CHBMS")] <- "Switzerland"
+year_site$country[which(year_site$country=="CZBMS")] <- "Czechia"
+year_site$country[which(year_site$country=="DEBMS")] <- "Germany"
+year_site$country[which(year_site$country=="ES-CTBMS")] <- "Spain - Catalonia"
+year_site$country[which(year_site$country=="ES-ZEBMS")] <- "Spain - ZERYNTHIA"
+year_site$country[which(year_site$country=="ESBMS")] <- "Spain"
+year_site$country[which(year_site$country=="FIBMS")] <- "Finland"
+year_site$country[which(year_site$country=="FRBMS")] <- "France"
+year_site$country[which(year_site$country=="IEBMS")] <- "Ireland"
+year_site$country[which(year_site$country=="LUBMS")] <- "Luxembourg"
+year_site$country[which(year_site$country=="NLBMS")] <- "Netherlands"
+year_site$country[which(year_site$country=="NOBMS")] <- "Norway"
+year_site$country[which(year_site$country=="SEBMS")] <- "Sweden"
+year_site$country[which(year_site$country=="SIBMS")] <- "Slovenia"
+year_site$country[which(year_site$country=="UKBMS")] <- "United Kingdom"
+
+
+
+
 ggplot(year_site, aes(y=count, col=bms_id, x=year)) +
   geom_line() +
   scale_y_log10(name = "Number of sites") + 
-  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = label),nudge_x = 4,na.rm = TRUE) +
+  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = country, fill=bms_id),col="black",nudge_x = 4,na.rm = TRUE) +
   theme_modern() +
   theme(legend.position = "none")
 
@@ -379,6 +400,30 @@ press_mainland_trend_butterfly_scale <- readRDS("output/press_mainland_trend_but
 site_mainland_sf_reproj_butterfly <- readRDS("output/site_mainland_sf_reproj_butterfly.rds")
 subsite_data_mainland_trend_butterfly <- readRDS("output/subsite_data_mainland_trend_butterfly.rds")
 
+# for publi
+
+set.seed(123)
+butterfly_data_publi <- butterfly_data_mainland[which(butterfly_data_mainland$species_name =="Aglais io"),]
+butterfly_data_publi <- butterfly_data_publi[which(butterfly_data_publi$transect_id %in% sample(unique(butterfly_data_publi$transect_id),500)),]
+pressure_publi_butterfly <- merge(press_mainland_trend_butterfly_scale,butterfly_data_publi[,c("year","transect_id")],all.y=TRUE)
+pressure_publi_butterfly_unscale <- merge(press_mainland_trend_butterfly,butterfly_data_publi[,c("year","transect_id")],all.y=TRUE)
+anonymise_data <- data.frame(transect_id=unique(butterfly_data_publi$transect_id),newtransect_id=paste0("Site_",1:500))
+anonymise_data2 <- data.frame(bms_id=unique(butterfly_data_publi$bms_id),newbms_id=paste0("bms_id",1:18))
+butterfly_data_publi <- merge(butterfly_data_publi,anonymise_data, by="transect_id")
+pressure_publi_butterfly <- merge(pressure_publi_butterfly,anonymise_data, by="transect_id")
+pressure_publi_butterfly_unscale <- merge(pressure_publi_butterfly_unscale,anonymise_data, by="transect_id")
+butterfly_data_publi <- merge(butterfly_data_publi,anonymise_data2, by="bms_id")
+butterfly_data_publi <- butterfly_data_publi[,c("year","species_name","count_corrected","transect_length","Long_LAEA" ,"Lat_LAEA","newtransect_id","newbms_id")]
+names(butterfly_data_publi)[7:8] <- c("transect_id","bms_id")
+butterfly_data_publi$species_name <- "Species1"
+pressure_publi_butterfly$transect_id <- pressure_publi_butterfly$newtransect_id
+pressure_publi_butterfly$newtransect_id <- NULL
+pressure_publi_butterfly_unscale$transect_id <- pressure_publi_butterfly_unscale$newtransect_id
+pressure_publi_butterfly_unscale$newtransect_id <- NULL
+
+write.csv(butterfly_data_publi,"output/butterfly_data_publi.csv")
+write.csv(pressure_publi_butterfly,"output/pressure_publi_butterfly.csv")
+write.csv(pressure_publi_butterfly_unscale,"output/pressure_publi_butterfly_unscale.csv")
 
 ### correlation between covariables
 
@@ -778,10 +823,9 @@ pressure_EU_butterfly_long_d <- pressure_EU_butterfly_long[which(pressure_EU_but
                                                                                              "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
                                                                                              "year:eulandsystem_farmland_high")),]
 
-pressure_EU_butterfly_long_d$variable <- factor(pressure_EU_butterfly_long_d$variable , levels = c("year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_impervious",
-                                                                                         "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
-                                                                                         "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
-                                                                                         "year:eulandsystem_farmland_high"))
+pressure_EU_butterfly_long_d$variable <- factor(pressure_EU_butterfly_long_d$variable , levels = c("year:eulandsystem_farmland_high","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_low","year:d_agri",
+                                                                                         "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
+                                                                                         "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping"))
 
 ggplot(pressure_EU_butterfly_long_d, aes(x = value, y = variable, fill = variable)) +
   scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
@@ -801,6 +845,36 @@ ggplot(pressure_EU_butterfly_long_d, aes(x = value, y = variable, fill = variabl
 
 
 ggsave("output/pressure_trend_butterfly_eu_hist.png",
+       width = 6,
+       height = 6,
+       dpi = 300
+)
+
+mean_pressure_butterfly <- mean_pressure(pressure_EU_butterfly[,c("year:eulandsystem_farmland_high","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_low","year:d_agri",
+                                                                  "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
+                                                                  "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping")])
+mean_pressure_butterfly$variable <- factor(mean_pressure_butterfly$variable , levels = c("year:eulandsystem_farmland_high","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_low","year:d_agri",
+                                                                               "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
+                                                                               "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping"))
+
+
+
+ggplot(mean_pressure_butterfly, aes(x = mean_value, y = variable, fill = variable)) +
+  geom_errorbarh(aes(xmax = mean_value+1.96*se_value, xmin = mean_value-1.96*se_value), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = variable)) + 
+  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
+                            "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests (Foh)",
+                            "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland (Fam)", "year:eulandsystem_farmland_high" = "High intensive farmland (Fah)")) +
+  scale_color_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
+                                "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
+                                "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
+                                "year:eulandsystem_farmland_high"="#b2df8a")) +
+  theme_ridges() + geom_vline(aes(xintercept = 1), lty=2) +
+  theme(legend.position = "none", axis.title = element_blank())
+
+ggsave("output/pressure_mean_butterfly_eu_hist.png",
        width = 6,
        height = 6,
        dpi = 300

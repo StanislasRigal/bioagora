@@ -720,6 +720,8 @@ pls_scenario3$pa_change <- pls_scenario3$nfn - pls_scenario3$initial
 pls_scenario_all <- merge(pls_scenario,pls_scenario2,by="PLS")
 pls_scenario_all <- merge(pls_scenario_all,pls_scenario3[,c("PLS","pa_change")],by="PLS")
 
+pls_scenario_all <- pls_scenario_all[which(pls_scenario_all$PLS != "europe"),]
+
 value_pls <- merge(pls_scenario_all,overall_trend_farmland[,c("PLS","mu_nfn_signif")],by="PLS", all.x=TRUE)
 
 ACP <- rda(pls_scenario_all[-1], scale=TRUE)
@@ -729,18 +731,18 @@ MVA.plot(ACP, fac = sign(log(value_pls$mu_nfn_signif)), col=c("red","blue"))
 MVA.plot(ACP,"corr")
 
 ## lda
-exp_impact_FaB <- c("green","green","red","red","green","red","green","red","red","red","red","grey","green")
-exp_impact_FoB <- c("green","green","red","red","red","green","red","red","red","red","red","red","green")
-exp_impact_GB <- c("red","grey","red","green","green","grey","green","green","red","grey","green","green","green")
-exp_impact_WB <- c("green","green","grey","green","grey","grey","green","grey","grey","grey","red","red","red")
+exp_impact_FaB <- c("green","grey","red","red","green","red","green","grey","red","red","red","grey","green")
+exp_impact_FoB <- c("red","grey","red","red","red","green","grey","red","red","red","red","red","grey")
+exp_impact_GB <- c("red","grey","red","green","green","red","green","green","grey","grey","grey","green","green")
+exp_impact_WB <- c("green","green","grey","green","grey","grey","grey","grey","grey","red","red","red","red")
 
-lda_data <- pls_scenario_all[which(!is.na(value_pls$mu_nfn_signif)),c("temp_change","tempvar_change","prec_change","urban","farmland","forest","farmland_low",
+lda_data <- pls_scenario_all[which(!is.na(value_pls$mu_nfn_signif) & value_pls$mu_nfn_signif != 1),c("temp_change","tempvar_change","prec_change","urban","farmland","forest","farmland_low",
                                                                       "farmland_medium","farmland_high","forest_lowmedium","forest_high","landscape_div","pa_change")]
 names(lda_data) <- c("Temperature change","Temperature variance change","Precipitation change","Urbanisation","Agricultural surface change","Forest cover change","Low intensive farmland change",
                      "Medium intensive farmland change","High intensive farmland change","Low/medium intensive forest change","High intensive forest change","Landscape diversity change","Protected area change")
 #anova(betadisper(dist(pls_scenario_all[-1]),sign(log(value_pls$mu_nfn_signif))))
-LDA <- lda(lda_data,sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif))])))
-MVA.plot(LDA,fac=sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif))])))
+LDA <- lda(lda_data,sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif) & value_pls$mu_nfn_signif != 1)])))
+MVA.plot(LDA,fac=sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif) & value_pls$mu_nfn_signif != 1)])))
 MVA.plot(LDA,"corr", col=exp_impact_WB)
 
 
@@ -1396,7 +1398,7 @@ predict_trend_all_bird_correct <- ddply(predict_trend_all_bird_correct,
                                              .(PLS),.fun=function(x){
                                                for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
                                                  #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                                 value_max <- max(abs(quantile(predict_trend_all_bird_eu$trend_past_signif,0.25)),abs(quantile(predict_trend_all_bird_eu$trend_past_signif,0.75)))
+                                                 value_max <- max(abs(quantile(predict_trend_all_bird_eu$trend_past_signif,0.1)),abs(quantile(predict_trend_all_bird_eu$trend_past_signif,0.9)))
                                                  x[which(x[,i]>value_max),i] <- value_max
                                                  x[which(x[,i]<(-value_max)),i] <- -value_max
                                                }
@@ -1424,6 +1426,13 @@ predict_trend_all_bird_correct_pecbms <- predict_trend_all_bird_correct[which(pr
 overall_trend_all <- ddply(predict_trend_all_bird_correct,
                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
+overall_trend_all_sp <- ddply(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$sci_name_out %in% SSI$Species[which(SSI$Habitat >0.5)]),],
+                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                 .progress = "text")
+overall_trend_all_gene <- ddply(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$sci_name_out %in% SSI$Species[which(SSI$Habitat <= 0.5)]),],
+                                   .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                   .progress = "text")
+
 overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS",all.x=TRUE)
 
 ggplot() + geom_sf() +  
@@ -1448,6 +1457,12 @@ overall_trend_all_eu <- overall_mean_sd_trend(predict_trend_all_bird_correct[whi
 overall_trend_farmland <- ddply(predict_trend_farmland,
                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
+overall_trend_farmland_sp <- ddply(predict_trend_farmland[which(predict_trend_farmland$sci_name_out %in% SSI$Species[which(SSI$Habitat >0.5)]),],
+                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                 .progress = "text")
+overall_trend_farmland_gene <- ddply(predict_trend_farmland[which(predict_trend_farmland$sci_name_out %in% SSI$Species[which(SSI$Habitat <= 0.5)]),],
+                                   .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                   .progress = "text")
 
 overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
@@ -1457,7 +1472,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.1, 0.05),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.15, 0.1),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_farm_bau.png",
        width = 8,
@@ -1469,6 +1484,14 @@ overall_trend_forest <- ddply(predict_trend_forest,
                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
 
+overall_trend_forest_sp <- ddply(predict_trend_forest[which(predict_trend_forest$sci_name_out %in% SSI$Species[which(SSI$Habitat >0.5)]),],
+                              .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                              .progress = "text")
+
+overall_trend_forest_gene <- ddply(predict_trend_forest[which(predict_trend_forest$sci_name_out %in% SSI$Species[which(SSI$Habitat <= 0.5)]),],
+                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                 .progress = "text")
+
 overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_past_signif), col = NA) + 
@@ -1477,7 +1500,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.03, 0.03),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.05, 0.04),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_forest_bau.png",
        width = 8,
@@ -1549,8 +1572,8 @@ ggsave("output/trend_bird_eu_all.png",
 comb_var <- combn(europe_all$variable,2)
 test_diff_var_europe_all <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_all[i,3] <- tsum.test(mean.x=europe_all$value[which(europe_all$variable==comb_var[1,i])],   s.x=europe_all$se[which(europe_all$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
-                                             mean.y=europe_all$value[which(europe_all$variable==comb_var[2,i])],   s.y=europe_all$se[which(europe_all$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+  test_diff_var_europe_all[i,3] <- tsum.test(mean.x=europe_all$value[which(europe_all$variable==comb_var[1,i])],   s.x=europe_all$se[which(europe_all$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                             mean.y=europe_all$value[which(europe_all$variable==comb_var[2,i])],   s.y=europe_all$se[which(europe_all$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -1660,11 +1683,11 @@ ggsave("output/trend_bird_eu_all_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="past")]^x/europe_all_signif$value[which(europe_all_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen",linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1678,8 +1701,8 @@ europe_all_signif2$variable <- as.character(europe_all_signif2$variable)
 comb_var <- combn(europe_all_signif2$variable,2)
 test_diff_var_europe_all_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[1,i])],   s.x=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
-                                                    mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+  test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[1,i])],   s.x=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                                    mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -1926,6 +1949,16 @@ ggsave("output/trend_bird_farm.png",
        dpi = 300
 )
 
+europe_farmland2$variable <- as.character(europe_farmland2$variable)
+comb_var <- combn(europe_farmland2$variable,2)
+test_diff_var_europe_farmland <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_farmland[i,3] <- tsum.test(mean.x=europe_farmland2$value[which(europe_farmland2$variable==comb_var[1,i])],   s.x=europe_farmland2$se[which(europe_farmland2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                                         mean.y=europe_farmland2$value[which(europe_farmland2$variable==comb_var[2,i])],   s.y=europe_farmland2$se[which(europe_farmland2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)])$p.value
+  
+}
+
+
 boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
                "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
                "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
@@ -2029,11 +2062,11 @@ ggsave("output/trend_bird_farm_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2047,8 +2080,8 @@ europe_farmland_signif2$variable <- as.character(europe_farmland_signif2$variabl
 comb_var <- combn(europe_farmland_signif2$variable,2)
 test_diff_var_europe_farmland_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[1,i])],   s.x=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")],
-                                                         mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")])$p.value
+  test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[1,i])],   s.x=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                                         mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -2174,8 +2207,8 @@ europe_forest2$variable <- as.character(europe_forest2$variable)
 comb_var <- combn(europe_forest2$variable,2)
 test_diff_var_europe_forest <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_forest[i,3] <- tsum.test(mean.x=europe_forest2$value[which(europe_forest2$variable==comb_var[1,i])],   s.x=europe_forest2$se[which(europe_forest2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
-                                                mean.y=europe_forest2$value[which(europe_forest2$variable==comb_var[2,i])],   s.y=europe_forest2$se[which(europe_forest2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  test_diff_var_europe_forest[i,3] <- tsum.test(mean.x=europe_forest2$value[which(europe_forest2$variable==comb_var[1,i])],   s.x=europe_forest2$se[which(europe_forest2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                                mean.y=europe_forest2$value[which(europe_forest2$variable==comb_var[2,i])],   s.y=europe_forest2$se[which(europe_forest2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -2283,11 +2316,11 @@ ggsave("output/trend_bird_forest_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2301,8 +2334,8 @@ europe_forest_signif2$variable <- as.character(europe_forest_signif2$variable)
 comb_var <- combn(europe_forest_signif2$variable,2)
 test_diff_var_europe_forest_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[1,i])],   s.x=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
-                                                       mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[1,i])],   s.x=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                                       mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -2376,7 +2409,7 @@ predict_trend_all_butterfly_correct <- ddply(predict_trend_all_butterfly_correct
                                         .(PLS),.fun=function(x){
                                           for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
                                             #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                            value_max <- max(abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.25)),abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.75)))
+                                            value_max <- max(abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.1)),abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.9)))
                                             x[which(x[,i]>value_max),i] <- value_max #quantile(predict_trend_all_butterfly_eu$trend_past_signif)
                                             x[which(x[,i]<(-value_max)),i] <- -value_max
                                           }
@@ -2392,7 +2425,7 @@ predict_trend_all_butterfly_correct <- ddply(predict_trend_all_butterfly_correct
                                         .progress = "text")
 
 
-predict_trend_all_butterfly_eu <- predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$PLS=="europe"),]
+predict_trend_all_butterfly_eu <- predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$PLS=="europe" & predict_trend_all_butterfly_correct$pressure_removed=="none"),]
 predict_trend_farmland <- predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$species_name %in% grassland_species),]
 predict_trend_forest <- predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$species_name %in% woodland_ind_species),]
 
@@ -2401,6 +2434,13 @@ predict_trend_forest <- predict_trend_all_butterfly_correct[which(predict_trend_
 overall_trend_all <- ddply(predict_trend_all_butterfly_correct,
                            .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                            .progress = "text")
+overall_trend_all_sp <- ddply(predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$species_name %in% SSI_butterfly$species_name[which(SSI_butterfly$habitat <=2)]),],
+                           .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                           .progress = "text")
+overall_trend_all_gene <- ddply(predict_trend_all_butterfly_correct[which(predict_trend_all_butterfly_correct$species_name %in% SSI_butterfly$species_name[which(SSI_butterfly$habitat >=3)]),],
+                              .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                              .progress = "text")
+
 overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS",all.x=TRUE)
 
 ggplot() + geom_sf() +  
@@ -2425,6 +2465,12 @@ overall_trend_all_eu <- ddply(predict_trend_all_butterfly_eu,
 overall_trend_farmland <- ddply(predict_trend_farmland,
                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
+overall_trend_farmland_sp <- ddply(predict_trend_farmland[which(predict_trend_farmland$species_name %in% SSI_butterfly$species_name[which(SSI_butterfly$habitat <=2)]),],
+                              .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                              .progress = "text")
+overall_trend_farmland_gene <- ddply(predict_trend_farmland[which(predict_trend_farmland$species_name %in% SSI_butterfly$species_name[which(SSI_butterfly$habitat >=3)]),],
+                                .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                .progress = "text")
 
 overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
@@ -2434,7 +2480,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.10, 0.06),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.15, 0.1),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_farm_bau.png",
        width = 8,
@@ -2445,6 +2491,12 @@ ggsave("output/map_pred_butterfly_farm_bau.png",
 overall_trend_forest <- ddply(predict_trend_forest,
                               .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                               .progress = "text")
+overall_trend_forest_sp <- ddply(predict_trend_forest[which(predict_trend_forest$species_name %in% SSI_butterfly$species_name[which(SSI_butterfly$habitat <=2)]),],
+                                   .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                   .progress = "text")
+overall_trend_forest_gene <- ddply(predict_trend_forest[which(predict_trend_forest$species_name %in% SSI_butterfly$species_name[which(SSI_butterfly$habitat >=3)]),],
+                                     .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
+                                     .progress = "text")
 
 overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
@@ -2454,7 +2506,7 @@ ggplot() + geom_sf() +
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(limits=c(-0.10, 0.08),midpoint = 0, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(-0.18, 0.10),midpoint = 0, name = NULL) + theme_void()
 
 ggsave("output/map_pred_butterfly_forest_bau.png",
        width = 8,
@@ -2527,8 +2579,8 @@ ggsave("output/trend_butterfly_eu_all.png",
 comb_var <- combn(europe_all$variable,2)
 test_diff_var_europe_all <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_all[i,3] <- tsum.test(mean.x=europe_all$value[which(europe_all$variable==comb_var[1,i])],   s.x=europe_all$se[which(europe_all$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
-                                             mean.y=europe_all$value[which(europe_all$variable==comb_var[2,i])],   s.y=europe_all$se[which(europe_all$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+  test_diff_var_europe_all[i,3] <- tsum.test(mean.x=europe_all$value[which(europe_all$variable==comb_var[1,i])],   s.x=europe_all$se[which(europe_all$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                             mean.y=europe_all$value[which(europe_all$variable==comb_var[2,i])],   s.y=europe_all$se[which(europe_all$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -2638,11 +2690,11 @@ ggsave("output/trend_butterfly_eu_all_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="past")]^x/europe_all_signif$value[which(europe_all_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2656,8 +2708,8 @@ europe_all_signif2$variable <- as.character(europe_all_signif2$variable)
 comb_var <- combn(europe_all_signif2$variable,2)
 test_diff_var_europe_all_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[1,i])],   s.x=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe")],
-                                                    mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe")])$p.value
+  test_diff_var_europe_all_signif[i,3] <- tsum.test(mean.x=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[1,i])],   s.x=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[1,i])], n.x= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)],
+                                                    mean.y=europe_all_signif2$value[which(europe_all_signif2$variable==comb_var[2,i])],   s.y=europe_all_signif2$se[which(europe_all_signif2$variable==comb_var[2,i])], n.y= overall_trend_all$n[which(overall_trend_all$PLS=="europe" & overall_trend_all$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -2774,6 +2826,15 @@ ggsave("output/trend_butterfly_farm.png",
        dpi = 300
 )
 
+europe_farmland2$variable <- as.character(europe_farmland2$variable)
+comb_var <- combn(europe_farmland2$variable,2)
+test_diff_var_europe_farmland <- data.frame(cbind(t(comb_var),NA))
+for(i in 1:dim(comb_var)[2]){
+  test_diff_var_europe_farmland[i,3] <- tsum.test(mean.x=europe_farmland2$value[which(europe_farmland2$variable==comb_var[1,i])],   s.x=europe_farmland2$se[which(europe_farmland2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                                         mean.y=europe_farmland2$value[which(europe_farmland2$variable==comb_var[2,i])],   s.y=europe_farmland2$se[which(europe_farmland2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)])$p.value
+  
+}
+
 boxLabels <- c("none","year","d_impervious","d_tempsrping","d_tempsrpingvar","d_precspring",
                "d_shannon","protectedarea_perc","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
                "d_agri","eulandsystem_farmland_low","eulandsystem_farmland_medium",
@@ -2877,11 +2938,11 @@ ggsave("output/trend_butterfly_farm_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2895,8 +2956,8 @@ europe_farmland_signif2$variable <- as.character(europe_farmland_signif2$variabl
 comb_var <- combn(europe_farmland_signif2$variable,2)
 test_diff_var_europe_farmland_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[1,i])],   s.x=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")],
-                                                         mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe")])$p.value
+  test_diff_var_europe_farmland_signif[i,3] <- tsum.test(mean.x=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[1,i])],   s.x=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[1,i])], n.x= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)],
+                                                         mean.y=europe_farmland_signif2$value[which(europe_farmland_signif2$variable==comb_var[2,i])],   s.y=europe_farmland_signif2$se[which(europe_farmland_signif2$variable==comb_var[2,i])], n.y= overall_trend_farmland$n[which(overall_trend_farmland$PLS=="europe" & overall_trend_farmland$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -3022,8 +3083,8 @@ europe_forest2$variable <- as.character(europe_forest2$variable)
 comb_var <- combn(europe_forest2$variable,2)
 test_diff_var_europe_forest <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_forest[i,3] <- tsum.test(mean.x=europe_forest2$value[which(europe_forest2$variable==comb_var[1,i])],   s.x=europe_forest2$se[which(europe_forest2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
-                                                mean.y=europe_forest2$value[which(europe_forest2$variable==comb_var[2,i])],   s.y=europe_forest2$se[which(europe_forest2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  test_diff_var_europe_forest[i,3] <- tsum.test(mean.x=europe_forest2$value[which(europe_forest2$variable==comb_var[1,i])],   s.x=europe_forest2$se[which(europe_forest2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                                mean.y=europe_forest2$value[which(europe_forest2$variable==comb_var[2,i])],   s.y=europe_forest2$se[which(europe_forest2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)])$p.value
   
 }
 
@@ -3131,11 +3192,11 @@ ggsave("output/trend_butterfly_forest_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -3149,8 +3210,8 @@ europe_forest_signif2$variable <- as.character(europe_forest_signif2$variable)
 comb_var <- combn(europe_forest_signif2$variable,2)
 test_diff_var_europe_forest_signif <- data.frame(cbind(t(comb_var),NA))
 for(i in 1:dim(comb_var)[2]){
-  test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[1,i])],   s.x=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")],
-                                                       mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe")])$p.value
+  test_diff_var_europe_forest_signif[i,3] <- tsum.test(mean.x=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[1,i])],   s.x=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[1,i])], n.x= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)],
+                                                       mean.y=europe_forest_signif2$value[which(europe_forest_signif2$variable==comb_var[2,i])],   s.y=europe_forest_signif2$se[which(europe_forest_signif2$variable==comb_var[2,i])], n.y= overall_trend_forest$n[which(overall_trend_forest$PLS=="europe" & overall_trend_forest$pressure_removed == pressure_removed)])$p.value
   
 }
 
