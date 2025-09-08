@@ -1080,7 +1080,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,
                                                                    pressure_name,"tempspring_2020","tempspringvar_2020","precspring_2020","agri_2018","shannon_2018","impervious_2018","treedensity_2018","PLS")])
   
   
-  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - 2000
+  poisson_df$year <- scale(poisson_df$year)
   
   if(length(table(poisson_df$area_sampled_m2)) > length(unique(poisson_df$scheme_code))){
     one_scheme_time_area <- 0 
@@ -1089,7 +1089,7 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,
     one_scheme_time_area <- 1
   }
   
-  poisson_df$count_scale_all <- poisson_df$count#scales::rescale(poisson_df$count)
+  poisson_df$count_scale_all <- poisson_df$count
   
   if(length(pressure_name) > 1){
     formula_gam <- "count_scale_all ~ year + year:d_impervious + year:d_treedensity +
@@ -1224,8 +1224,6 @@ predict_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,
       
       predict_trend_all <- rbind(predict_trend_pls,predict_trend_europe)
       
-      #res.poisson_sf <- merge(grid_eu_mainland_biogeo,predict_trend_all,by="PLS")
-      #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=trend_BAU)) + scale_fill_gradient2()
       
     }else{
       predict_trend_all <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,
@@ -1279,7 +1277,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                                                    pressure_name,"tempspring_2020","tempspringvar_2020","precspring_2020","agri_2018","shannon_2018","impervious_2018","treedensity_2018","PLS")])
   
   
-  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - 2000
+  poisson_df$year <- scale(poisson_df$year)
   
   if(length(table(poisson_df$transect_length)) > length(unique(poisson_df$bms_id))){
     one_scheme_time_area <- 0 
@@ -1288,7 +1286,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
     one_scheme_time_area <- 1
   }
   
-  poisson_df$count_corrected_scale_all <- poisson_df$count_corrected#scales::rescale(poisson_df$count_corrected)
+  poisson_df$count_corrected_scale_all <- poisson_df$count_corrected
   
   if(length(pressure_name) > 1){
     formula_gam <- "count_corrected_scale_all ~ year + year:d_impervious + year:d_treedensity +
@@ -1422,9 +1420,7 @@ predict_trend_butterfly <- function(butterfly_data,pressure_data,pressure_data_u
                                  .progress="none")
       
       predict_trend_all <- rbind(predict_trend_pls,predict_trend_europe)
-      
-      #res.poisson_sf <- merge(grid_eu_mainland_biogeo,predict_trend_all,by="PLS")
-      #ggplot() + geom_sf() +  geom_sf(data=res.poisson_sf, aes(fill=trend_BAU)) + scale_fill_gradient2()
+
       
     }else{
       predict_trend_all <- data.frame(intercept=NA,trend_past=NA,sd_past=NA,trend_BAU=NA,sd_BAU=NA,trend_SSP1=NA,sd_SSP1=NA,

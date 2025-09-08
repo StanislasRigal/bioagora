@@ -15,8 +15,8 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 
 # Load packages and functions
 
-source("packages.R")
-source("function_publi")
+source("package_publi.R")
+source("function_publi.R")
 
 ```
 
@@ -27,10 +27,10 @@ source("function_publi")
 ```{r}
 
 # Biophysical regions
-grid_eu_mainland_biogeo <- st_read("grid_eu_mainland_biogeo.gpkg")
+grid_eu_mainland_biogeo <- st_read("raw_data/grid_eu_mainland_biogeo.gpkg")
 
 # Outline of the study area
-grid_eu_mainland_outline <- st_read("grid_eu_mainland_outline.gpkg")
+grid_eu_mainland_outline <- st_read("raw_data/grid_eu_mainland_outline.gpkg")
 
 ```
 
@@ -42,8 +42,8 @@ The full dataset is available upon request at PECBMS https://pecbms.info/
 
 # subset with one species and 500 sites
 
-bird_data <- read.csv("bird_data_publi.csv")
-pressure_publi <- read.csv("pressure_publi.csv")
+bird_data <- read.csv("raw_data/bird_data_publi.csv")
+pressure_publi <- read.csv("raw_data/pressure_publi.csv")
 
 ```
 
@@ -55,8 +55,8 @@ The full dataset is available upon request at eBMS https://butterfly-monitoring.
 
 # subset with one species and 500 transects
 
-butterfly_data <- read.csv("butterfly_data_publi.csv")
-pressure_publi_butterfly <- read.csv("pressure_publi_butterfly.csv")
+butterfly_data <- read.csv("raw_data/butterfly_data_publi.csv")
+pressure_publi_butterfly <- read.csv("raw_data/pressure_publi_butterfly.csv")
 
 ```
 
@@ -73,7 +73,7 @@ res_gamm_bird_ex <- gam_bird_PLS(bird_data, pressure_data = pressure_publi)
 
 # Load results from all data
 
-res_gamm_bird <- read.csv("res_gamm_bird.csv")
+res_gamm_bird <- read.csv("output/res_gamm_bird.csv")
 
 res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15),]
 
@@ -154,7 +154,7 @@ res_gamm_butterfly_ex <- gam_butterfly_PLS(butterfly_data, pressure_data = press
 
 # Load results from all data
 
-res_gamm_butterfly <- read.csv("res_gamm_butterfly.csv")
+res_gamm_butterfly <- read.csv("output/res_gamm_butterfly.csv")
 
 res_gamm_butterfly_correct <- res_gamm_butterfly[which(res_gamm_butterfly$dev_exp>0.15),]
 
@@ -228,14 +228,14 @@ ggplot(pressure_EU_butterfly_long_d, aes(x = value, y = variable, fill = variabl
 
 ```{r}
 
-# load prediction maps from https://dataverse.nl/dataset.xhtml?persistentId=doi:10.34894/NWGCBY
+# download prediction maps from https://dataverse.nl/dataset.xhtml?persistentId=doi:10.34894/NWGCBY and add it to raw_data folder before
 
-lulc_2015 <- rast(raster("raw_data/predicted_land_system/ssp1_cov0_eu_updated.tif"),crs="EPSG:3035")
-lulc_ssp1 <- rast(raster("raw_data/predicted_land_system/SSP1_Europe.tif"),crs="EPSG:3035")
-lulc_ssp3 <- rast(raster("raw_data/predicted_land_system/SSP3_Europe.tif"),crs="EPSG:3035")
-lulc_nac <- rast(raster("raw_data/predicted_land_system/nac_2050_eu.tif"),crs="EPSG:3035")
-lulc_nfn <- rast(raster("raw_data/predicted_land_system/nfn_2050_eu.tif"),crs="EPSG:3035")
-lulc_nfs <- rast(raster("raw_data/predicted_land_system/nfs_2050_eu.tif"),crs="EPSG:3035")
+lulc_2015 <- rast(raster("raw_data/ssp1_cov0_eu_updated.tif"),crs="EPSG:3035")
+lulc_ssp1 <- rast(raster("raw_data/SSP1_Europe.tif"),crs="EPSG:3035")
+lulc_ssp3 <- rast(raster("raw_data/SSP3_Europe.tif"),crs="EPSG:3035")
+lulc_nac <- rast(raster("raw_data/nac_2050_eu.tif"),crs="EPSG:3035")
+lulc_nfn <- rast(raster("raw_data/nfn_2050_eu.tif"),crs="EPSG:3035")
+lulc_nfs <- rast(raster("raw_data/nfs_2050_eu.tif"),crs="EPSG:3035")
 
 ### control compare to https://doi.org/10.1016/j.gloenvcha.2023.102766
 
@@ -326,10 +326,6 @@ lulc_pls_2015$forest_high <- lulc_pls_2015$frac_8
 lulc_pls_2015$landscape_div <- lulc_pls_2015$frac_15 + lulc_pls_2015$frac_16 + lulc_pls_2015$frac_17 + lulc_pls_2015$frac_18 + lulc_pls_2015$frac_19
 lulc_pls_2015$PLS <- c(1:19,21:25)
 
-plot_lulc_pls <- merge(grid_eu_mainland_biogeo,lulc_pls_2015, by="PLS")
-
-ggplot(plot_lulc_pls) + geom_sf(aes(fill=urban),col=NA) +
-  scale_fill_gradientn(colors = paletteer_c("ggthemes::Classic Area Red", 30))
 
 lulc_pls_2015 <- lulc_pls_2015[,c("PLS","urban","farmland_low","farmland_medium","farmland_high","forest_lowmedium","forest_high","landscape_div")]
 lulc_pls_2015 <- rbind(lulc_pls_2015,data.frame(PLS="europe",lulc_eu_2015[,1:7]))
@@ -411,9 +407,9 @@ lulc_pls_short <- reshape2::dcast(lulc_pls, PLS + variable ~ scenario, value.var
 
 ```{r}
 
-# load change in protected areas from https://dataverse.nl/dataset.xhtml?persistentId=doi:10.34894/TCNKPJ
+# download before change in protected areas from https://dataverse.nl/dataset.xhtml?persistentId=doi:10.34894/TCNKPJ
 
-pa_2050 <- rast(raster("predicted_protected_areas/FIG2_3values_expand_top5.tif"))
+pa_2050 <- rast(raster("raw_data/FIG2_3values_expand_top5.tif"))
 
 pa_pls <- exact_extract(pa_2050,grid_eu_mainland_biogeo[which(!is.na(grid_eu_mainland_biogeo$PLS)),], fun="frac")
 pa_pls_eu <- exact_extract(pa_2050,grid_eu_mainland_outline, fun="frac")
@@ -437,11 +433,11 @@ pa_pls_short <- reshape2::dcast(pa_pls_short, PLS + variable ~ scenario, value.v
 
 ```{r}
 
-# load change in climate https://cds.climate.copernicus.eu/
+# download before change in climate https://cds.climate.copernicus.eu/
 
 ### Temperature
 
-mean_t_4_5_cclm <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/01_mean_temperature-projections-monthly-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+mean_t_4_5_cclm <- brick("raw_data/01_mean_temperature-projections-monthly-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 mean_t_4_5_cclm_2016 <- (mean_t_4_5_cclm$X2016.03.01 + mean_t_4_5_cclm$X2016.04.01 + mean_t_4_5_cclm$X2016.05.01 + mean_t_4_5_cclm$X2016.06.01 +
                            mean_t_4_5_cclm$X2017.03.01 + mean_t_4_5_cclm$X2017.04.01 + mean_t_4_5_cclm$X2017.05.01 + mean_t_4_5_cclm$X2017.06.01 +
                            mean_t_4_5_cclm$X2018.03.01 + mean_t_4_5_cclm$X2018.04.01 + mean_t_4_5_cclm$X2018.05.01 + mean_t_4_5_cclm$X2018.06.01 +
@@ -449,7 +445,7 @@ mean_t_4_5_cclm_2016 <- (mean_t_4_5_cclm$X2016.03.01 + mean_t_4_5_cclm$X2016.04.
                            mean_t_4_5_cclm$X2020.03.01 + mean_t_4_5_cclm$X2020.04.01 + mean_t_4_5_cclm$X2020.05.01 + mean_t_4_5_cclm$X2020.06.01 +
                            mean_t_4_5_cclm$X2021.03.01 + mean_t_4_5_cclm$X2021.04.01 + mean_t_4_5_cclm$X2021.05.01 + mean_t_4_5_cclm$X2021.06.01)/24
 mean_t_4_5_cclm <- (mean_t_4_5_cclm$X2050.03.01 + mean_t_4_5_cclm$X2050.04.01 + mean_t_4_5_cclm$X2050.05.01 + mean_t_4_5_cclm$X2050.06.01)/4
-mean_t_4_5_hirham <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/01_mean_temperature-projections-monthly-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
+mean_t_4_5_hirham <- brick("raw_data/01_mean_temperature-projections-monthly-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
 mean_t_4_5_hirham_2016 <- (mean_t_4_5_hirham$X2016.03.01 + mean_t_4_5_hirham$X2016.04.01 + mean_t_4_5_hirham$X2016.05.01 + mean_t_4_5_hirham$X2016.06.01 +
                            mean_t_4_5_hirham$X2017.03.01 + mean_t_4_5_hirham$X2017.04.01 + mean_t_4_5_hirham$X2017.05.01 + mean_t_4_5_hirham$X2017.06.01 +
                            mean_t_4_5_hirham$X2018.03.01 + mean_t_4_5_hirham$X2018.04.01 + mean_t_4_5_hirham$X2018.05.01 + mean_t_4_5_hirham$X2018.06.01 +
@@ -457,7 +453,7 @@ mean_t_4_5_hirham_2016 <- (mean_t_4_5_hirham$X2016.03.01 + mean_t_4_5_hirham$X20
                            mean_t_4_5_hirham$X2020.03.01 + mean_t_4_5_hirham$X2020.04.01 + mean_t_4_5_hirham$X2020.05.01 + mean_t_4_5_hirham$X2020.06.01 +
                            mean_t_4_5_hirham$X2021.03.01 + mean_t_4_5_hirham$X2021.04.01 + mean_t_4_5_hirham$X2021.05.01 + mean_t_4_5_hirham$X2021.06.01)/24
 mean_t_4_5_hirham <- (mean_t_4_5_hirham$X2050.03.01 + mean_t_4_5_hirham$X2050.04.01 + mean_t_4_5_hirham$X2050.05.01 + mean_t_4_5_hirham$X2050.06.01)/4
-mean_t_4_5_racmo_ecearth <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/01_mean_temperature-projections-monthly-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
+mean_t_4_5_racmo_ecearth <- brick("raw_data/01_mean_temperature-projections-monthly-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
 mean_t_4_5_racmo_ecearth_2016 <- (mean_t_4_5_racmo_ecearth$X2016.03.01 + mean_t_4_5_racmo_ecearth$X2016.04.01 + mean_t_4_5_racmo_ecearth$X2016.05.01 + mean_t_4_5_racmo_ecearth$X2016.06.01 +
                            mean_t_4_5_racmo_ecearth$X2017.03.01 + mean_t_4_5_racmo_ecearth$X2017.04.01 + mean_t_4_5_racmo_ecearth$X2017.05.01 + mean_t_4_5_racmo_ecearth$X2017.06.01 +
                            mean_t_4_5_racmo_ecearth$X2018.03.01 + mean_t_4_5_racmo_ecearth$X2018.04.01 + mean_t_4_5_racmo_ecearth$X2018.05.01 + mean_t_4_5_racmo_ecearth$X2018.06.01 +
@@ -465,7 +461,7 @@ mean_t_4_5_racmo_ecearth_2016 <- (mean_t_4_5_racmo_ecearth$X2016.03.01 + mean_t_
                            mean_t_4_5_racmo_ecearth$X2020.03.01 + mean_t_4_5_racmo_ecearth$X2020.04.01 + mean_t_4_5_racmo_ecearth$X2020.05.01 + mean_t_4_5_racmo_ecearth$X2020.06.01 +
                            mean_t_4_5_racmo_ecearth$X2021.03.01 + mean_t_4_5_racmo_ecearth$X2021.04.01 + mean_t_4_5_racmo_ecearth$X2021.05.01 + mean_t_4_5_racmo_ecearth$X2021.06.01)/24
 mean_t_4_5_racmo_ecearth <- (mean_t_4_5_racmo_ecearth$X2050.03.01 + mean_t_4_5_racmo_ecearth$X2050.04.01 + mean_t_4_5_racmo_ecearth$X2050.05.01 + mean_t_4_5_racmo_ecearth$X2050.06.01)/4
-mean_t_4_5_racmo_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/01_mean_temperature-projections-monthly-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
+mean_t_4_5_racmo_hadgem <- brick("raw_data/01_mean_temperature-projections-monthly-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
 mean_t_4_5_racmo_hadgem_2016 <- (mean_t_4_5_racmo_hadgem$X2016.03.01 + mean_t_4_5_racmo_hadgem$X2016.04.01 + mean_t_4_5_racmo_hadgem$X2016.05.01 + mean_t_4_5_racmo_hadgem$X2016.06.01 +
                            mean_t_4_5_racmo_hadgem$X2017.03.01 + mean_t_4_5_racmo_hadgem$X2017.04.01 + mean_t_4_5_racmo_hadgem$X2017.05.01 + mean_t_4_5_racmo_hadgem$X2017.06.01 +
                            mean_t_4_5_racmo_hadgem$X2018.03.01 + mean_t_4_5_racmo_hadgem$X2018.04.01 + mean_t_4_5_racmo_hadgem$X2018.05.01 + mean_t_4_5_racmo_hadgem$X2018.06.01 +
@@ -473,7 +469,7 @@ mean_t_4_5_racmo_hadgem_2016 <- (mean_t_4_5_racmo_hadgem$X2016.03.01 + mean_t_4_
                            mean_t_4_5_racmo_hadgem$X2020.03.01 + mean_t_4_5_racmo_hadgem$X2020.04.01 + mean_t_4_5_racmo_hadgem$X2020.05.01 + mean_t_4_5_racmo_hadgem$X2020.06.01 +
                            mean_t_4_5_racmo_hadgem$X2021.03.01 + mean_t_4_5_racmo_hadgem$X2021.04.01 + mean_t_4_5_racmo_hadgem$X2021.05.01 + mean_t_4_5_racmo_hadgem$X2021.06.01)/24
 mean_t_4_5_racmo_hadgem <- (mean_t_4_5_racmo_hadgem$X2050.03.01 + mean_t_4_5_racmo_hadgem$X2050.04.01 + mean_t_4_5_racmo_hadgem$X2050.05.01 + mean_t_4_5_racmo_hadgem$X2050.06.01)/4
-mean_t_4_5_rca_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/01_mean_temperature-projections-monthly-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
+mean_t_4_5_rca_hadgem <- brick("raw_data/01_mean_temperature-projections-monthly-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
 mean_t_4_5_rca_hadgem_2016 <- (mean_t_4_5_rca_hadgem$X2016.03.01 + mean_t_4_5_rca_hadgem$X2016.04.01 + mean_t_4_5_rca_hadgem$X2016.05.01 + mean_t_4_5_rca_hadgem$X2016.06.01 +
                            mean_t_4_5_rca_hadgem$X2017.03.01 + mean_t_4_5_rca_hadgem$X2017.04.01 + mean_t_4_5_rca_hadgem$X2017.05.01 + mean_t_4_5_rca_hadgem$X2017.06.01 +
                            mean_t_4_5_rca_hadgem$X2018.03.01 + mean_t_4_5_rca_hadgem$X2018.04.01 + mean_t_4_5_rca_hadgem$X2018.05.01 + mean_t_4_5_rca_hadgem$X2018.06.01 +
@@ -481,7 +477,7 @@ mean_t_4_5_rca_hadgem_2016 <- (mean_t_4_5_rca_hadgem$X2016.03.01 + mean_t_4_5_rc
                            mean_t_4_5_rca_hadgem$X2020.03.01 + mean_t_4_5_rca_hadgem$X2020.04.01 + mean_t_4_5_rca_hadgem$X2020.05.01 + mean_t_4_5_rca_hadgem$X2020.06.01 +
                            mean_t_4_5_rca_hadgem$X2021.03.01 + mean_t_4_5_rca_hadgem$X2021.04.01 + mean_t_4_5_rca_hadgem$X2021.05.01 + mean_t_4_5_rca_hadgem$X2021.06.01)/24
 mean_t_4_5_rca_hadgem <- (mean_t_4_5_rca_hadgem$X2050.03.01 + mean_t_4_5_rca_hadgem$X2050.04.01 + mean_t_4_5_rca_hadgem$X2050.05.01 + mean_t_4_5_rca_hadgem$X2050.06.01)/4
-mean_t_4_5_rca_mpi <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/01_mean_temperature-projections-monthly-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+mean_t_4_5_rca_mpi <- brick("raw_data/01_mean_temperature-projections-monthly-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 mean_t_4_5_rca_mpi_2016 <- (mean_t_4_5_rca_mpi$X2016.03.01 + mean_t_4_5_rca_mpi$X2016.04.01 + mean_t_4_5_rca_mpi$X2016.05.01 + mean_t_4_5_rca_mpi$X2016.06.01 +
                            mean_t_4_5_rca_mpi$X2017.03.01 + mean_t_4_5_rca_mpi$X2017.04.01 + mean_t_4_5_rca_mpi$X2017.05.01 + mean_t_4_5_rca_mpi$X2017.06.01 +
                            mean_t_4_5_rca_mpi$X2018.03.01 + mean_t_4_5_rca_mpi$X2018.04.01 + mean_t_4_5_rca_mpi$X2018.05.01 + mean_t_4_5_rca_mpi$X2018.06.01 +
@@ -489,7 +485,7 @@ mean_t_4_5_rca_mpi_2016 <- (mean_t_4_5_rca_mpi$X2016.03.01 + mean_t_4_5_rca_mpi$
                            mean_t_4_5_rca_mpi$X2020.03.01 + mean_t_4_5_rca_mpi$X2020.04.01 + mean_t_4_5_rca_mpi$X2020.05.01 + mean_t_4_5_rca_mpi$X2020.06.01 +
                            mean_t_4_5_rca_mpi$X2021.03.01 + mean_t_4_5_rca_mpi$X2021.04.01 + mean_t_4_5_rca_mpi$X2021.05.01 + mean_t_4_5_rca_mpi$X2021.06.01)/24
 mean_t_4_5_rca_mpi <- (mean_t_4_5_rca_mpi$X2050.03.01 + mean_t_4_5_rca_mpi$X2050.04.01 + mean_t_4_5_rca_mpi$X2050.05.01 + mean_t_4_5_rca_mpi$X2050.06.01)/4
-mean_t_4_5_wrf <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/01_mean_temperature-projections-monthly-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
+mean_t_4_5_wrf <- brick("raw_data/01_mean_temperature-projections-monthly-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
 mean_t_4_5_wrf_2016 <- (mean_t_4_5_wrf$X2016.03.01 + mean_t_4_5_wrf$X2016.04.01 + mean_t_4_5_wrf$X2016.05.01 + mean_t_4_5_wrf$X2016.06.01 +
                            mean_t_4_5_wrf$X2017.03.01 + mean_t_4_5_wrf$X2017.04.01 + mean_t_4_5_wrf$X2017.05.01 + mean_t_4_5_wrf$X2017.06.01 +
                            mean_t_4_5_wrf$X2018.03.01 + mean_t_4_5_wrf$X2018.04.01 + mean_t_4_5_wrf$X2018.05.01 + mean_t_4_5_wrf$X2018.06.01 +
@@ -504,7 +500,7 @@ mean_t_2016 <- (mean_t_4_5_cclm_2016 + mean_t_4_5_hirham_2016 + mean_t_4_5_racmo
 
 ### Precipitation
 
-sum_p_4_5_cclm <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/12_total_precipitation-projections-monthly-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+sum_p_4_5_cclm <- brick("raw_data/12_total_precipitation-projections-monthly-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 sum_p_4_5_cclm_2016 <- (sum_p_4_5_cclm$X2016.03.01 + sum_p_4_5_cclm$X2016.04.01 + sum_p_4_5_cclm$X2016.05.01 + sum_p_4_5_cclm$X2016.06.01 +
                            sum_p_4_5_cclm$X2017.03.01 + sum_p_4_5_cclm$X2017.04.01 + sum_p_4_5_cclm$X2017.05.01 + sum_p_4_5_cclm$X2017.06.01 +
                            sum_p_4_5_cclm$X2018.03.01 + sum_p_4_5_cclm$X2018.04.01 + sum_p_4_5_cclm$X2018.05.01 + sum_p_4_5_cclm$X2018.06.01 +
@@ -512,7 +508,7 @@ sum_p_4_5_cclm_2016 <- (sum_p_4_5_cclm$X2016.03.01 + sum_p_4_5_cclm$X2016.04.01 
                            sum_p_4_5_cclm$X2020.03.01 + sum_p_4_5_cclm$X2020.04.01 + sum_p_4_5_cclm$X2020.05.01 + sum_p_4_5_cclm$X2020.06.01 +
                            sum_p_4_5_cclm$X2021.03.01 + sum_p_4_5_cclm$X2021.04.01 + sum_p_4_5_cclm$X2021.05.01 + sum_p_4_5_cclm$X2021.06.01)/6
 sum_p_4_5_cclm <- sum_p_4_5_cclm$X2050.03.01 + sum_p_4_5_cclm$X2050.04.01 + sum_p_4_5_cclm$X2050.05.01 + sum_p_4_5_cclm$X2050.06.01
-sum_p_4_5_hirham <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/12_total_precipitation-projections-monthly-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
+sum_p_4_5_hirham <- brick("raw_data/12_total_precipitation-projections-monthly-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
 sum_p_4_5_hirham_2016 <- (sum_p_4_5_hirham$X2016.03.01 + sum_p_4_5_hirham$X2016.04.01 + sum_p_4_5_hirham$X2016.05.01 + sum_p_4_5_hirham$X2016.06.01 +
                           sum_p_4_5_hirham$X2017.03.01 + sum_p_4_5_hirham$X2017.04.01 + sum_p_4_5_hirham$X2017.05.01 + sum_p_4_5_hirham$X2017.06.01 +
                           sum_p_4_5_hirham$X2018.03.01 + sum_p_4_5_hirham$X2018.04.01 + sum_p_4_5_hirham$X2018.05.01 + sum_p_4_5_hirham$X2018.06.01 +
@@ -520,7 +516,7 @@ sum_p_4_5_hirham_2016 <- (sum_p_4_5_hirham$X2016.03.01 + sum_p_4_5_hirham$X2016.
                           sum_p_4_5_hirham$X2020.03.01 + sum_p_4_5_hirham$X2020.04.01 + sum_p_4_5_hirham$X2020.05.01 + sum_p_4_5_hirham$X2020.06.01 +
                           sum_p_4_5_hirham$X2021.03.01 + sum_p_4_5_hirham$X2021.04.01 + sum_p_4_5_hirham$X2021.05.01 + sum_p_4_5_hirham$X2021.06.01)/6
 sum_p_4_5_hirham <- sum_p_4_5_hirham$X2050.03.01 + sum_p_4_5_hirham$X2050.04.01 + sum_p_4_5_hirham$X2050.05.01 + sum_p_4_5_hirham$X2050.06.01
-sum_p_4_5_racmo_ecearth <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/12_total_precipitation-projections-monthly-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
+sum_p_4_5_racmo_ecearth <- brick("raw_data/12_total_precipitation-projections-monthly-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
 sum_p_4_5_racmo_ecearth_2016 <- (sum_p_4_5_racmo_ecearth$X2016.03.01 + sum_p_4_5_racmo_ecearth$X2016.04.01 + sum_p_4_5_racmo_ecearth$X2016.05.01 + sum_p_4_5_racmo_ecearth$X2016.06.01 +
                           sum_p_4_5_racmo_ecearth$X2017.03.01 + sum_p_4_5_racmo_ecearth$X2017.04.01 + sum_p_4_5_racmo_ecearth$X2017.05.01 + sum_p_4_5_racmo_ecearth$X2017.06.01 +
                           sum_p_4_5_racmo_ecearth$X2018.03.01 + sum_p_4_5_racmo_ecearth$X2018.04.01 + sum_p_4_5_racmo_ecearth$X2018.05.01 + sum_p_4_5_racmo_ecearth$X2018.06.01 +
@@ -528,7 +524,7 @@ sum_p_4_5_racmo_ecearth_2016 <- (sum_p_4_5_racmo_ecearth$X2016.03.01 + sum_p_4_5
                           sum_p_4_5_racmo_ecearth$X2020.03.01 + sum_p_4_5_racmo_ecearth$X2020.04.01 + sum_p_4_5_racmo_ecearth$X2020.05.01 + sum_p_4_5_racmo_ecearth$X2020.06.01 +
                           sum_p_4_5_racmo_ecearth$X2021.03.01 + sum_p_4_5_racmo_ecearth$X2021.04.01 + sum_p_4_5_racmo_ecearth$X2021.05.01 + sum_p_4_5_racmo_ecearth$X2021.06.01)/6
 sum_p_4_5_racmo_ecearth <- sum_p_4_5_racmo_ecearth$X2050.03.01 + sum_p_4_5_racmo_ecearth$X2050.04.01 + sum_p_4_5_racmo_ecearth$X2050.05.01 + sum_p_4_5_racmo_ecearth$X2050.06.01
-sum_p_4_5_racmo_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/12_total_precipitation-projections-monthly-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
+sum_p_4_5_racmo_hadgem <- brick("raw_data/12_total_precipitation-projections-monthly-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
 sum_p_4_5_racmo_hadgem_2016 <- (sum_p_4_5_racmo_hadgem$X2016.03.01 + sum_p_4_5_racmo_hadgem$X2016.04.01 + sum_p_4_5_racmo_hadgem$X2016.05.01 + sum_p_4_5_racmo_hadgem$X2016.06.01 +
                           sum_p_4_5_racmo_hadgem$X2017.03.01 + sum_p_4_5_racmo_hadgem$X2017.04.01 + sum_p_4_5_racmo_hadgem$X2017.05.01 + sum_p_4_5_racmo_hadgem$X2017.06.01 +
                           sum_p_4_5_racmo_hadgem$X2018.03.01 + sum_p_4_5_racmo_hadgem$X2018.04.01 + sum_p_4_5_racmo_hadgem$X2018.05.01 + sum_p_4_5_racmo_hadgem$X2018.06.01 +
@@ -536,7 +532,7 @@ sum_p_4_5_racmo_hadgem_2016 <- (sum_p_4_5_racmo_hadgem$X2016.03.01 + sum_p_4_5_r
                           sum_p_4_5_racmo_hadgem$X2020.03.01 + sum_p_4_5_racmo_hadgem$X2020.04.01 + sum_p_4_5_racmo_hadgem$X2020.05.01 + sum_p_4_5_racmo_hadgem$X2020.06.01 +
                           sum_p_4_5_racmo_hadgem$X2021.03.01 + sum_p_4_5_racmo_hadgem$X2021.04.01 + sum_p_4_5_racmo_hadgem$X2021.05.01 + sum_p_4_5_racmo_hadgem$X2021.06.01)/6
 sum_p_4_5_racmo_hadgem <- sum_p_4_5_racmo_hadgem$X2050.03.01 + sum_p_4_5_racmo_hadgem$X2050.04.01 + sum_p_4_5_racmo_hadgem$X2050.05.01 + sum_p_4_5_racmo_hadgem$X2050.06.01
-sum_p_4_5_rca_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/12_total_precipitation-projections-monthly-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
+sum_p_4_5_rca_hadgem <- brick("raw_data/12_total_precipitation-projections-monthly-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
 sum_p_4_5_rca_hadgem_2016 <- (sum_p_4_5_rca_hadgem$X2016.03.01 + sum_p_4_5_rca_hadgem$X2016.04.01 + sum_p_4_5_rca_hadgem$X2016.05.01 + sum_p_4_5_rca_hadgem$X2016.06.01 +
                           sum_p_4_5_rca_hadgem$X2017.03.01 + sum_p_4_5_rca_hadgem$X2017.04.01 + sum_p_4_5_rca_hadgem$X2017.05.01 + sum_p_4_5_rca_hadgem$X2017.06.01 +
                           sum_p_4_5_rca_hadgem$X2018.03.01 + sum_p_4_5_rca_hadgem$X2018.04.01 + sum_p_4_5_rca_hadgem$X2018.05.01 + sum_p_4_5_rca_hadgem$X2018.06.01 +
@@ -544,7 +540,7 @@ sum_p_4_5_rca_hadgem_2016 <- (sum_p_4_5_rca_hadgem$X2016.03.01 + sum_p_4_5_rca_h
                           sum_p_4_5_rca_hadgem$X2020.03.01 + sum_p_4_5_rca_hadgem$X2020.04.01 + sum_p_4_5_rca_hadgem$X2020.05.01 + sum_p_4_5_rca_hadgem$X2020.06.01 +
                           sum_p_4_5_rca_hadgem$X2021.03.01 + sum_p_4_5_rca_hadgem$X2021.04.01 + sum_p_4_5_rca_hadgem$X2021.05.01 + sum_p_4_5_rca_hadgem$X2021.06.01)/6
 sum_p_4_5_rca_hadgem <- sum_p_4_5_rca_hadgem$X2050.03.01 + sum_p_4_5_rca_hadgem$X2050.04.01 + sum_p_4_5_rca_hadgem$X2050.05.01 + sum_p_4_5_rca_hadgem$X2050.06.01
-sum_p_4_5_rca_mpi <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/12_total_precipitation-projections-monthly-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+sum_p_4_5_rca_mpi <- brick("raw_data/12_total_precipitation-projections-monthly-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 sum_p_4_5_rca_mpi_2016 <- (sum_p_4_5_rca_mpi$X2016.03.01 + sum_p_4_5_rca_mpi$X2016.04.01 + sum_p_4_5_rca_mpi$X2016.05.01 + sum_p_4_5_rca_mpi$X2016.06.01 +
                           sum_p_4_5_rca_mpi$X2017.03.01 + sum_p_4_5_rca_mpi$X2017.04.01 + sum_p_4_5_rca_mpi$X2017.05.01 + sum_p_4_5_rca_mpi$X2017.06.01 +
                           sum_p_4_5_rca_mpi$X2018.03.01 + sum_p_4_5_rca_mpi$X2018.04.01 + sum_p_4_5_rca_mpi$X2018.05.01 + sum_p_4_5_rca_mpi$X2018.06.01 +
@@ -552,7 +548,7 @@ sum_p_4_5_rca_mpi_2016 <- (sum_p_4_5_rca_mpi$X2016.03.01 + sum_p_4_5_rca_mpi$X20
                           sum_p_4_5_rca_mpi$X2020.03.01 + sum_p_4_5_rca_mpi$X2020.04.01 + sum_p_4_5_rca_mpi$X2020.05.01 + sum_p_4_5_rca_mpi$X2020.06.01 +
                           sum_p_4_5_rca_mpi$X2021.03.01 + sum_p_4_5_rca_mpi$X2021.04.01 + sum_p_4_5_rca_mpi$X2021.05.01 + sum_p_4_5_rca_mpi$X2021.06.01)/6
 sum_p_4_5_rca_mpi <- sum_p_4_5_rca_mpi$X2050.03.01 + sum_p_4_5_rca_mpi$X2050.04.01 + sum_p_4_5_rca_mpi$X2050.05.01 + sum_p_4_5_rca_mpi$X2050.06.01
-sum_p_4_5_wrf <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/12_total_precipitation-projections-monthly-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
+sum_p_4_5_wrf <- brick("raw_data/12_total_precipitation-projections-monthly-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
 sum_p_4_5_wrf_2016 <- (sum_p_4_5_wrf$X2016.03.01 + sum_p_4_5_wrf$X2016.04.01 + sum_p_4_5_wrf$X2016.05.01 + sum_p_4_5_wrf$X2016.06.01 +
                           sum_p_4_5_wrf$X2017.03.01 + sum_p_4_5_wrf$X2017.04.01 + sum_p_4_5_wrf$X2017.05.01 + sum_p_4_5_wrf$X2017.06.01 +
                           sum_p_4_5_wrf$X2018.03.01 + sum_p_4_5_wrf$X2018.04.01 + sum_p_4_5_wrf$X2018.05.01 + sum_p_4_5_wrf$X2018.06.01 +
@@ -566,7 +562,7 @@ sum_p_2016 <- (sum_p_4_5_cclm_2016 + sum_p_4_5_hirham_2016 + sum_p_4_5_racmo_ece
 
 ### Temperature variation
 
-max_t_4_5_cclm <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+max_t_4_5_cclm <- brick("raw_data/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 max_t_4_5_cclm_2016 <- (max_t_4_5_cclm$X2016.03.01 + max_t_4_5_cclm$X2016.04.01 + max_t_4_5_cclm$X2016.05.01 + max_t_4_5_cclm$X2016.06.01 +
                            max_t_4_5_cclm$X2017.03.01 + max_t_4_5_cclm$X2017.04.01 + max_t_4_5_cclm$X2017.05.01 + max_t_4_5_cclm$X2017.06.01 +
                            max_t_4_5_cclm$X2018.03.01 + max_t_4_5_cclm$X2018.04.01 + max_t_4_5_cclm$X2018.05.01 + max_t_4_5_cclm$X2018.06.01 +
@@ -574,7 +570,7 @@ max_t_4_5_cclm_2016 <- (max_t_4_5_cclm$X2016.03.01 + max_t_4_5_cclm$X2016.04.01 
                            max_t_4_5_cclm$X2020.03.01 + max_t_4_5_cclm$X2020.04.01 + max_t_4_5_cclm$X2020.05.01 + max_t_4_5_cclm$X2020.06.01 +
                            max_t_4_5_cclm$X2021.03.01 + max_t_4_5_cclm$X2021.04.01 + max_t_4_5_cclm$X2021.05.01 + max_t_4_5_cclm$X2021.06.01)/24
 max_t_4_5_cclm <- (max_t_4_5_cclm$X2050.03.01 + max_t_4_5_cclm$X2050.04.01 + max_t_4_5_cclm$X2050.05.01 + max_t_4_5_cclm$X2050.06.01)/4
-max_t_4_5_hirham <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
+max_t_4_5_hirham <- brick("raw_data/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
 max_t_4_5_hirham_2016 <- (max_t_4_5_hirham$X2016.03.01 + max_t_4_5_hirham$X2016.04.01 + max_t_4_5_hirham$X2016.05.01 + max_t_4_5_hirham$X2016.06.01 +
                              max_t_4_5_hirham$X2017.03.01 + max_t_4_5_hirham$X2017.04.01 + max_t_4_5_hirham$X2017.05.01 + max_t_4_5_hirham$X2017.06.01 +
                              max_t_4_5_hirham$X2018.03.01 + max_t_4_5_hirham$X2018.04.01 + max_t_4_5_hirham$X2018.05.01 + max_t_4_5_hirham$X2018.06.01 +
@@ -582,7 +578,7 @@ max_t_4_5_hirham_2016 <- (max_t_4_5_hirham$X2016.03.01 + max_t_4_5_hirham$X2016.
                              max_t_4_5_hirham$X2020.03.01 + max_t_4_5_hirham$X2020.04.01 + max_t_4_5_hirham$X2020.05.01 + max_t_4_5_hirham$X2020.06.01 +
                              max_t_4_5_hirham$X2021.03.01 + max_t_4_5_hirham$X2021.04.01 + max_t_4_5_hirham$X2021.05.01 + max_t_4_5_hirham$X2021.06.01)/24
 max_t_4_5_hirham <- (max_t_4_5_hirham$X2050.03.01 + max_t_4_5_hirham$X2050.04.01 + max_t_4_5_hirham$X2050.05.01 + max_t_4_5_hirham$X2050.06.01)/4
-max_t_4_5_racmo_ecearth <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
+max_t_4_5_racmo_ecearth <- brick("raw_data/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
 max_t_4_5_racmo_ecearth_2016 <- (max_t_4_5_racmo_ecearth$X2016.03.01 + max_t_4_5_racmo_ecearth$X2016.04.01 + max_t_4_5_racmo_ecearth$X2016.05.01 + max_t_4_5_racmo_ecearth$X2016.06.01 +
                                     max_t_4_5_racmo_ecearth$X2017.03.01 + max_t_4_5_racmo_ecearth$X2017.04.01 + max_t_4_5_racmo_ecearth$X2017.05.01 + max_t_4_5_racmo_ecearth$X2017.06.01 +
                                     max_t_4_5_racmo_ecearth$X2018.03.01 + max_t_4_5_racmo_ecearth$X2018.04.01 + max_t_4_5_racmo_ecearth$X2018.05.01 + max_t_4_5_racmo_ecearth$X2018.06.01 +
@@ -590,7 +586,7 @@ max_t_4_5_racmo_ecearth_2016 <- (max_t_4_5_racmo_ecearth$X2016.03.01 + max_t_4_5
                                     max_t_4_5_racmo_ecearth$X2020.03.01 + max_t_4_5_racmo_ecearth$X2020.04.01 + max_t_4_5_racmo_ecearth$X2020.05.01 + max_t_4_5_racmo_ecearth$X2020.06.01 +
                                     max_t_4_5_racmo_ecearth$X2021.03.01 + max_t_4_5_racmo_ecearth$X2021.04.01 + max_t_4_5_racmo_ecearth$X2021.05.01 + max_t_4_5_racmo_ecearth$X2021.06.01)/24
 max_t_4_5_racmo_ecearth <- (max_t_4_5_racmo_ecearth$X2050.03.01 + max_t_4_5_racmo_ecearth$X2050.04.01 + max_t_4_5_racmo_ecearth$X2050.05.01 + max_t_4_5_racmo_ecearth$X2050.06.01)/4
-max_t_4_5_racmo_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
+max_t_4_5_racmo_hadgem <- brick("raw_data/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
 max_t_4_5_racmo_hadgem_2016 <- (max_t_4_5_racmo_hadgem$X2016.03.01 + max_t_4_5_racmo_hadgem$X2016.04.01 + max_t_4_5_racmo_hadgem$X2016.05.01 + max_t_4_5_racmo_hadgem$X2016.06.01 +
                                    max_t_4_5_racmo_hadgem$X2017.03.01 + max_t_4_5_racmo_hadgem$X2017.04.01 + max_t_4_5_racmo_hadgem$X2017.05.01 + max_t_4_5_racmo_hadgem$X2017.06.01 +
                                    max_t_4_5_racmo_hadgem$X2018.03.01 + max_t_4_5_racmo_hadgem$X2018.04.01 + max_t_4_5_racmo_hadgem$X2018.05.01 + max_t_4_5_racmo_hadgem$X2018.06.01 +
@@ -598,7 +594,7 @@ max_t_4_5_racmo_hadgem_2016 <- (max_t_4_5_racmo_hadgem$X2016.03.01 + max_t_4_5_r
                                    max_t_4_5_racmo_hadgem$X2020.03.01 + max_t_4_5_racmo_hadgem$X2020.04.01 + max_t_4_5_racmo_hadgem$X2020.05.01 + max_t_4_5_racmo_hadgem$X2020.06.01 +
                                    max_t_4_5_racmo_hadgem$X2021.03.01 + max_t_4_5_racmo_hadgem$X2021.04.01 + max_t_4_5_racmo_hadgem$X2021.05.01 + max_t_4_5_racmo_hadgem$X2021.06.01)/24
 max_t_4_5_racmo_hadgem <- (max_t_4_5_racmo_hadgem$X2050.03.01 + max_t_4_5_racmo_hadgem$X2050.04.01 + max_t_4_5_racmo_hadgem$X2050.05.01 + max_t_4_5_racmo_hadgem$X2050.06.01)/4
-max_t_4_5_rca_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
+max_t_4_5_rca_hadgem <- brick("raw_data/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
 max_t_4_5_rca_hadgem_2016 <- (max_t_4_5_rca_hadgem$X2016.03.01 + max_t_4_5_rca_hadgem$X2016.04.01 + max_t_4_5_rca_hadgem$X2016.05.01 + max_t_4_5_rca_hadgem$X2016.06.01 +
                                  max_t_4_5_rca_hadgem$X2017.03.01 + max_t_4_5_rca_hadgem$X2017.04.01 + max_t_4_5_rca_hadgem$X2017.05.01 + max_t_4_5_rca_hadgem$X2017.06.01 +
                                  max_t_4_5_rca_hadgem$X2018.03.01 + max_t_4_5_rca_hadgem$X2018.04.01 + max_t_4_5_rca_hadgem$X2018.05.01 + max_t_4_5_rca_hadgem$X2018.06.01 +
@@ -606,7 +602,7 @@ max_t_4_5_rca_hadgem_2016 <- (max_t_4_5_rca_hadgem$X2016.03.01 + max_t_4_5_rca_h
                                  max_t_4_5_rca_hadgem$X2020.03.01 + max_t_4_5_rca_hadgem$X2020.04.01 + max_t_4_5_rca_hadgem$X2020.05.01 + max_t_4_5_rca_hadgem$X2020.06.01 +
                                  max_t_4_5_rca_hadgem$X2021.03.01 + max_t_4_5_rca_hadgem$X2021.04.01 + max_t_4_5_rca_hadgem$X2021.05.01 + max_t_4_5_rca_hadgem$X2021.06.01)/24
 max_t_4_5_rca_hadgem <- (max_t_4_5_rca_hadgem$X2050.03.01 + max_t_4_5_rca_hadgem$X2050.04.01 + max_t_4_5_rca_hadgem$X2050.05.01 + max_t_4_5_rca_hadgem$X2050.06.01)/4
-max_t_4_5_rca_mpi <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+max_t_4_5_rca_mpi <- brick("raw_data/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 max_t_4_5_rca_mpi_2016 <- (max_t_4_5_rca_mpi$X2016.03.01 + max_t_4_5_rca_mpi$X2016.04.01 + max_t_4_5_rca_mpi$X2016.05.01 + max_t_4_5_rca_mpi$X2016.06.01 +
                               max_t_4_5_rca_mpi$X2017.03.01 + max_t_4_5_rca_mpi$X2017.04.01 + max_t_4_5_rca_mpi$X2017.05.01 + max_t_4_5_rca_mpi$X2017.06.01 +
                               max_t_4_5_rca_mpi$X2018.03.01 + max_t_4_5_rca_mpi$X2018.04.01 + max_t_4_5_rca_mpi$X2018.05.01 + max_t_4_5_rca_mpi$X2018.06.01 +
@@ -614,7 +610,7 @@ max_t_4_5_rca_mpi_2016 <- (max_t_4_5_rca_mpi$X2016.03.01 + max_t_4_5_rca_mpi$X20
                               max_t_4_5_rca_mpi$X2020.03.01 + max_t_4_5_rca_mpi$X2020.04.01 + max_t_4_5_rca_mpi$X2020.05.01 + max_t_4_5_rca_mpi$X2020.06.01 +
                               max_t_4_5_rca_mpi$X2021.03.01 + max_t_4_5_rca_mpi$X2021.04.01 + max_t_4_5_rca_mpi$X2021.05.01 + max_t_4_5_rca_mpi$X2021.06.01)/24
 max_t_4_5_rca_mpi <- (max_t_4_5_rca_mpi$X2050.03.01 + max_t_4_5_rca_mpi$X2050.04.01 + max_t_4_5_rca_mpi$X2050.05.01 + max_t_4_5_rca_mpi$X2050.06.01)/4
-max_t_4_5_wrf <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
+max_t_4_5_wrf <- brick("raw_data/l1_daily_maximum_temperature-projections-monthly-mean-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
 max_t_4_5_wrf_2016 <- (max_t_4_5_wrf$X2016.03.01 + max_t_4_5_wrf$X2016.04.01 + max_t_4_5_wrf$X2016.05.01 + max_t_4_5_wrf$X2016.06.01 +
                           max_t_4_5_wrf$X2017.03.01 + max_t_4_5_wrf$X2017.04.01 + max_t_4_5_wrf$X2017.05.01 + max_t_4_5_wrf$X2017.06.01 +
                           max_t_4_5_wrf$X2018.03.01 + max_t_4_5_wrf$X2018.04.01 + max_t_4_5_wrf$X2018.05.01 + max_t_4_5_wrf$X2018.06.01 +
@@ -626,7 +622,7 @@ max_t_4_5_wrf <- (max_t_4_5_wrf$X2050.03.01 + max_t_4_5_wrf$X2050.04.01 + max_t_
 max_t_4_5 <- (max_t_4_5_cclm + max_t_4_5_hirham + max_t_4_5_racmo_ecearth + max_t_4_5_racmo_hadgem + max_t_4_5_rca_hadgem + max_t_4_5_rca_mpi + max_t_4_5_wrf)/7 - 272.15
 max_t_2016 <- (max_t_4_5_cclm_2016 + max_t_4_5_hirham_2016 + max_t_4_5_racmo_ecearth_2016 + max_t_4_5_racmo_hadgem_2016 + max_t_4_5_rca_hadgem_2016 + max_t_4_5_rca_mpi_2016 + max_t_4_5_wrf_2016)/7 - 272.15
 
-min_t_4_5_cclm <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+min_t_4_5_cclm <- brick("raw_data/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-cclm4_8_17-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 min_t_4_5_cclm_2016 <- (min_t_4_5_cclm$X2016.03.01 + min_t_4_5_cclm$X2016.04.01 + min_t_4_5_cclm$X2016.05.01 + min_t_4_5_cclm$X2016.06.01 +
                           min_t_4_5_cclm$X2017.03.01 + min_t_4_5_cclm$X2017.04.01 + min_t_4_5_cclm$X2017.05.01 + min_t_4_5_cclm$X2017.06.01 +
                           min_t_4_5_cclm$X2018.03.01 + min_t_4_5_cclm$X2018.04.01 + min_t_4_5_cclm$X2018.05.01 + min_t_4_5_cclm$X2018.06.01 +
@@ -634,7 +630,7 @@ min_t_4_5_cclm_2016 <- (min_t_4_5_cclm$X2016.03.01 + min_t_4_5_cclm$X2016.04.01 
                           min_t_4_5_cclm$X2020.03.01 + min_t_4_5_cclm$X2020.04.01 + min_t_4_5_cclm$X2020.05.01 + min_t_4_5_cclm$X2020.06.01 +
                           min_t_4_5_cclm$X2021.03.01 + min_t_4_5_cclm$X2021.04.01 + min_t_4_5_cclm$X2021.05.01 + min_t_4_5_cclm$X2021.06.01)/24
 min_t_4_5_cclm <- (min_t_4_5_cclm$X2050.03.01 + min_t_4_5_cclm$X2050.04.01 + min_t_4_5_cclm$X2050.05.01 + min_t_4_5_cclm$X2050.06.01)/4
-min_t_4_5_hirham <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
+min_t_4_5_hirham <- brick("raw_data/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-hirham5-noresm1_m-r1i1p1-grid-v1.0.nc")
 min_t_4_5_hirham_2016 <- (min_t_4_5_hirham$X2016.03.01 + min_t_4_5_hirham$X2016.04.01 + min_t_4_5_hirham$X2016.05.01 + min_t_4_5_hirham$X2016.06.01 +
                             min_t_4_5_hirham$X2017.03.01 + min_t_4_5_hirham$X2017.04.01 + min_t_4_5_hirham$X2017.05.01 + min_t_4_5_hirham$X2017.06.01 +
                             min_t_4_5_hirham$X2018.03.01 + min_t_4_5_hirham$X2018.04.01 + min_t_4_5_hirham$X2018.05.01 + min_t_4_5_hirham$X2018.06.01 +
@@ -642,7 +638,7 @@ min_t_4_5_hirham_2016 <- (min_t_4_5_hirham$X2016.03.01 + min_t_4_5_hirham$X2016.
                             min_t_4_5_hirham$X2020.03.01 + min_t_4_5_hirham$X2020.04.01 + min_t_4_5_hirham$X2020.05.01 + min_t_4_5_hirham$X2020.06.01 +
                             min_t_4_5_hirham$X2021.03.01 + min_t_4_5_hirham$X2021.04.01 + min_t_4_5_hirham$X2021.05.01 + min_t_4_5_hirham$X2021.06.01)/24
 min_t_4_5_hirham <- (min_t_4_5_hirham$X2050.03.01 + min_t_4_5_hirham$X2050.04.01 + min_t_4_5_hirham$X2050.05.01 + min_t_4_5_hirham$X2050.06.01)/4
-min_t_4_5_racmo_ecearth <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
+min_t_4_5_racmo_ecearth <- brick("raw_data/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-ec_earth-r1i1p1-grid-v1.0.nc")
 min_t_4_5_racmo_ecearth_2016 <- (min_t_4_5_racmo_ecearth$X2016.03.01 + min_t_4_5_racmo_ecearth$X2016.04.01 + min_t_4_5_racmo_ecearth$X2016.05.01 + min_t_4_5_racmo_ecearth$X2016.06.01 +
                                    min_t_4_5_racmo_ecearth$X2017.03.01 + min_t_4_5_racmo_ecearth$X2017.04.01 + min_t_4_5_racmo_ecearth$X2017.05.01 + min_t_4_5_racmo_ecearth$X2017.06.01 +
                                    min_t_4_5_racmo_ecearth$X2018.03.01 + min_t_4_5_racmo_ecearth$X2018.04.01 + min_t_4_5_racmo_ecearth$X2018.05.01 + min_t_4_5_racmo_ecearth$X2018.06.01 +
@@ -650,7 +646,7 @@ min_t_4_5_racmo_ecearth_2016 <- (min_t_4_5_racmo_ecearth$X2016.03.01 + min_t_4_5
                                    min_t_4_5_racmo_ecearth$X2020.03.01 + min_t_4_5_racmo_ecearth$X2020.04.01 + min_t_4_5_racmo_ecearth$X2020.05.01 + min_t_4_5_racmo_ecearth$X2020.06.01 +
                                    min_t_4_5_racmo_ecearth$X2021.03.01 + min_t_4_5_racmo_ecearth$X2021.04.01 + min_t_4_5_racmo_ecearth$X2021.05.01 + min_t_4_5_racmo_ecearth$X2021.06.01)/24
 min_t_4_5_racmo_ecearth <- (min_t_4_5_racmo_ecearth$X2050.03.01 + min_t_4_5_racmo_ecearth$X2050.04.01 + min_t_4_5_racmo_ecearth$X2050.05.01 + min_t_4_5_racmo_ecearth$X2050.06.01)/4
-min_t_4_5_racmo_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
+min_t_4_5_racmo_hadgem <- brick("raw_data/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-racmo22e-hadgem2_es-r1i1p1-grid-v1.0.nc")
 min_t_4_5_racmo_hadgem_2016 <- (min_t_4_5_racmo_hadgem$X2016.03.01 + min_t_4_5_racmo_hadgem$X2016.04.01 + min_t_4_5_racmo_hadgem$X2016.05.01 + min_t_4_5_racmo_hadgem$X2016.06.01 +
                                   min_t_4_5_racmo_hadgem$X2017.03.01 + min_t_4_5_racmo_hadgem$X2017.04.01 + min_t_4_5_racmo_hadgem$X2017.05.01 + min_t_4_5_racmo_hadgem$X2017.06.01 +
                                   min_t_4_5_racmo_hadgem$X2018.03.01 + min_t_4_5_racmo_hadgem$X2018.04.01 + min_t_4_5_racmo_hadgem$X2018.05.01 + min_t_4_5_racmo_hadgem$X2018.06.01 +
@@ -658,7 +654,7 @@ min_t_4_5_racmo_hadgem_2016 <- (min_t_4_5_racmo_hadgem$X2016.03.01 + min_t_4_5_r
                                   min_t_4_5_racmo_hadgem$X2020.03.01 + min_t_4_5_racmo_hadgem$X2020.04.01 + min_t_4_5_racmo_hadgem$X2020.05.01 + min_t_4_5_racmo_hadgem$X2020.06.01 +
                                   min_t_4_5_racmo_hadgem$X2021.03.01 + min_t_4_5_racmo_hadgem$X2021.04.01 + min_t_4_5_racmo_hadgem$X2021.05.01 + min_t_4_5_racmo_hadgem$X2021.06.01)/24
 min_t_4_5_racmo_hadgem <- (min_t_4_5_racmo_hadgem$X2050.03.01 + min_t_4_5_racmo_hadgem$X2050.04.01 + min_t_4_5_racmo_hadgem$X2050.05.01 + min_t_4_5_racmo_hadgem$X2050.06.01)/4
-min_t_4_5_rca_hadgem <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
+min_t_4_5_rca_hadgem <- brick("raw_data/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-rca4-hadgem2_es-r1i1p1-grid-v1.0.nc")
 min_t_4_5_rca_hadgem_2016 <- (min_t_4_5_rca_hadgem$X2016.03.01 + min_t_4_5_rca_hadgem$X2016.04.01 + min_t_4_5_rca_hadgem$X2016.05.01 + min_t_4_5_rca_hadgem$X2016.06.01 +
                                 min_t_4_5_rca_hadgem$X2017.03.01 + min_t_4_5_rca_hadgem$X2017.04.01 + min_t_4_5_rca_hadgem$X2017.05.01 + min_t_4_5_rca_hadgem$X2017.06.01 +
                                 min_t_4_5_rca_hadgem$X2018.03.01 + min_t_4_5_rca_hadgem$X2018.04.01 + min_t_4_5_rca_hadgem$X2018.05.01 + min_t_4_5_rca_hadgem$X2018.06.01 +
@@ -666,7 +662,7 @@ min_t_4_5_rca_hadgem_2016 <- (min_t_4_5_rca_hadgem$X2016.03.01 + min_t_4_5_rca_h
                                 min_t_4_5_rca_hadgem$X2020.03.01 + min_t_4_5_rca_hadgem$X2020.04.01 + min_t_4_5_rca_hadgem$X2020.05.01 + min_t_4_5_rca_hadgem$X2020.06.01 +
                                 min_t_4_5_rca_hadgem$X2021.03.01 + min_t_4_5_rca_hadgem$X2021.04.01 + min_t_4_5_rca_hadgem$X2021.05.01 + min_t_4_5_rca_hadgem$X2021.06.01)/24
 min_t_4_5_rca_hadgem <- (min_t_4_5_rca_hadgem$X2050.03.01 + min_t_4_5_rca_hadgem$X2050.04.01 + min_t_4_5_rca_hadgem$X2050.05.01 + min_t_4_5_rca_hadgem$X2050.06.01)/4
-min_t_4_5_rca_mpi <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
+min_t_4_5_rca_mpi <- brick("raw_data/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-rca4-mpi_esm_lr-r1i1p1-grid-v1.0.nc")
 min_t_4_5_rca_mpi_2016 <- (min_t_4_5_rca_mpi$X2016.03.01 + min_t_4_5_rca_mpi$X2016.04.01 + min_t_4_5_rca_mpi$X2016.05.01 + min_t_4_5_rca_mpi$X2016.06.01 +
                              min_t_4_5_rca_mpi$X2017.03.01 + min_t_4_5_rca_mpi$X2017.04.01 + min_t_4_5_rca_mpi$X2017.05.01 + min_t_4_5_rca_mpi$X2017.06.01 +
                              min_t_4_5_rca_mpi$X2018.03.01 + min_t_4_5_rca_mpi$X2018.04.01 + min_t_4_5_rca_mpi$X2018.05.01 + min_t_4_5_rca_mpi$X2018.06.01 +
@@ -674,7 +670,7 @@ min_t_4_5_rca_mpi_2016 <- (min_t_4_5_rca_mpi$X2016.03.01 + min_t_4_5_rca_mpi$X20
                              min_t_4_5_rca_mpi$X2020.03.01 + min_t_4_5_rca_mpi$X2020.04.01 + min_t_4_5_rca_mpi$X2020.05.01 + min_t_4_5_rca_mpi$X2020.06.01 +
                              min_t_4_5_rca_mpi$X2021.03.01 + min_t_4_5_rca_mpi$X2021.04.01 + min_t_4_5_rca_mpi$X2021.05.01 + min_t_4_5_rca_mpi$X2021.06.01)/24
 min_t_4_5_rca_mpi <- (min_t_4_5_rca_mpi$X2050.03.01 + min_t_4_5_rca_mpi$X2050.04.01 + min_t_4_5_rca_mpi$X2050.05.01 + min_t_4_5_rca_mpi$X2050.06.01)/4
-min_t_4_5_wrf <- brick("raw_data/predicted_climate/bdbb154c789566ea9935529937de5e88/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
+min_t_4_5_wrf <- brick("raw_data/l2_daily_minimum_temperature-projections-monthly-mean-rcp_4_5-wrf381p-ipsl_cm5a_mr-r1i1p1-grid-v1.0.nc")
 min_t_4_5_wrf_2016 <- (min_t_4_5_wrf$X2016.03.01 + min_t_4_5_wrf$X2016.04.01 + min_t_4_5_wrf$X2016.05.01 + min_t_4_5_wrf$X2016.06.01 +
                          min_t_4_5_wrf$X2017.03.01 + min_t_4_5_wrf$X2017.04.01 + min_t_4_5_wrf$X2017.05.01 + min_t_4_5_wrf$X2017.06.01 +
                          min_t_4_5_wrf$X2018.03.01 + min_t_4_5_wrf$X2018.04.01 + min_t_4_5_wrf$X2018.05.01 + min_t_4_5_wrf$X2018.06.01 +
@@ -711,7 +707,7 @@ climate_pls <- data.frame(PLS = c(as.character(c(1:19,21:25)),"europe"),
 
 # load unscale pressure
 
-pressure_publi_unscale <- read.csv("pressure_publi_unscale.csv")
+pressure_publi_unscale <- read.csv("raw_data/pressure_publi_unscale.csv")
 
 # run for the subset data
 
@@ -753,10 +749,10 @@ pecbms_species <- c("Acanthis flammea","Accipiter nisus",
 "Delichon urbicum","Dendrocopos major",
 "Dendrocopos syriacus","Dryobates minor",
 "Dryocopus martius","Egretta garzetta",
-"Emberiza calandra","Emberiza cia"
+"Emberiza calandra","Emberiza cia",
 "Emberiza cirlus","Emberiza citrinella",
 "Emberiza hortulana","Emberiza melanocephala",
-"Emberiza rustica","Emberiza schoeniclus"
+"Emberiza rustica","Emberiza schoeniclus",
 "Erithacus rubecula","Falco tinnunculus",
 "Ficedula albicollis","Ficedula hypoleuca",
 "Fringilla coelebs","Fringilla montifringilla",
@@ -869,7 +865,7 @@ ggplot() + geom_sf() +
 
 # load unscale pressure
 
-pressure_publi_butterfly_unscale <- read.csv("pressure_publi_butterfly_unscale.csv")
+pressure_publi_butterfly_unscale <- read.csv("raw_data/pressure_publi_butterfly_unscale.csv")
 
 # run for the subset data
 
@@ -913,7 +909,7 @@ wetland_species <- c("Agriades optilete","Boloria aquilonaris","Boloria eunomia"
                      "Coenonympha oedippus","Coenonympha tullia","Colias palaeno","Erebia disa","Erebia embla",
                      "Oeneis jutta","Pyrgus centaureae")
 
-predict_trend_all_butterfly_correct <- merge(res_gamm_butterfly_correct[which(res_gamm_butterfly_correct$sci_name_out %in% res_gamm_butterfly$species_name %in% c(grassland_species, woodland_species, woodland_ind_species, wetland_species)),],predict_trend_all_butterfly, by=c("sci_name_out","PLS"),all.x=TRUE)
+predict_trend_all_butterfly_correct <- merge(res_gamm_butterfly_correct[which(res_gamm_butterfly_correct$species_name %in% c(grassland_species, woodland_species, woodland_ind_species, wetland_species)),],predict_trend_all_butterfly, by=c("species_name","PLS"),all.x=TRUE)
 
 # Bound the predicted trends to avoid outliers
 
