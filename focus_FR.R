@@ -87,7 +87,7 @@ test_multicor <- press_mainland_trend_FR[which(press_mainland_trend_FR$year==201
                                                                                            "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
                                                                                            "d_shannon","shannon","drymatter","protectedarea_perc","protectedarea_type",
                                                                                            "eulandsystem_cat","eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
-                                                                                     "CPE_mean",
+                                                                                     "CPE_mean","CPE_trend",
                                                                                            "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat")]
 test_multicor$milieu_cat <- as.numeric(as.factor(test_multicor$milieu_cat))
 test_multicor$eulandsystem_cat <- as.numeric(test_multicor$eulandsystem_cat)
@@ -121,8 +121,8 @@ subsite_data_mainland_trend_fr <- subsite_data_mainland_trend[which(subsite_data
 col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
                "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_treedensity",
                "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
-               "year:eulandsystem_farmland_low",#"year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
-               "year:CPE_mean",
+               "year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+               "year:CPE_mean","year:CPE_trend",
                "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc")
 if_fail <- data.frame(t(rep(NA,(length(col_names)+27))))
 names(if_fail) <- c(col_names,"dev_exp","n_obs","PLS","trend_past","sd_past",
@@ -140,7 +140,7 @@ res_gam_bird_FR <- ddply(subsite_data_mainland_trend_fr,
                       pressure_data_unscale=press_mainland_trend_FR,
                       pressure_change=pressure_change,
                       site_data=site_mainland_sf_reproj_fr,
-                      pest_landsystem = "pest",
+                      pest_landsystem = "both",
                       .progress = "text")
 
 saveRDS(res_gam_bird_FR,"output/res_gam_bird_FR_pest.rds")
@@ -162,7 +162,7 @@ plot(exp(year)~PECBMS_slope_long,res_gam_bird_FR2)
 
 
 data_plot <- res_gam_bird_FR2[which(res_gam_bird_FR2$dev_exp > 0.15 & res_gam_bird_FR2$n_obs > 400),]
-data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","PECBMS_slope_long","PECBMS_slope_short")], id.var=c("sci_name_out","trend_past"))
+data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","trend_past_signif","PECBMS_slope_long","PECBMS_slope_short")], id.var=c("sci_name_out","trend_past","trend_past_signif"))
 
 ggplot(data_plot, aes(y=exp(trend_past_signif))) + 
   geom_vline(xintercept = 1, linetype = 2) +
@@ -253,6 +253,9 @@ ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:d_agri`)
   geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
   geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
 ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:CPE_mean`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
+  geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:CPE_trend`)) + 
   geom_boxplot(color="blue",fill="blue",alpha=0.2,notch=TRUE,notchwidth = 0.8,outlier.colour="red",outlier.fill="red",outlier.size=3) +
   geom_jitter(color="black", size=0.4, alpha=0.9) + theme_minimal()
 ggplot(obs_vs_expected, aes(x=Intensification.de.l.agriculture, y=`year:eulandsystem_farmland_low`)) + 

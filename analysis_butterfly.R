@@ -921,6 +921,20 @@ matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %
                                                                                              #max_effect_percent = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp),
                                                                                              #min_effect_percent = ifelse(nb_sp_neg_lulc < nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp)))
 
+matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %>% summarise(mean_impervious = mean(`year:d_impervious`,na.rm=TRUE),
+                                                                                        mean_treedensity = mean(`year:d_treedensity`,na.rm=TRUE),
+                                                                                        mean_forest_lm = mean(`year:eulandsystem_forest_lowmedium`,na.rm=TRUE),
+                                                                                        mean_forest_h = mean(`year:eulandsystem_forest_high`,na.rm=TRUE),
+                                                                                        mean_agri = mean(`year:d_agri`,na.rm=TRUE),
+                                                                                        mean_agri_l = mean(`year:eulandsystem_farmland_low`,na.rm=TRUE),
+                                                                                        mean_agri_m = mean(`year:eulandsystem_farmland_medium`,na.rm=TRUE),
+                                                                                        mean_agri_h = mean(`year:eulandsystem_farmland_high`,na.rm=TRUE),
+                                                                                        mean_temp = mean(`year:d_tempsrping`,na.rm=TRUE),
+                                                                                        mean_tempvar = mean(`year:d_tempsrpingvar`,na.rm=TRUE),
+                                                                                        mean_prec = mean(`year:d_precspring`,na.rm=TRUE),
+                                                                                        mean_shannon = mean(`year:d_shannon`,na.rm=TRUE),
+                                                                                        mean_protected = mean(`year:protectedarea_perc`,na.rm=TRUE)))
+
 
 matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
