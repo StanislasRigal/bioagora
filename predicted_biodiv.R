@@ -643,7 +643,7 @@ plot_scenario$variable <- recode(plot_scenario$variable, d_impervious = "D urban
 
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("D urbanisation","D agricultural surface","D tree density","D landscape diversity")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="dodge", stat="identity") +
-  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   facet_wrap(~variable, scales="free_y", nrow=1) +
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
@@ -656,7 +656,7 @@ ggsave("output/scenario_detail1.png",
 
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("Low intensive farmland","Medium intensive farmland","High intensive farmland")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="fill", stat="identity", aes(alpha=variable)) +
-  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_manual (values = c("Low intensive farmland"=1,"Medium intensive farmland"=0.7,"High intensive farmland"=0.5)) +
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
@@ -669,7 +669,7 @@ ggsave("output/scenario_detail_agri.png",
 
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("Low/medium intensive forest","High intensive forest")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="fill", stat="identity", aes(alpha=variable)) +
-  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_manual (values = c("Low/medium intensive forest" = 1,"High intensive forest" = 0.5)) +
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
@@ -682,7 +682,7 @@ ggsave("output/scenario_detail_foret.png",
 
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("Protected area percent")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="dodge", stat="identity") +
-  scale_fill_manual(values = c("BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
 
@@ -1368,7 +1368,7 @@ predict_trend_all_bird <- ddply(subsite_data_mainland_trend,
 predict_trend_all_bird <- predict_trend_all_bird[which(!is.na(predict_trend_all_bird$PLS)),]
 
 #saveRDS(predict_trend_all_bird,"output/predict_trend_all_bird.rds")
-#predict_trend_all_bird <- readRDS("output/predict_trend_all_birdnew_past.rds")
+#predict_trend_all_bird <- readRDS("output/predict_trend_all_bird.rds") #readRDS("output/predict_trend_all_birdnew_past.rds")
 
 
 predict_trend_all_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
@@ -1380,7 +1380,7 @@ predict_trend_all_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
 predict_trend_all_butterfly <- predict_trend_all_butterfly[which(!is.na(predict_trend_all_butterfly$PLS)),]
 
 #saveRDS(predict_trend_all_butterfly,"output/predict_trend_all_butterfly.rds")
-#predict_trend_all_butterfly <- readRDS("output/predict_trend_all_butterflynew_past.rds")
+#predict_trend_all_butterfly <- readRDS("output/predict_trend_all_butterfly.rds") # readRDS("output/predict_trend_all_butterflynew_past.rds")
 
 
 
@@ -1543,7 +1543,7 @@ ggplot(europe_all2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -1671,7 +1671,7 @@ ggplot(europe_all_signif2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -1683,11 +1683,11 @@ ggsave("output/trend_bird_eu_all_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="past")]^x/europe_all_signif$value[which(europe_all_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen",linetype=6, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "#f88587ff", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "#96c3dcff", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "#a4db77ff", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "#fbb25cff", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "#bea0ccff",linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -1750,7 +1750,7 @@ ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) +
                             "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
                             "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
                             "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
-  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_discrete(range = c(0.4, 1)) +
   theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
   ylab("") +
@@ -1923,7 +1923,7 @@ ggplot(europe_farmland2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2050,7 +2050,7 @@ ggplot(europe_farmland_signif2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2062,11 +2062,11 @@ ggsave("output/trend_bird_farm_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "#f88587ff", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "#96c3dcff", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "#a4db77ff", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "#fbb25cff", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "#bea0ccff", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2128,7 +2128,7 @@ ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) +
                             "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
                             "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
                             "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
-  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_discrete(range = c(0.4, 1)) +
   theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
   ylab("") +
@@ -2176,7 +2176,7 @@ ggplot(europe_forest2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2303,7 +2303,7 @@ ggplot(europe_forest_signif2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2316,11 +2316,11 @@ ggsave("output/trend_bird_forest_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "#f88587ff", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "#96c3dcff", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "#a4db77ff", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "#fbb25cff", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "#bea0ccff", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2383,7 +2383,7 @@ ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) +
                             "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
                             "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
                             "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
-  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_discrete(range = c(0.4, 1)) +
   theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
   ylab("") +
@@ -2550,7 +2550,7 @@ ggplot(europe_all2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2678,7 +2678,7 @@ ggplot(europe_all_signif2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2690,11 +2690,11 @@ ggsave("output/trend_butterfly_eu_all_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="past")]^x/europe_all_signif$value[which(europe_all_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="bau")]^x/europe_all_signif$value[which(europe_all_signif$variable=="bau")]^2021*100}, colour = "#f88587ff", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^x/europe_all_signif$value[which(europe_all_signif$variable=="ssp1")]^2021*100}, colour = "#96c3dcff", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfn")]^2021*100}, colour = "#a4db77ff", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nfs")]^2021*100}, colour = "#fbb25cff", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_all_signif$value[which(europe_all_signif$variable=="nac")]^x/europe_all_signif$value[which(europe_all_signif$variable=="nac")]^2021*100}, colour = "#bea0ccff", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -2757,7 +2757,7 @@ ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) +
                             "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
                             "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
                             "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
-  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_discrete(range = c(0.4, 1)) +
   theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
   ylab("") +
@@ -2800,7 +2800,7 @@ ggplot(europe_farmland2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2926,7 +2926,7 @@ ggplot(europe_farmland_signif2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -2938,11 +2938,11 @@ ggsave("output/trend_butterfly_farm_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="bau")]^2021*100}, colour = "#f88587ff", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="ssp1")]^2021*100}, colour = "#96c3dcff", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfn")]^2021*100}, colour = "#a4db77ff", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nfs")]^2021*100}, colour = "#fbb25cff", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^x/europe_farmland_signif$value[which(europe_farmland_signif$variable=="nac")]^2021*100}, colour = "#bea0ccff", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -3004,7 +3004,7 @@ ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) +
                             "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
                             "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
                             "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
-  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_discrete(range = c(0.4, 1)) +
   theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
   ylab("") +
@@ -3052,7 +3052,7 @@ ggplot(europe_forest2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -3179,7 +3179,7 @@ ggplot(europe_forest_signif2, aes(x=value,y = variable)) +
   geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
-  scale_color_manual(values = c("past"="black","bau"="red","ssp1"="blue","nfn"="darkgreen","nfs"="green","nac"="lightgreen")) + 
+  scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
   theme_minimal() + theme(legend.position = "none") +
   xlab("Slope") + ylab("Scenarios")
 
@@ -3192,11 +3192,11 @@ ggsave("output/trend_butterfly_forest_signif_error.png",
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="past")]^2021*100}, colour = "black", linetype=2, xlim=c(2000,2021)) +
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "red", linetype=1, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "blue", linetype=3, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "darkgreen", linetype=4, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "green", linetype=5, xlim=c(2021,2050)) + 
-  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "lightgreen", linetype=6, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="bau")]^2021*100}, colour = "#f88587ff", linetype=1, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="ssp1")]^2021*100}, colour = "#96c3dcff", linetype=3, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfn")]^2021*100}, colour = "#a4db77ff", linetype=4, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nfs")]^2021*100}, colour = "#fbb25cff", linetype=5, xlim=c(2021,2050)) + 
+  geom_function(fun = function(x){europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^x/europe_forest_signif$value[which(europe_forest_signif$variable=="nac")]^2021*100}, colour = "#bea0ccff", linetype=6, xlim=c(2021,2050)) + 
   coord_trans(y='log') +
   theme_minimal() + xlab("Year") + ylab("Abundance")
 
@@ -3259,7 +3259,7 @@ ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) +
                             "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
                             "d_agri" = "\u2205 Agricultural surface","eulandsystem_farmland_low" = "\u2205 Low intensive farmland",
                             "eulandsystem_farmland_medium" = "\u2205 Medium intensive farmland", "eulandsystem_farmland_high" = "\u2205 High intensive farmland")) + 
-  scale_color_manual(values = c("Past"="black","BAU"="red","SSP1"="blue","NFN"="darkgreen","NFS"="green","NAC"="lightgreen")) + 
+  scale_color_manual(values = c("Past"="black","BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
   scale_alpha_discrete(range = c(0.4, 1)) +
   theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
   ylab("") +

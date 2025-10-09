@@ -1459,6 +1459,9 @@ res_gamm_bird_year <- ddply(subsite_data_mainland_trend,
 ### select good model fit and compare with PECBMS trends
 
 pecbms_trend_class <- read.csv("output/pecbms_trend_class.csv", header=TRUE)
+pecbms_species <- na.omit(pecbms_trend_class)$sci_name_out
+pecbms_species_farmland <- na.omit(pecbms_trend_class[which(pecbms_trend_class$Habitat=="Farmland"),])$sci_name_out
+pecbms_species_forest <- na.omit(pecbms_trend_class[which(pecbms_trend_class$Habitat=="Forest"),])$sci_name_out
 pecbms_trend_class <- read.csv("output/pecbms_test2.csv", header=TRUE)
 pecbms_trend_class$PECBMS_slope_long <- as.numeric(substr(pecbms_trend_class$PECBMS_slope_long,1,6))
 pecbms_trend_class$PECBMS_slope_short <- as.numeric(substr(pecbms_trend_class$PECBMS_slope_short,1,6))
@@ -1503,7 +1506,8 @@ for(i in seq(0,0.5, by=0.01)){
 }
 
 res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15),]
-res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15 & res_gamm_bird$sci_name_out %in% pecbms_trend_class$sci_name_out),]
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15 & res_gamm_bird$sci_name_out %in% pecbms_species),]
+#res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15 & res_gamm_bird$sci_name_out %in% pecbms_trend_class$sci_name_out),]
 
 unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
 

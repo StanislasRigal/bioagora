@@ -5,6 +5,8 @@ bird_data <- read.table(file = "raw_data/pecbms_bird_data/all_count_bird_data_bv
 # load sites
 
 sites <- read.table(file = "raw_data/pecbms_bird_data/sites.txt", header = TRUE, sep = "\t")
+# sites <- sites[which(sites$country=="France"),]
+# bird_data <- bird_data[which(bird_data$siteID %in% unique(sites$siteID)),]
 
 # plot sampled site on a map
 
