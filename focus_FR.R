@@ -1,15 +1,84 @@
+grid_fr <- st_read("output/grid_fr.gpkg")
+
+prec_spring_2000_average_FR <- rast(raster(x='raw_data/climate/prec_spring_2000_average_FR.tif')) #2000-2002
+prec_spring_2020_average_FR <- rast(raster(x='raw_data/climate/prec_spring_2020_average_FR.tif')) #2018-2020
+
+temp_spring_var_2000_average_FR <- rast(raster(x='raw_data/climate/temp_spring_var_2000_average_FR.tif'))
+temp_spring_var_2020_average_FR <- rast(raster(x='raw_data/climate/temp_spring_var_2020_average_FR.tif'))
+
+temp_spring_2000_average_FR <- rast(raster(x='raw_data/climate/temp_spring_2000_average_FR.tif'))
+temp_spring_2020_average_FR <- rast(raster(x='raw_data/climate/temp_spring_2020_average_FR.tif'))
+
+prec_spring_2000_average_FR <- project(prec_spring_2000_average_FR, crs(grid_fr))
+prec_spring_2000_average_FR <- crop(prec_spring_2000_average_FR,ext(grid_fr))
+prec_2000 <- exact_extract(prec_spring_2000_average_FR,grid_fr, fun=c("sum","count"))
+prec_2000$mean <- prec_2000$sum/prec_2000$count
+
+prec_spring_2020_average_FR <- project(prec_spring_2020_average_FR, crs(grid_fr))
+prec_spring_2020_average_FR <- crop(prec_spring_2020_average_FR,ext(grid_fr))
+prec_2020 <- exact_extract(prec_spring_2020_average_FR,grid_fr, fun=c("sum","count"))
+prec_2020$mean <- prec_2020$sum/prec_2020$count
+
+temp_spring_2000_average_FR <- project(temp_spring_2000_average_FR, crs(grid_fr))
+temp_spring_2000_average_FR <- crop(temp_spring_2000_average_FR,ext(grid_fr))
+temp_2000 <- exact_extract(temp_spring_2000_average_FR,grid_fr, fun=c("sum","count"))
+temp_2000$mean <- temp_2000$sum/temp_2000$count
+
+temp_spring_2020_average_FR <- project(temp_spring_2020_average_FR, crs(grid_fr))
+temp_spring_2020_average_FR <- crop(temp_spring_2020_average_FR,ext(grid_fr))
+temp_2020 <- exact_extract(temp_spring_2020_average_FR,grid_fr, fun=c("sum","count"))
+temp_2020$mean <- temp_2020$sum/temp_2020$count
+
+temp_spring_var_2000_average_FR <- project(temp_spring_var_2000_average_FR, crs(grid_fr))
+temp_spring_var_2000_average_FR <- crop(temp_spring_var_2000_average_FR,ext(grid_fr))
+temp_var_2000 <- exact_extract(temp_spring_var_2000_average_FR,grid_fr, fun=c("sum","count"))
+temp_var_2000$mean <- temp_var_2000$sum/temp_var_2000$count
+
+temp_spring_var_2020_average_FR <- project(temp_spring_var_2020_average_FR, crs(grid_fr))
+temp_spring_var_2020_average_FR <- crop(temp_spring_var_2020_average_FR,ext(grid_fr))
+temp_var_2020 <- exact_extract(temp_spring_var_2020_average_FR,grid_fr, fun=c("sum","count"))
+temp_var_2020$mean <- temp_var_2020$sum/temp_var_2020$count
+
+grid_fr$tempspring2000 <- temp_2000$mean
+grid_fr$tempspring2020 <- temp_2020$mean
+grid_fr$tempspringvar2000 <- temp_var_2000$mean
+grid_fr$tempspringvar2020 <- temp_var_2020$mean
+grid_fr$precspring2000 <- prec_2000$mean
+grid_fr$precspring2020 <- prec_2020$mean
+
+st_write(grid_fr,"output/grid_fr_temp.gpkg")
 
 ### Load previously produced datasets
 
-grid_fr <- st_read("output/grid_fr.gpkg")
+grid_fr <- st_read("output/grid_fr_temp.gpkg")
 site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
 site_mainland_sf_reproj_fr <- site_mainland_sf_reproj[which(site_mainland_sf_reproj$scheme_code=="FR"),]
 grid_fr_outline <- grid_fr[,1] %>% summarise(id="europe")
 st_write(grid_fr_outline,"output/grid_fr_outline.gpkg")
+grid_fr_biogeo <- grid_fr %>% group_by(PLS) %>% summarise(id="PLS_region")#grid_eu_mainland %>% group_by(biogeo_area) %>% summarise(id="biogeo") 
+st_write(grid_fr_biogeo,"output/grid_fr_biogeo.gpkg")
+
+ss_centroids <- data.frame(st_coordinates(st_centroid(grid_fr_biogeo)),PLS=grid_fr_biogeo$PLS)
+
+ggplot(grid_fr_biogeo) + geom_sf(aes(fill=as.character(PLS)),col=NA) + 
+  scale_fill_viridis_d() + theme_minimal() + theme(legend.position = "none") +
+  geom_text(data=ss_centroids,aes(x=X,y=Y,label=PLS)) +
+  theme(text = element_text(colour = "white"),
+        panel.grid = element_line(colour = "white"),
+        axis.text = element_text(colour = "white"))
+
+ggsave("output/biogeo_area_fr.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+
 
 grid_fr_outline_crop <- st_crop(grid_fr_outline, xmin = 4, xmax = 5,ymin = 48, ymax = 49)
 
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379) # sqrt(4000000/pi)
+site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1414.214) # 2000*sqrt(2)/2
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500)
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000)
 
@@ -166,6 +235,7 @@ site_mainland_sf_reproj_fr <- st_transform(site_mainland_sf_reproj_fr,st_crs(pes
 
 
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379)
+site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1414.214)
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500)
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000)
 area_site_pesticide <- st_intersection(site_mainland_buffer, pesticide_fr)
@@ -180,9 +250,10 @@ value_site_pesticide <- ddply(area_site_pesticide_df,.(siteID,id,area),
                              .fun = function(x){
                                
                                CPE_2013 = mean(x$all_pesticide_exposure[which(x$year %in% c(2013:2015))],na.omit=TRUE)
-                               CPE_2020 = mean(x$all_pesticide_exposure[which(x$year %in% c(2019:2021))],na.omit=TRUE)
+                               CPE_2020 = mean(x$all_pesticide_exposure[which(x$year %in% c(2018:2020))],na.omit=TRUE)
+                               CPE_mean = mean(x$all_pesticide_exposure[which(x$year %in% c(2013:2019))],na.omit=TRUE)
                                
-                               return(data.frame(CPE_2013,CPE_2020))
+                               return(data.frame(CPE_2013,CPE_2020,CPE_mean))
                                
                              },.progress = "text")
 
@@ -192,8 +263,9 @@ value_site_pesticide <- ddply(value_site_pesticide,.(siteID),
                                 
                                 CPE2013 = weighted.mean(x$CPE_2013,x$area)
                                 CPE2020 = weighted.mean(x$CPE_2020,x$area)
+                                CPEmean = weighted.mean(x$CPE_mean,x$area)
                                 
-                                return(data.frame(CPE2013,CPE2020))
+                                return(data.frame(CPE2013,CPE2020,CPEmean))
                                 
                               },.progress = "text")
 
@@ -216,6 +288,7 @@ abs_intensity_fr <- raster("raw_data/nest/Crop_management_systems_dom50_def.tif"
 site_mainland_sf_reproj_fr <- st_transform(site_mainland_sf_reproj_fr,st_crs(abs_intensity_fr))
 
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379)
+site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1414.214) 
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500)
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000)
 area_site_agi <- exact_extract(abs_intensity_fr,site_mainland_buffer, fun=c("frac"))
@@ -243,10 +316,11 @@ value_site_mainland <- merge(value_site_mainland, value_site_intensity, by="site
 
 
 #saveRDS(value_site_mainland, "output/value_site_mainland_buffersmall.rds")
+#saveRDS(value_site_mainland, "output/value_site_mainland_buffersmall2.rds")
 #saveRDS(value_site_mainland, "output/value_site_mainland_buffermedium.rds")
 #saveRDS(value_site_mainland, "output/value_site_mainland_bufferhigh.rds")
 
-value_site_mainland_fr <- readRDS("output/value_site_mainland_buffersmall.rds")
+value_site_mainland_fr <- readRDS("output/value_site_mainland_buffersmall2.rds")
 
 #subsite_data_mainland_trend <- readRDS("output/subsite_data_mainland_trend.rds")
 #subsite_data_mainland_trend_fr <- subsite_data_mainland_trend[which(subsite_data_mainland_trend$scheme_code=="FR"),]
@@ -269,7 +343,7 @@ press_mainland_trend_fr <- ddply(distinct(subsite_data_mainland_trend_fr,siteID,
                                 precspring_2020 <- pressure_subdata$precspring2020
                                 shannon_2018 <- pressure_subdata$shannon2018
                                 CPE_2020 <- pressure_subdata$CPE2020
-                                
+
                                 d_impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13
                                 d_treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7
                                 d_agri <- (pressure_subdata$agri2018-pressure_subdata$agri2000)/19
@@ -338,6 +412,8 @@ press_mainland_trend_scale_fr[,c("d_impervious","d_treedensity","d_agri",
 
 #saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffersmall.rds") 
 #saveRDS(press_mainland_trend_scale_fr,"output/press_mainland_trend_scale_fr_buffersmall.rds")
+#saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffersmall2.rds") 
+#saveRDS(press_mainland_trend_scale_fr,"output/press_mainland_trend_scale_fr_buffersmall2.rds")
 #saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffermedium.rds") 
 #saveRDS(press_mainland_trend_scale_fr,"output/press_mainland_trend_scale_fr_buffermedium.rds")
 #saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_bufferhigh.rds") 
@@ -359,8 +435,10 @@ ggplot(press_mainland_trend_fr) +
 
 bird_data_fr <- readRDS("output/bird_data_fr.rds")
 grid_fr_outline <- st_read("output/grid_fr_outline.gpkg")
-press_trend_scale <- readRDS("output/press_mainland_trend_scale_fr_buffersmall.rds")
-press_trend <- readRDS("output/press_mainland_trend_fr_buffersmall.rds")
+#press_trend_scale <- readRDS("output/press_mainland_trend_scale_fr_buffersmall.rds")
+#press_trend <- readRDS("output/press_mainland_trend_fr_buffersmall.rds")
+press_trend_scale <- readRDS("output/press_mainland_trend_scale_fr_buffersmall2.rds")
+press_trend <- readRDS("output/press_mainland_trend_fr_buffersmall2.rds")
 #press_trend_scale <- readRDS("output/press_mainland_trend_scale_fr_buffermedium.rds")
 #press_trend <- readRDS("output/press_mainland_trend_fr_buffermedium.rds")
 #press_trend_scale <- readRDS("output/press_mainland_trend_scale_fr_bufferhigh.rds")
@@ -431,6 +509,9 @@ res_gam_bird_FR <- ddply(subsite_data_trend_fr,
 #saveRDS(res_gam_bird_FR,"output/res_gam_bird_fr_agi_CPE_nosignif.rds")
 res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2.rds")
 res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2.rds")
+
+res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2small2.rds")
+res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2small2.rds")
 
 res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2medium.rds")
 res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2medium.rds")
@@ -538,7 +619,21 @@ expected_effect_all$Diversité.des.paysages[which(expected_effect$Diversité.des
 expected_effect_all$Aires.protégées[which(expected_effect$Aires.protégées == "-" & expected_effect2$Aires.protégées == "-" )] <- "-"
 expected_effect_all$Aires.protégées[which(expected_effect$Aires.protégées == "+" & expected_effect2$Aires.protégées == "+" )] <- "+"
 
-obs_vs_expected <- merge(res_gam_bird_FR_correct[which(res_gam_bird_FR_correct$pressure_removed=="none"),],expected_effect_all, by.x = "sci_name_out", by.y="Species", all.y=TRUE)
+
+obs_vs_expected <- res_gam_bird_FR_correct[which(res_gam_bird_FR_correct$pressure_removed=="none"),]
+obs_vs_expected[,c("year:d_CPE","year:agi_high","year:agi_low","year:d_agri",
+                    "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
+                    "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping")][obs_vs_expected[,c("year:d_CPE","year:agi_high","year:agi_low","year:d_agri",
+                                                                                                                             "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
+                                                                                                                             "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping")] > value_max] <- value_max
+obs_vs_expected[,c("year:d_CPE","year:agi_high","year:agi_low","year:d_agri",
+                    "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
+                    "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping")][obs_vs_expected[,c("year:d_CPE","year:agi_high","year:agi_low","year:d_agri",
+                                                                                                                             "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
+                                                                                                                             "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping")] < -value_max] <- -value_max
+
+
+obs_vs_expected <- merge(obs_vs_expected,expected_effect_all, by.x = "sci_name_out", by.y="Species", all.y=TRUE)
 
 obs_vs_expected$Augmentation.des.températures <- factor(obs_vs_expected$Augmentation.des.températures, levels = c("--","-","0","+","++"))
 obs_vs_expected$Augmentation.de.l.artificialisation <- factor(obs_vs_expected$Augmentation.de.l.artificialisation, levels = c("--","-","0","+","++"))
@@ -799,7 +894,7 @@ pressure_FR_bird_long_d$variable <- factor(pressure_FR_bird_long_d$variable , le
 ggplot(pressure_FR_bird_long_d, aes(x = value_nosignif)) +
   geom_histogram(aes(fill = variable_nosignif),col="lightgrey",
                  bins = 30) + 
-  xlim(c(-0.27,0.27)) +
+  xlim(c(-0.21,0.21)) +
   scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
                             "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests on trend (Foh)",
                             "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:d_CPE" = "Pesticide exposure (\u03B4CPE)","year:agi_low" = "Low intensive farmland (Fal)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
@@ -999,7 +1094,7 @@ ggsave("output/trend_bird_FR_error.png",
 )
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="past")]^x/FR_all$value[which(FR_all$variable=="past")]^2019*100}, colour = "black", linetype=2, xlim=c(2000,2020)) +
+  geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="past")]^x/FR_all$value[which(FR_all$variable=="past")]^2019*100}, colour = "black", linetype=2, xlim=c(2000,2019)) +
   geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="tend")]^x/FR_all$value[which(FR_all$variable=="tend")]^2019*100}, colour = "red", xlim=c(2019,2050)) + 
   geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="s1")]^x/FR_all$value[which(FR_all$variable=="s1")]^2019*100}, colour = "#6293c9ff", xlim=c(2019,2050)) + 
   geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="s2")]^x/FR_all$value[which(FR_all$variable=="s2")]^2019*100}, colour = "#a8338fff", xlim=c(2019,2050)) + 
@@ -1116,7 +1211,7 @@ ggsave("output/trend_bird_FR_signif_error.png",
 )
 
 ggplot(data.frame(x = 2000:2050), aes(x)) +
-  geom_function(fun = function(x){FR_all_signif$value[which(FR_all_signif$variable=="past")]^x/FR_all_signif$value[which(FR_all_signif$variable=="past")]^2019*100}, colour = "black", linetype=2, xlim=c(2000,2020)) +
+  geom_function(fun = function(x){FR_all_signif$value[which(FR_all_signif$variable=="past")]^x/FR_all_signif$value[which(FR_all_signif$variable=="past")]^2019*100}, colour = "black", linetype=2, xlim=c(2000,2019)) +
   geom_function(fun = function(x){FR_all_signif$value[which(FR_all_signif$variable=="tend")]^x/FR_all_signif$value[which(FR_all_signif$variable=="tend")]^2019*100}, colour = "red", xlim=c(2019,2050)) + 
   geom_function(fun = function(x){FR_all_signif$value[which(FR_all_signif$variable=="s1")]^x/FR_all_signif$value[which(FR_all_signif$variable=="s1")]^2019*100}, colour = "#6293c9ff", xlim=c(2019,2050)) + 
   geom_function(fun = function(x){FR_all_signif$value[which(FR_all_signif$variable=="s2")]^x/FR_all_signif$value[which(FR_all_signif$variable=="s2")]^2019*100}, colour = "#a8338fff", xlim=c(2019,2050)) + 

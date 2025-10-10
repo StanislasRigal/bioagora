@@ -861,10 +861,20 @@ temp_spring_2020_average <- (temp_spring_2018 + temp_spring_2019 + temp_spring_2
 writeRaster(temp_spring_2000_average,'raw_data/climate/temp_spring_2000_average.tif')
 writeRaster(temp_spring_2020_average,'raw_data/climate/temp_spring_2020_average.tif')
 
+temp_spring_2000_average_FR <- (temp_spring_2000 + temp_spring_2001 + temp_spring_2002)/3
+temp_spring_2020_average_FR <- (temp_spring_2018 + temp_spring_2019 + temp_spring_2020)/3
+writeRaster(temp_spring_2000_average_FR,'raw_data/climate/temp_spring_2000_average_FR.tif')
+writeRaster(temp_spring_2020_average_FR,'raw_data/climate/temp_spring_2020_average_FR.tif')
+
 temp_spring_var_2000_average <- (temp_spring_var_1998 + temp_spring_var_1999 + temp_spring_var_2000 + temp_spring_var_2001 + temp_spring_var_2002)/5
 temp_spring_var_2020_average <- (temp_spring_var_2018 + temp_spring_var_2019 + temp_spring_var_2020 + temp_spring_var_2021 + temp_spring_var_2022)/5
 writeRaster(temp_spring_var_2000_average,'raw_data/climate/temp_spring_var_2000_average.tif')
 writeRaster(temp_spring_var_2020_average,'raw_data/climate/temp_spring_var_2020_average.tif')
+
+temp_spring_var_2000_average_FR <- (temp_spring_var_2000 + temp_spring_var_2001 + temp_spring_var_2002)/3
+temp_spring_var_2020_average_FR <- (temp_spring_var_2018 + temp_spring_var_2019 + temp_spring_var_2020)/3
+writeRaster(temp_spring_var_2000_average_FR,'raw_data/climate/temp_spring_var_2000_average_FR.tif')
+writeRaster(temp_spring_var_2020_average_FR,'raw_data/climate/temp_spring_var_2020_average_FR.tif')
 
 temp_spring_2000_average <- rast(raster(x = "raw_data/climate/temp_spring_2000_average.tif"))
 temp_spring_2020_average <- rast(raster(x = "raw_data/climate/temp_spring_2020_average.tif"))
@@ -1059,6 +1069,11 @@ prec_spring_2000_average <- (prec_spring_1998 + prec_spring_1999 + prec_spring_2
 prec_spring_2020_average <- (prec_spring_2018 + prec_spring_2019 + prec_spring_2020 + prec_spring_2021 + prec_spring_2022)/5
 writeRaster(prec_spring_2000_average,'raw_data/climate/prec_spring_2000_average.tif')
 writeRaster(prec_spring_2020_average,'raw_data/climate/prec_spring_2020_average.tif')
+
+prec_spring_2000_average_FR <- (prec_spring_2000 + prec_spring_2001 + prec_spring_2002)/3
+prec_spring_2020_average_FR <- (prec_spring_2018 + prec_spring_2019 + prec_spring_2020)/3
+writeRaster(prec_spring_2000_average_FR,'raw_data/climate/prec_spring_2000_average_FR.tif')
+writeRaster(prec_spring_2020_average_FR,'raw_data/climate/prec_spring_2020_average_FR.tif')
 
 prec_spring_var_2000_average <- (prec_spring_var_1998 + prec_spring_var_1999 + prec_spring_var_2000 + prec_spring_var_2001 + prec_spring_var_2002)/5
 prec_spring_var_2020_average <- (prec_spring_var_2018 + prec_spring_var_2019 + prec_spring_var_2020 + prec_spring_var_2021 + prec_spring_var_2022)/5

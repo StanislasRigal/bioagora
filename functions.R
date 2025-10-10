@@ -6811,6 +6811,41 @@ overall_mean_sd_trend_FR <- function(data){
 }
 
 
+overall_mean_sd_trend_FR_weight <- function(data){
+  data$dev_exp <- data$dev_exp/max(data$dev_exp)
+  n <- length(na.omit(data$trend_s1))
+  mu_past <- exp(weighted.mean(data$trend_past,data$dev_exp,na.rm=TRUE))
+  se_past <- mu_past/sqrt(n)*sd(data$trend_past)
+  mu_tend <- exp(weighted.mean(data$trend_tend,data$dev_exp,na.rm=TRUE))
+  se_tend <- mu_tend/sqrt(n)*sd(data$trend_tend)
+  mu_s1 <- exp(weighted.mean(data$trend_s1,data$dev_exp,na.rm=TRUE))
+  se_s1 <- mu_s1/sqrt(n)*sd(data$trend_s1)
+  mu_s2 <- exp(weighted.mean(data$trend_s2,data$dev_exp,na.rm=TRUE))
+  se_s2 <- mu_s2/sqrt(n)*sd(data$trend_s2)
+  mu_s3 <- exp(weighted.mean(data$trend_s3,data$dev_exp,na.rm=TRUE))
+  se_s3 <- mu_s3/sqrt(n)*sd(data$trend_s3)
+  mu_s4 <- exp(weighted.mean(data$trend_s4,data$dev_exp,na.rm=TRUE))
+  se_s4 <- mu_s4/sqrt(n)*sd(data$trend_s4)
+  
+  mu_past_signif <- exp(weighted.mean(data$trend_past_signif,data$dev_exp,na.rm=TRUE))
+  se_past_signif <- mu_past_signif/sqrt(n)*sd(data$trend_past_signif)
+  mu_tend_signif <- exp(weighted.mean(data$trend_tend_signif,data$dev_exp,na.rm=TRUE))
+  se_tend_signif <- mu_tend_signif/sqrt(n)*sd(data$trend_tend_signif)
+  mu_s1_signif <- exp(weighted.mean(data$trend_s1_signif,data$dev_exp,na.rm=TRUE))
+  se_s1_signif <- mu_s1_signif/sqrt(n)*sd(data$trend_s1_signif)
+  mu_s2_signif <- exp(weighted.mean(data$trend_s2_signif,data$dev_exp,na.rm=TRUE))
+  se_s2_signif <- mu_s2_signif/sqrt(n)*sd(data$trend_s2_signif)
+  mu_s3_signif <- exp(weighted.mean(data$trend_s3_signif,data$dev_exp,na.rm=TRUE))
+  se_s3_signif <- mu_s3_signif/sqrt(n)*sd(data$trend_s3_signif)
+  mu_s4_signif <- exp(weighted.mean(data$trend_s4_signif,data$dev_exp,na.rm=TRUE))
+  se_s4_signif <- mu_s4_signif/sqrt(n)*sd(data$trend_s4_signif)
+  
+  return(data.frame(mu_past,se_past,mu_tend,se_tend,mu_s1,se_s1,mu_s2,se_s2,mu_s3,se_s3,
+                    mu_s4,se_s4,
+                    mu_past_signif,se_past_signif,mu_tend_signif,se_tend_signif,mu_s1_signif,se_s1_signif,mu_s2_signif,se_s2_signif,mu_s3_signif,se_s3_signif,
+                    mu_s4_signif,se_s4_signif,n))
+}
+
 
 
 mean_pressure_FR <- function(data){
