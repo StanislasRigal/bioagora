@@ -49,6 +49,7 @@ library(RVAideMemoire)
 library(MASS)
 library("ggrepel")
 library(ggpubr)
+library(ggstats)
 
 # predicted data
 library(ncdf4)

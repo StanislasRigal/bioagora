@@ -57,6 +57,7 @@ grid_fr_outline <- grid_fr[,1] %>% summarise(id="europe")
 st_write(grid_fr_outline,"output/grid_fr_outline.gpkg")
 grid_fr_biogeo <- grid_fr %>% group_by(PLS) %>% summarise(id="PLS_region")#grid_eu_mainland %>% group_by(biogeo_area) %>% summarise(id="biogeo") 
 st_write(grid_fr_biogeo,"output/grid_fr_biogeo.gpkg")
+grid_fr_outline <- st_read("output/grid_fr_outline.gpkg")
 
 ss_centroids <- data.frame(st_coordinates(st_centroid(grid_fr_biogeo)),PLS=grid_fr_biogeo$PLS)
 
@@ -68,6 +69,20 @@ ggplot(grid_fr_biogeo) + geom_sf(aes(fill=as.character(PLS)),col=NA) +
         axis.text = element_text(colour = "white"))
 
 ggsave("output/biogeo_area_fr.png",
+       width = 8,
+       height = 8,
+       dpi = 300
+)
+
+grid_fr_outline_plot <- st_transform(grid_fr_outline, crs="EPSG:27572")
+site_mainland_sf_reproj_fr_plot <- st_transform(site_mainland_sf_reproj[which(site_mainland_sf_reproj$siteID %in% unique(bird_data_fr$siteID)),], crs="EPSG:27572")
+
+ggplot(grid_fr_outline_plot) +
+  geom_sf() +
+  geom_sf(data=site_mainland_sf_reproj_fr_plot, size=1) +
+  theme_minimal()
+
+ggsave("output/grid_fr_outline_plot.png",
        width = 8,
        height = 8,
        dpi = 300
@@ -921,12 +936,49 @@ ggplot(pressure_FR_bird_long_d, aes(x = value_nosignif)) +
         panel.grid.major.y = element_blank(),
         axis.title = element_blank())
 
-
 ggsave("output/pressure_trend_bird_FR_hist.png",
        width = 6,
        height = 6,
        dpi = 300
 )
+
+pressure_FR_bird_long_d$signif2 <- NA
+pressure_FR_bird_long_d$signif2[which(pressure_FR_bird_long_d$signif==0 & pressure_FR_bird_long_d$value_nosignif > 0)] <- "Positive, p-value > 0.05"
+pressure_FR_bird_long_d$signif2[which(pressure_FR_bird_long_d$signif==0 & pressure_FR_bird_long_d$value_nosignif < 0)] <- "Negative, p-value > 0.05"
+pressure_FR_bird_long_d$signif2[which(pressure_FR_bird_long_d$signif==1 & pressure_FR_bird_long_d$value_nosignif > 0)] <- "Positive, p-value < 0.05"
+pressure_FR_bird_long_d$signif2[which(pressure_FR_bird_long_d$signif==1 & pressure_FR_bird_long_d$value_nosignif < 0)] <- "Negative, p-value < 0.05"
+pressure_FR_bird_long_d$signif2 <- factor(pressure_FR_bird_long_d$signif2, levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
+
+pressure_FR_bird_likert <- reshape2::dcast(pressure_FR_bird_long_d, sci_name_out ~ variable, value.var = "signif2")
+
+for(i in 2:14){
+  pressure_FR_bird_likert[,i] <- factor(pressure_FR_bird_likert[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
+}
+
+pressure_FR_bird_likert <- pressure_FR_bird_likert[,c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_shannon",              
+                                                      "year:protectedarea_perc", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
+                                                      "year:d_agri","year:agi_low", "year:agi_high","year:d_CPE")]
+
+gglikert(pressure_FR_bird_likert,add_totals = FALSE) +
+  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
+                            "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests on trend (Foh)",
+                            "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:d_CPE" = "Pesticide exposure (CPE)","year:agi_low" = "Low intensive farmland (Fal)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland (Fam)", "year:agi_high" = "High intensive farmland (Fah)"
+  )) + scale_fill_manual(values = c("Negative, p-value > 0.05" = "#fdae61ff","Negative, p-value < 0.05" = "#d7191cff" ,"Positive, p-value < 0.05" = "#2c7bb6ff", "Positive, p-value > 0.05" = "#abd9e9ff")) +
+  theme(legend.position = "none", 
+        strip.text.x = element_blank(),
+        strip.text.y.left = element_text(angle = 0),
+        strip.background.y = element_rect(fill = NA),
+        strip.placement = "outside",
+        panel.grid.major.y = element_blank(),
+        axis.title = element_blank())
+
+ggsave("output/pressure_trend_bird_FR_likert.png",
+       width = 6,
+       height = 6,
+       dpi = 300
+)
+
 
 
 pressure_FR_bird <- res_gam_bird_FR_correct[which(res_gam_bird_FR_correct$pressure_removed =="none"),]
@@ -1292,3 +1344,28 @@ ggsave("output/trend_bird_FR_all_signif_effect.png",
        height = 6,
        dpi = 300
 )
+
+### species list
+
+species_list_fr <- data.frame(Species = STOC_species)
+species_list_fr$Index <- NA
+species_list_fr$Index[which(species_list_fr$Species %in% farmland_species)] <- "FaBI"
+species_list_fr$Index[which(species_list_fr$Species %in% forest_species)] <- "FoBI"
+species_list_fr$ABI <- NA
+species_list_fr$ABI[which(species_list_fr$Species %in% unique(res_gam_bird_FR_correct$sci_name_out))] <- "ABI"
+
+species_list_fr <- merge(species_list_fr, res_gam_bird_FR_nosignif[which(res_gam_bird_FR_nosignif$pressure_removed == "none"),], by.x="Species",by.y = "sci_name_out", all.x=TRUE)
+
+species_list_fr$pressure_removed <- NULL
+species_list_fr$PLS <- NULL
+
+names(species_list_fr)[6:27] <- c("Openland_vs_forest_on_abundance","Otherland_vs_forest_on_abundance","Urban_vs_forest_on_abundance",
+                                  "Temperature_on_abundance","Precipitation_on_abundance","Landscape_diversity_on_abundance",
+                                  "Primary_production_on_abundance","d_urbanisation_on_trend","d_tree_density_on_trend",
+                                  "lowmedium_intensive_forest_on_trend","high_intensive_forest_on_trend","d_agricultural_cover_on_trend",
+                                  "low_intensive_farmland_on_trend","high_intensive_farmland_on_trend","pesticide_exposure_on_trend",
+                                  "d_temperature_on_trend","d_temperature_variation_on_trend","d_precipitation_on_trend",
+                                  "d_landscape_diversity_on_trend","Protected_area_on_trend","Deviance_explained",
+                                  "Number_observation")
+
+write.csv(species_list_fr,"output/species_list_fr.csv", row.names = FALSE)
