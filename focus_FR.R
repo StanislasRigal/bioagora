@@ -522,17 +522,17 @@ res_gam_bird_FR <- ddply(subsite_data_trend_fr,
 
 #saveRDS(res_gam_bird_FR,"output/res_gam_bird_fr_agi_CPE.rds")
 #saveRDS(res_gam_bird_FR,"output/res_gam_bird_fr_agi_CPE_nosignif.rds")
-res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2.rds")
-res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2.rds")
+#res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2.rds")
+#res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2.rds")
 
 res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2small2.rds")
 res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2small2.rds")
 
-res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2medium.rds")
-res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2medium.rds")
+#res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2medium.rds")
+#res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2medium.rds")
 
-res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2high.rds")
-res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2high.rds")
+#res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2high.rds")
+#res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2high.rds")
 
 ### select good model fit and compare with PECBMS trends
 
