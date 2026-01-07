@@ -577,7 +577,7 @@ names(plot_scenario)[2] <- "scenario"
 
 
 plot_scenario <- data.frame(scenario = c("BAU","SSP1","NAC","NFN","NFS"),
-                            d_impervious = c(mean(press_mainland_trend$d_impervious, na.rm=TRUE),
+                            d_impervious = 0.01*c(mean(press_mainland_trend$d_impervious, na.rm=TRUE),
                                              mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
                                              mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
                                              mean(press_mainland_trend$impervious_2018)*(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("urban"))]-1)/(2050-2018),
@@ -612,7 +612,7 @@ plot_scenario <- data.frame(scenario = c("BAU","SSP1","NAC","NFN","NFS"),
                                           mean(press_mainland_trend$eulandsystem_farmland_high)*lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))],
                                           mean(press_mainland_trend$eulandsystem_farmland_high)*lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))],
                                           mean(press_mainland_trend$eulandsystem_farmland_high)*lulc_pls_short$nfs[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]/lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("farmland_high"))]),
-                            d_treedensity = c(mean(press_mainland_trend$d_treedensity, na.rm=TRUE),
+                            d_treedensity = 0.01*c(mean(press_mainland_trend$d_treedensity, na.rm=TRUE),
                                               mean(press_mainland_trend$treedensity_2018)*(sum(lulc_pls_short$ssp1[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018),
                                               mean(press_mainland_trend$treedensity_2018)*(sum(lulc_pls_short$nac[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018),
                                               mean(press_mainland_trend$treedensity_2018)*(sum(lulc_pls_short$nfn[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])/sum(lulc_pls_short$initial[which(lulc_pls_short$PLS=="europe" & lulc_pls_short$variable %in% c("forest_lowmedium","forest_high"))])-1)/(2050-2018),
@@ -644,6 +644,7 @@ plot_scenario$variable <- recode(plot_scenario$variable, d_impervious = "D urban
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("D urbanisation","D agricultural surface","D tree density","D landscape diversity")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="dodge", stat="identity") +
   scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
+  scale_y_continuous(labels = scales::percent_format()) +
   facet_wrap(~variable, scales="free_y", nrow=1) +
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
@@ -657,7 +658,8 @@ ggsave("output/scenario_detail1.png",
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("Low intensive farmland","Medium intensive farmland","High intensive farmland")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="fill", stat="identity", aes(alpha=variable)) +
   scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
-  scale_alpha_manual (values = c("Low intensive farmland"=1,"Medium intensive farmland"=0.7,"High intensive farmland"=0.5)) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_alpha_manual (values = c("Low intensive farmland"=0.5,"Medium intensive farmland"=0.7,"High intensive farmland"=1)) +
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
 
@@ -670,7 +672,8 @@ ggsave("output/scenario_detail_agri.png",
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("Low/medium intensive forest","High intensive forest")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="fill", stat="identity", aes(alpha=variable)) +
   scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
-  scale_alpha_manual (values = c("Low/medium intensive forest" = 1,"High intensive forest" = 0.5)) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_alpha_manual (values = c("Low/medium intensive forest" = 0.5,"High intensive forest" = 1)) +
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
 
@@ -683,6 +686,7 @@ ggsave("output/scenario_detail_foret.png",
 ggplot(plot_scenario[which(plot_scenario$variable %in% c("Protected area percent")),], aes(fill=scenario, y=value, x=scenario)) + 
   geom_bar(position="dodge", stat="identity") +
   scale_fill_manual(values = c("BAU"="#f88587ff","SSP1"="#96c3dcff","NFN"="#a4db77ff","NFS"="#fbb25cff","NAC"="#bea0ccff")) + 
+  scale_y_continuous(labels = scales::percent_format()) +
   theme_minimal() +
   theme(legend.position="none") + xlab("") + ylab("")
 

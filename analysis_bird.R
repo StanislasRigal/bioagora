@@ -916,7 +916,7 @@ bird_data_clean <- readRDS("output/bird_data_clean.rds")
 
 ## site and bird data
 
-sites <- read.table(file = "raw_data/pecbms_bird_data/sites.txt", header = TRUE, sep = "\t")
+sites <- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/sites2.txt", header = TRUE, sep = "\t")
 
 site_mainland <- sites[which(sites$Long_WGS84 > -10 ),] # remove canary islands
 
@@ -1173,18 +1173,18 @@ ggsave("output/PECBMS_site_selected.png",
 
 site_pls <- unique(press_mainland_trend_scale[,c("siteID","PLS")])
 year_site_pls <- merge(subsite_data_mainland_trend,site_pls, by="siteID")
-year_site <- data.frame(year_site_pls %>% group_by(siteID,scheme,year) %>% summarise(count=n()))
-year_site <- data.frame(year_site %>% group_by(scheme,year) %>% summarise(count=n()))
-year_site <- data.frame(year_site %>% group_by(scheme) %>% mutate(label=case_when(year==max(year) ~ scheme)))
+year_site <- data.frame(year_site_pls %>% group_by(siteID,country,year) %>% summarise(count=n()))
+year_site <- data.frame(year_site %>% group_by(country,year) %>% summarise(count=n()))
+year_site <- data.frame(year_site %>% group_by(country) %>% mutate(label=case_when(year==max(year) ~ country)))
 year_site2 <- data.frame(year_site_pls %>% group_by(siteID,PLS,year) %>% summarise(count=n()))
 year_site2 <- na.omit(data.frame(year_site2 %>% group_by(PLS,year) %>% summarise(count=n())))
 year_site2$PLS <- factor(as.character(year_site2$PLS), levels = as.character(c(1:25)))
 year_site2 <- data.frame(year_site2 %>% group_by(PLS) %>% mutate(label=case_when(year==max(year) ~ PLS)))
 
-ggplot(year_site, aes(y=count, col=scheme, x=year)) +
+ggplot(year_site, aes(y=count, col=country, x=year)) +
   geom_line() +
   scale_y_log10(name = "Number of sites") + 
-  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = label, fill=scheme),col="black",nudge_x = 4,na.rm = TRUE) +
+  geom_vline(xintercept = 2021) + geom_label_repel(aes(label = label, fill=country),col="black",nudge_x = 4,na.rm = TRUE) +
   theme_modern() +
   theme(legend.position = "none")
 

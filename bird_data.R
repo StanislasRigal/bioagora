@@ -1,10 +1,12 @@
 # load bird data
 
 bird_data <- read.table(file = "raw_data/pecbms_bird_data/all_count_bird_data_bv.txt", header = TRUE, sep = "\t")
+bird_data<- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/all_count_bird_data_bv2.txt", header = TRUE, sep = "\t")
 
 # load sites
 
 sites <- read.table(file = "raw_data/pecbms_bird_data/sites.txt", header = TRUE, sep = "\t")
+sites <- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/sites2.txt", header = TRUE, sep = "\t")
 # sites <- sites[which(sites$country=="France"),]
 # bird_data <- bird_data[which(bird_data$siteID %in% unique(sites$siteID)),]
 
@@ -184,7 +186,7 @@ bird_data_preclean <- bird_data_preclean[which(!(bird_data_preclean$siteID %in% 
 bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count>0),]
 
 # merge with site information
-bird_data_preclean <- merge(bird_data_preclean, sites[,c("scheme", "scheme_code", "siteID", "Long_WGS84", "Lat_WGS84",
+bird_data_preclean <- merge(bird_data_preclean, sites[,c("scheme_code", "siteID", "Long_WGS84", "Lat_WGS84",
                                                    "time_effort","area_sampled_m2", "country", "method", "count_unit", "species")], by="siteID", all.x=TRUE)
 
 # multiply by 2 for pair and territories (as stated in the PECBMS_SLD_information_v1.pdf)
@@ -192,7 +194,9 @@ bird_data_preclean$count[which(bird_data_preclean$count_unit %in% c("pairs","ter
 
 # remove records of large groups
 bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.99)),]
+bird_data_preclean$count[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.99))] <- quantile(bird_data_preclean$count,0.99)
 
 bird_data_clean <- bird_data_preclean
 
 saveRDS(bird_data_clean,"output/bird_data_clean.rds")
+saveRDS(bird_data_clean,"output/bird_data_clean_cap.rds")
