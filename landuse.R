@@ -651,8 +651,13 @@ woodprod_average <- rast(raster(x = "raw_data/Wood_prod/WoodProductionMaps/woodp
 
 ## Habitat diversity (simpson diversity of habitat proportion)
 
-clc_land_cover <- raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
-clc_land_cover_2000 <- raster(x = "raw_data/land_cover/u2006_clc2000_v2020_20u1_raster100m/DATA/U2006_CLC2000_V2020_20u1.tif")
+#clc_land_cover <- raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+#clc_land_cover_2000 <- raster(x = "raw_data/land_cover/u2006_clc2000_v2020_20u1_raster100m/DATA/U2006_CLC2000_V2020_20u1.tif")
+
+#now from https://www.eea.europa.eu/en/datahub/datahubitem-view/a55d9224-a326-4cb1-9b9c-3a324520341a?activeAccordion=1069872%2C1069948
+clc_land_cover <- rast(x = "raw_data/land_cover/eea_r_3035_100_m_clc-2018-acc_p_2017-2018_v01_r00/CLC2018ACC_V2018_20.tif")
+clc_land_cover_2000 <- rast(x = "raw_data/land_cover/eea_r_3035_100_m_clc-2000-acc_p_1999-2001_v02_r00/CLC2000ACC_V2018_20.tif")
+
 
 
 # Productivity
@@ -2168,6 +2173,11 @@ clc_land_cover2 <- classify(rast(clc_land_cover),cbind(c(1:44,48),
                                                          rep(21,3),rep(22,3),rep(23,1),rep(24,4),
                                                          rep(31,3),rep(32,4),rep(33,5),rep(41,2),
                                                          rep(42,3),rep(51,2),rep(52,3),NA)))
+clc_land_cover2 <- classify(rast(clc_land_cover),cbind(c(1:44,48),
+                                                       c(rep(11,2),rep(12,4),rep(13,3),rep(14,2),
+                                                         rep(21,3),rep(22,3),rep(23,1),rep(24,4),
+                                                         rep(31,3),rep(32,4),rep(33,5),rep(41,2),
+                                                         rep(42,3),rep(51,2),rep(52,3),NA)))
 writeRaster(clc_land_cover2,'raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/clc_land_cover2.tif')
 clc_land_cover2 <- rast(raster(x = "raw_data/land_cover/u2018_clc2018_v2020_20u1_raster100m/DATA/clc_land_cover2.tif"))
 
@@ -2210,27 +2220,82 @@ ggplot(grid_eu_test) +
 
 ### apply
 
-temp2 <- exact_extract(clc_land_cover2,grid_eu,fun="frac")
-temp2$shannon <- apply(temp2,1,
+temp2 <- exact_extract(clc_land_cover,grid_eu,fun="frac")
+temp2$shannon <- apply(temp2[,c("frac_211","frac_212","frac_213","frac_221","frac_222","frac_223","frac_231","frac_241","frac_242","frac_243","frac_244",
+                                "frac_311","frac_312","frac_313","frac_321","frac_322","frac_323","frac_324","frac_331","frac_332","frac_333","frac_334","frac_335",
+                                "frac_411","frac_412","frac_421","frac_422","frac_423")],1,
                        function(x){
                          x_nnull <- x[which(x>0)]
                          shannon_i <- -sum(x_nnull*log(x_nnull))
                          return(shannon_i)
                        })
-temp2$agri <- temp2$frac_21 + temp2$frac_22 + temp2$frac_23 + temp2$frac_24 + temp2$frac_32
+#temp2$agri <- temp2$frac_21 + temp2$frac_22 + temp2$frac_23 + temp2$frac_24 + temp2$frac_32
+temp2$open <- temp2$frac_211 + temp2$frac_212 + temp2$frac_213 + 
+  temp2$frac_221 + temp2$frac_222 + temp2$frac_223 + 
+  temp2$frac_231 +
+  temp2$frac_241 + temp2$frac_242 + temp2$frac_243 + temp2$frac_244 +
+  temp2$frac_321 + temp2$frac_322 + temp2$frac_323 +
+  temp2$frac_333
+temp2$agri <- temp2$frac_211 + temp2$frac_212 + temp2$frac_213 + 
+  temp2$frac_221 + temp2$frac_222 + temp2$frac_223 + 
+  temp2$frac_231 +
+  temp2$frac_241 + temp2$frac_242 + temp2$frac_243 + temp2$frac_244
 
+temp2$frac_1 <- temp2$frac_111 + temp2$frac_112 + temp2$frac_121 + temp2$frac_122 + temp2$frac_123 + temp2$frac_124 
+temp2$frac_2 <- temp2$frac_211 + temp2$frac_212 + temp2$frac_213 + temp2$frac_221 + temp2$frac_222 + temp2$frac_223 + temp2$frac_231 + temp2$frac_241 + temp2$frac_242 + temp2$frac_243 + temp2$frac_244 
+temp2$frac_3 <- temp2$frac_311 + temp2$frac_312 + temp2$frac_313 + temp2$frac_321 + temp2$frac_322 + temp2$frac_323 + temp2$frac_324 + temp2$frac_331 + temp2$frac_332 + temp2$frac_333 + temp2$frac_334 + temp2$frac_335  
+temp2$frac_4 <- temp2$frac_411 + temp2$frac_412 + temp2$frac_421 + temp2$frac_422 + temp2$frac_423
+temp2$frac_5 <- temp2$frac_511 + temp2$frac_512 + temp2$frac_521 + temp2$frac_522 + temp2$frac_523 
 
-temp3 <- exact_extract(clc_land_cover_20002,grid_eu,fun="frac")
-temp3$shannon <- apply(temp3,1,
+temp2$frac_max <- apply(temp2[,c("frac_1", "frac_2", "frac_3", "frac_4", "frac_5")],1,
+                        function(x){
+                          return(names(which.max(x)))
+                        })
+
+temp3 <- exact_extract(clc_land_cover_2000,grid_eu,fun="frac")
+temp3$shannon <- apply(temp3[,c("frac_211","frac_212","frac_213","frac_221","frac_222","frac_223","frac_231","frac_241","frac_242","frac_243","frac_244",
+                                "frac_311","frac_312","frac_313","frac_321","frac_322","frac_323","frac_324","frac_331","frac_332","frac_333","frac_334","frac_335",
+                                "frac_411","frac_412","frac_421","frac_422","frac_423")],1,
                        function(x){
                          x_nnull <- x[which(x>0)]
                          shannon_i <- -sum(x_nnull*log(x_nnull))
                          return(shannon_i)
                        })
-temp3$agri <- temp3$frac_21 + temp3$frac_22 + temp3$frac_23 + temp3$frac_24 + temp3$frac_32
+#temp3$agri <- temp3$frac_21 + temp3$frac_22 + temp3$frac_23 + temp3$frac_24 + temp3$frac_32
+temp3$open <- temp3$frac_211 + temp3$frac_212 + temp3$frac_213 + 
+  temp3$frac_221 + temp3$frac_222 + temp3$frac_223 + 
+  temp3$frac_231 +
+  temp3$frac_241 + temp3$frac_242 + temp3$frac_243 + temp3$frac_244 +
+  temp3$frac_321 + temp3$frac_322 + temp3$frac_323 +
+  temp3$frac_333
+temp3$agri <- temp3$frac_211 + temp3$frac_212 + temp3$frac_213 + 
+  temp3$frac_221 + temp3$frac_222 + temp3$frac_223 + 
+  temp3$frac_231 +
+  temp3$frac_241 + temp3$frac_242 + temp3$frac_243 + temp3$frac_244
+
+temp3$frac_1 <- temp3$frac_111 + temp3$frac_112 + temp3$frac_121 + temp3$frac_122 + temp3$frac_123 + temp3$frac_124 
+temp3$frac_2 <- temp3$frac_211 + temp3$frac_212 + temp3$frac_213 + temp3$frac_221 + temp3$frac_222 + temp3$frac_223 + temp3$frac_231 + temp3$frac_241 + temp3$frac_242 + temp3$frac_243 + temp3$frac_244 
+temp3$frac_3 <- temp3$frac_311 + temp3$frac_312 + temp3$frac_313 + temp3$frac_321 + temp3$frac_322 + temp3$frac_323 + temp3$frac_324 + temp3$frac_331 + temp3$frac_332 + temp3$frac_333 + temp3$frac_334 + temp3$frac_335  
+temp3$frac_4 <- temp3$frac_411 + temp3$frac_412 + temp3$frac_421 + temp3$frac_422 + temp3$frac_423
+temp3$frac_5 <- temp3$frac_511 + temp3$frac_512 + temp3$frac_521 + temp3$frac_522 + temp3$frac_523 
+
+temp3$frac_max <- apply(temp3[,c("frac_1", "frac_2", "frac_3", "frac_4", "frac_5")],1,
+                        function(x){
+                          return(names(which.max(x)))
+                        })
+
+
 
 grid_eu$shannon_2018 <- temp2$shannon
 grid_eu$shannon_2000 <- temp3$shannon
+
+grid_eu$agri_2000 <- temp3$agri
+grid_eu$agri_2018 <- temp2$agri
+
+grid_eu$open_2000 <- temp3$open
+grid_eu$open_2018 <- temp2$open
+
+grid_eu_mainland$frac_max_2000 <- temp3$frac_max
 
 grid_eu$DIST_BORD <- grid_eu$TOT_P_2011 <- grid_eu$TOT_P_2018 <-
   grid_eu$Y_LLC <- grid_eu$X_LLC <- NULL

@@ -1,7 +1,36 @@
 # load bird data
 
 bird_data <- read.table(file = "raw_data/pecbms_bird_data/all_count_bird_data_bv.txt", header = TRUE, sep = "\t")
-bird_data<- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/all_count_bird_data_bv2.txt", header = TRUE, sep = "\t")
+bird_data <- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/all_count_bird_data_bv2.txt", header = TRUE, sep = "\t")
+
+# merge with Portugal data
+
+bird_data_portugal_path <- list.files(path = "raw_data/pecbms_bird_data/data_Portugal", pattern = ".csv", full.names = TRUE)
+bird_data_portugal_list <- lapply(bird_data_portugal_path, data.table::fread, sep=";")
+
+for( i in seq_along(bird_data_portugal_list)){
+  
+  bird_data_portugal_list[[i]]$euring_out <- str_match(bird_data_portugal_path[i], "Portugal/(.*?)_1_22_counts")[2]
+  
+}
+
+bird_data_portugal <- data.frame(rbindlist(bird_data_portugal_list))
+
+euring_speciesname <- distinct(bird_data[,c("euring_out","sci_name_out")])
+euring_speciesname$euring_out <- as.character(euring_speciesname$euring_out)
+
+bird_data_portugal <- merge(bird_data_portugal,euring_speciesname, by ="euring_out", all.x=TRUE)
+bird_data_portugal <- merge(bird_data_portugal,portugal_sites[,c("Plot_nr","Plot_name")], by.x ="site", by.y= "Plot_nr", all.x=TRUE)
+
+bird_data_portugal <- na.omit(bird_data_portugal)
+
+bird_data_portugal2 <- data.frame(euring_out=bird_data_portugal$euring_out, sci_name_out=bird_data_portugal$sci_name_out, siteID=bird_data_portugal$Plot_name,
+                                  year=bird_data_portugal$year, count=bird_data_portugal$count, indicator=NA)
+
+bird_data_with_portugal <- rbind(bird_data,bird_data_portugal2)
+
+write.csv(bird_data_with_portugal, "raw_data/pecbms_bird_data/bird_data_with_portugal.csv", row.names = FALSE)
+bird_data <- read.csv("raw_data/pecbms_bird_data/bird_data_with_portugal.csv", header = TRUE)
 
 # load sites
 
@@ -9,6 +38,21 @@ sites <- read.table(file = "raw_data/pecbms_bird_data/sites.txt", header = TRUE,
 sites <- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/sites2.txt", header = TRUE, sep = "\t")
 # sites <- sites[which(sites$country=="France"),]
 # bird_data <- bird_data[which(bird_data$siteID %in% unique(sites$siteID)),]
+
+# merge with Portugal sites
+
+portugal_sites <- read.csv("raw_data/pecbms_bird_data/plots_4fev2026_clean.csv")
+
+portugal_sites2 <- data.frame(siteID = portugal_sites$Plot_name, scheme_code ="PT", country = "Portugal",
+                              Long_WGS84 = portugal_sites$Location_X, Lat_WGS84=portugal_sites$Location_Y,
+                              Long_ETRS89 = NA, Lat_ETRS89 = NA, method ="Point counts", num_visits = NA,
+                              count_unit = "individuals", species = "all species", time_effort = NA,
+                              num_points = NA, transect_length = NA, area_sampled_m2 = 100000000)
+
+sites_with_portugal <- rbind(sites, portugal_sites2)
+
+write.csv(sites_with_portugal, "raw_data/pecbms_bird_data/sites_with_portugal.csv", row.names = FALSE)
+sites <- read.csv("raw_data/pecbms_bird_data/sites_with_portugal.csv", header = TRUE)
 
 # plot sampled site on a map
 
@@ -183,7 +227,7 @@ sites_to_remove <- sites$siteID[which(sites$scheme_code == "CZ_LSD")]
 bird_data_preclean <- bird_data_preclean[which(!(bird_data_preclean$siteID %in% sites_to_remove)),]
 
 # remove 0 value from territory survey
-bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count>0),]
+#bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count>0),]
 
 # merge with site information
 bird_data_preclean <- merge(bird_data_preclean, sites[,c("scheme_code", "siteID", "Long_WGS84", "Lat_WGS84",
@@ -193,10 +237,12 @@ bird_data_preclean <- merge(bird_data_preclean, sites[,c("scheme_code", "siteID"
 bird_data_preclean$count[which(bird_data_preclean$count_unit %in% c("pairs","territories"))] <- 2*bird_data_preclean$count[which(bird_data_preclean$count_unit %in% c("pairs","territories"))]
 
 # remove records of large groups
-bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.99)),]
-bird_data_preclean$count[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.99))] <- quantile(bird_data_preclean$count,0.99)
+#bird_data_preclean <- bird_data_preclean[which(bird_data_preclean$count <= quantile(bird_data_preclean$count,0.99)),]
+bird_data_preclean$count[which(bird_data_preclean$count > quantile(bird_data_preclean$count,0.99))] <- quantile(bird_data_preclean$count,0.99)
+
+bird_data_preclean$count <- round(bird_data_preclean$count)
 
 bird_data_clean <- bird_data_preclean
 
 saveRDS(bird_data_clean,"output/bird_data_clean.rds")
-saveRDS(bird_data_clean,"output/bird_data_clean_cap.rds")
+#saveRDS(bird_data_clean,"output/bird_data_clean_cap.rds")

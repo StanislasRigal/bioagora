@@ -872,9 +872,9 @@ grid_eu_all$PLS[which(grid_eu_all$GRD_ID %in% grid_id_andorra)] <- 18
 grid_eu_all$PLS[grep("HR061|HR063|HR021|HR022|HR023|HR024|HR025|HR026",grid_eu_all$NUTS2021_3)] <- 16
 grid_eu_all$PLS[grep("HR062|HR064|HR065|HR050|HR027|HR028|HR031|HR032|HR033|HR034|HR035|HR036|HR037",grid_eu_all$NUTS2021_3)] <- 12
 
-grid_eu_mainland <- grid_eu_all[grep("AL|CY|EL|IS|ME|MK|MT|PT|RS|SK|TR",grid_eu_all$NUTS2021_0,invert = TRUE),] # remove countries without data
+grid_eu_mainland <- grid_eu_all[grep("AL|CY|EL|IS|ME|MK|MT|RS|SK|TR",grid_eu_all$NUTS2021_0,invert = TRUE),] # remove countries without data
 
-grid_eu_mainland <- grid_eu_mainland[grep("ES7|FRY",grid_eu_mainland$NUTS2021_1,invert = TRUE),] # remove oversea territories
+grid_eu_mainland <- grid_eu_mainland[grep("ES7|FRY|PT2|PT3",grid_eu_mainland$NUTS2021_1,invert = TRUE),] # remove oversea territories
 
 grid_eu_mainland <- grid_eu_mainland[which(!(grid_eu_mainland$NUTS2021_0 == "")),]
 
@@ -916,7 +916,8 @@ bird_data_clean <- readRDS("output/bird_data_clean.rds")
 
 ## site and bird data
 
-sites <- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/sites2.txt", header = TRUE, sep = "\t")
+#sites <- read.table(file = "raw_data/pecbms_bird_data/updated_pecbms_SLD/sites2.txt", header = TRUE, sep = "\t")
+sites <- read.csv("raw_data/pecbms_bird_data/sites_with_portugal.csv", header = TRUE)
 
 site_mainland <- sites[which(sites$Long_WGS84 > -10 ),] # remove canary islands
 
@@ -929,10 +930,10 @@ st_crs(site_mainland_sf) <- 4326
 site_mainland_sf_reproj <- st_transform(site_mainland_sf,crs(grid_eu_mainland_outline))
 
 #saveRDS(site_mainland_sf_reproj,"output/site_mainland_sf_reproj.rds")
-site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
+#site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
 
-site_mainland$Long_LAEA <- st_coordinates(site_mainland_sf_reproj)[,1]
-site_mainland$Lat_LAEA <- st_coordinates(site_mainland_sf_reproj)[,2]
+site_mainland_sf_reproj$Long_LAEA <- site_mainland$Long_LAEA <- st_coordinates(site_mainland_sf_reproj)[,1]
+site_mainland_sf_reproj$Lat_LAEA <- site_mainland$Lat_LAEA <- st_coordinates(site_mainland_sf_reproj)[,2]
 
 
 ## plot sites and area monitored
@@ -983,6 +984,8 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                shannon2000 = weighted.mean(x$shannon_2000,x$area); shannon2018 = weighted.mean(x$shannon_2018,x$area)
                                agri2000 = weighted.mean(x$agri_2000,x$area); agri2018 = weighted.mean(x$agri_2018,x$area)
                                GDP2000 = weighted.mean(x$GDP2000,x$area); GDP2015 = weighted.mean(x$GDP2015,x$area)
+                               open2000 = weighted.mean(x$open_2000,x$area); open2018 = weighted.mean(x$open_2018,x$area)
+                               
                                
                                biogeo_area = data.frame(x %>% group_by(biogeo_area) %>% summarise(biogeo_surface=sum(area)))
                                biogeo_area = biogeo_area$biogeo_area[which.max(biogeo_area$biogeo_surface)]
@@ -1001,6 +1004,9 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                }else{
                                  forestintegrity_cat = forestintegrity_cat$forestintegrity_cat[which.max(forestintegrity_cat$biogeo_surface)]
                                }
+                               
+                               milieu = data.frame(x %>% group_by(frac_max_2000) %>% summarise(biogeo_surface=sum(area)))
+                               milieu_max = milieu$frac_max_2000[which.max(milieu$biogeo_surface)]
                                
                                eulandsystem = data.frame(x %>% group_by(eulandsystem) %>% summarise(biogeo_surface=sum(area)))
                                eulandsystem_max = eulandsystem$eulandsystem[which.max(eulandsystem$biogeo_surface)]
@@ -1096,12 +1102,12 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                         smallwoodyfeatures,fragmentation,forestintegrity,temp2000,temp2020,tempspring2000,tempspring2020,
                                         tempspringvar2000,tempspringvar2020,prec2000,prec2020,precspring2000,precspring2020,
                                         precspringvar2000,precspringvar2020,humidity2000,humidity2020,humidityspring2000,humidityspring2020,
-                                        humidityspringvar2000,humidityspringvar2020,shannon2000,shannon2018,agri2000,agri2018,GDP2000,GDP2015,
+                                        humidityspringvar2000,humidityspringvar2020,shannon2000,shannon2018,agri2000,agri2018,open2000,open2018,GDP2000,GDP2015,
                                         biogeo_area,PLS,forestintegrity_cat,eulandsystem_max,grassland,farmland,
                                         low_farmland,high_farmland,low_farmland_tot,high_farmland_tot,protectedarea_cat,
                                         protectedarea_perc,protectedarea_type,protectedarea_size,eulandsystem_cat_forest,eulandsystem_cat_urban,eulandsystem_cat_farmland,
                                         eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
-                                        eulandsystem_forest_lowmedium,eulandsystem_forest_high))
+                                        eulandsystem_forest_lowmedium,eulandsystem_forest_high, milieu_max))
                                
                              },.progress = "text")
 
@@ -1128,12 +1134,14 @@ saveRDS(value_site_mainland,"output/value_site_mainland.rds")
 
 ## add zero when species no present at monitored site
 
-wide_bird_data <- data.frame(bird_data_mainland[,c("siteID","year","sci_name_out","count")] %>% group_by(siteID) %>% tidyr::complete(year,sci_name_out))
-wide_bird_data$count[which(is.na(wide_bird_data$count))] <- 0
+#bird_data_mainland$count <- round(bird_data_mainland$count)
 
-bird_data_mainland <- merge(wide_bird_data,site_mainland,by=c("siteID"), all.x=T)
+#wide_bird_data <- data.frame(bird_data_mainland[,c("siteID","year","sci_name_out","count")] %>% group_by(siteID) %>% tidyr::complete(year,sci_name_out))
+#wide_bird_data$count[which(is.na(wide_bird_data$count))] <- 0
 
-#bird_data_mainland <- merge(bird_data_mainland,value_site_mainland, by="siteID", all.x=TRUE)
+#bird_data_mainland <- merge(wide_bird_data,site_mainland,by=c("siteID"), all.x=T)
+
+##bird_data_mainland <- merge(bird_data_mainland,value_site_mainland, by="siteID", all.x=TRUE)
 
 saveRDS(bird_data_mainland,"output/bird_data_mainland.rds")
 
@@ -1153,6 +1161,8 @@ subsite_data_mainland_trend <- bird_data_mainland[which(bird_data_mainland$siteI
 
 subsite_data_mainland_trend <- subsite_data_mainland_trend[which(subsite_data_mainland_trend$siteID %in% unique(value_site_mainland$siteID)),] # remove some island site no longer in grid_eu_mainland
 
+subsite_data_mainland_trend <- merge(subsite_data_mainland_trend, site_mainland[,c("siteID","Long_LAEA","Lat_LAEA")], by="siteID", all.x=TRUE)
+
 saveRDS(subsite_data_mainland_trend,"output/subsite_data_mainland_trend.rds")
 
 site_mainland_sf_reproj <- site_mainland_sf_reproj[which(site_mainland_sf_reproj$siteID %in% unique(value_site_mainland$siteID)),] # remove some island site no longer in grid_eu_mainland
@@ -1164,11 +1174,23 @@ ggplot(grid_eu_mainland_outline) +
   geom_sf(data=site_mainland_sf_reproj[which(site_mainland_sf_reproj$siteID %in% unique(subsite_data_mainland_trend$siteID)),], size=1) +
   theme_minimal()
 
+ggplot(grid_eu_mainland_outline) +
+  geom_sf() +
+  geom_sf(data=site_mainland_sf_reproj[which(site_mainland_sf_reproj$siteID %in% unique(subsite_data_mainland_trend$siteID)),], size=1) +
+  theme_void()
+
+ggplot(grid_eu_mainland_outline) +
+  geom_sf() +
+  geom_sf(data=site_mainland_sf_reproj[which(site_mainland_sf_reproj$siteID %in% unique(subsite_data_mainland_trend$siteID)),], size=1, aes(col=method)) +
+  theme_minimal()
+
 ggsave("output/PECBMS_site_selected.png",
        width = 8,
        height = 10,
        dpi = 300
 )
+
+
 
 
 site_pls <- unique(press_mainland_trend_scale[,c("siteID","PLS")])
@@ -1212,6 +1234,7 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               impervious_2018 <- pressure_subdata$impervious2018
                               treedensity_2018 <- pressure_subdata$treedensity2018
                               agri_2018 <- pressure_subdata$agri2018
+                              open_2018 <- pressure_subdata$open2018
                               tempspring_2020 <- pressure_subdata$tempspring2020
                               tempspringvar_2020 <- pressure_subdata$tempspringvar2020
                               precspring_2020 <- pressure_subdata$precspring2020
@@ -1220,6 +1243,7 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               d_impervious <- (pressure_subdata$impervious2018-pressure_subdata$impervious2006)/13
                               d_treedensity <- (pressure_subdata$treedensity2018-pressure_subdata$treedensity2012)/7
                               d_agri <- (pressure_subdata$agri2018-pressure_subdata$agri2000)/19
+                              d_open <- (pressure_subdata$open2018-pressure_subdata$open2000)/19
                               d_tempsrping <- (pressure_subdata$tempspring2020-pressure_subdata$tempspring2000)/21
                               tempsrping <- pressure_subdata$tempspring2000
                               d_tempsrpingvar <- (pressure_subdata$tempspringvar2020-pressure_subdata$tempspringvar2000)/21
@@ -1228,7 +1252,9 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               d_shannon <- (pressure_subdata$shannon2018-pressure_subdata$shannon2000)/19
                               shannon <- pressure_subdata$shannon2000
                               
-                              milieu <- pressure_subdata$eulandsystem_max
+                              milieu <- pressure_subdata$milieu_max
+                              
+                              milieu_old <- pressure_subdata$eulandsystem_max
                               
                               drymatter <- sum(pressure_subdata$drymatter2000,pressure_subdata$drymatter2018, na.rm = TRUE)/2
                               
@@ -1244,26 +1270,53 @@ press_mainland_trend <- ddply(distinct(subsite_data_mainland_trend,siteID,year,.
                               
                               PLS <- pressure_subdata$PLS
                               
-                              trend_result <- data.frame(impervious_2018,treedensity_2018,agri_2018,tempspring_2020,tempspringvar_2020,precspring_2020,shannon_2018,
-                                                         d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
-                                                         d_shannon,shannon,milieu,drymatter,protectedarea_perc,protectedarea_type,
+                              trend_result <- data.frame(impervious_2018,treedensity_2018,agri_2018,open_2018,tempspring_2020,tempspringvar_2020,precspring_2020,shannon_2018,
+                                                         d_impervious,d_treedensity,d_agri,d_open,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,
+                                                         d_shannon,shannon,milieu,milieu_old,drymatter,protectedarea_perc,protectedarea_type,
                                                          eulandsystem_cat,eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
                                                          eulandsystem_forest_lowmedium,eulandsystem_forest_high,PLS)
                               return(trend_result)
                             },pressure_data = value_site_mainland,
                             .progress = "text")
 
-press_mainland_trend$milieu_cat <- NA
-press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(21,22,23))] <- "urban"
-press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(41,42,43,71,72,74,75))] <- "forest and shrub"
-press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(31,32,51,52,53,61,62,63,731,732,733))] <- "openland"
-press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c(0,11,12,13,80,90))] <- "others"
+press_mainland_trend$milieu_cat_old <- NA
+press_mainland_trend$milieu_cat_old[which(press_mainland_trend$milieu_old %in% c(21,22,23))] <- "urban"
+press_mainland_trend$milieu_cat_old[which(press_mainland_trend$milieu_old %in% c(41,42,43,71,72,74,75))] <- "forest and shrub"
+press_mainland_trend$milieu_cat_old[which(press_mainland_trend$milieu_old %in% c(31,32,51,52,53,61,62,63,731,732,733))] <- "openland"
+press_mainland_trend$milieu_cat_old[which(press_mainland_trend$milieu_old %in% c(0,11,12,13,80,90))] <- "others"
 
+press_mainland_trend$milieu_cat <- NA
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_1"))] <- "urban"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_3"))] <- "forest and shrub"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_2"))] <- "openland"
+press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_4","frac_5"))] <- "others"
+
+#press_mainland_trend <- press_mainland_trend[which(press_mainland_trend$milieu_cat != "others"),]
 
 saveRDS(press_mainland_trend,"output/press_mainland_trend.rds") 
 
 press_mainland_trend_scale <- press_mainland_trend
 press_mainland_trend_scale$eulandsystem_cat <- droplevels(press_mainland_trend_scale$eulandsystem_cat)
+press_mainland_trend_scale[,c("d_impervious","d_treedensity","d_agri",
+                              "d_tempsrping","d_tempsrpingvar","d_precspring",
+                              "d_shannon")] <- scale(press_mainland_trend_scale[,c("d_impervious","d_treedensity","d_agri",
+                                                                                   "d_tempsrping","d_tempsrpingvar","d_precspring",
+                                                                                   "d_shannon")],
+                                                                                                    center = FALSE)
+
+
+press_mainland_trend_scale[,c("tempsrping","precspring",
+                              "shannon","drymatter","protectedarea_perc",
+                              "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",   
+                              "eulandsystem_forest_lowmedium","eulandsystem_forest_high")] <- scale(press_mainland_trend_scale[,c("tempsrping","precspring",
+                                                                                                                                  "shannon","drymatter","protectedarea_perc",
+                                                                                                                                  "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",   
+                                                                                                                                  "eulandsystem_forest_lowmedium","eulandsystem_forest_high")],
+                                                                                                    center = TRUE)
+
+
+
+
 press_mainland_trend_scale[,c("d_impervious","d_treedensity","d_agri",
                               "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
                               "d_shannon","shannon","drymatter","protectedarea_perc",
@@ -1272,11 +1325,19 @@ press_mainland_trend_scale[,c("d_impervious","d_treedensity","d_agri",
                                                                                                                                   "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
                                                                                                                                   "d_shannon","shannon","drymatter","protectedarea_perc",
                                                                                                                                   "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",   
-                                                                                                                                  "eulandsystem_forest_lowmedium","eulandsystem_forest_high")])
-
+                                                                                                                                  "eulandsystem_forest_lowmedium","eulandsystem_forest_high")],
+                                                                                                    center = FALSE)
 
 
 saveRDS(press_mainland_trend_scale,"output/press_mainland_trend_scale.rds") 
+
+press_mainland_trend_plot <- merge(site_mainland_sf_reproj,press_mainland_trend[which(press_mainland_trend$year==2017),], by="siteID", all.y=TRUE)
+
+ggplot(grid_eu_mainland_outline) +
+  geom_sf() +
+  geom_sf(data=press_mainland_trend_plot, size=1, aes(col=milieu_cat)) +
+  theme_minimal()
+
 
 
 ###### Analysis
@@ -1351,7 +1412,7 @@ ggplot(data = test_multicor, aes(Var2, Var1, fill = value))+
 
 
 
-test_multicor <- press_mainland_trend_scale[which(press_mainland_trend_scale$year==2010),c("d_impervious","d_treedensity","d_agri",
+test_multicor <- press_mainland_trend_scale[which(press_mainland_trend_scale$year==2017),c("d_impervious","d_treedensity","d_agri",
                                                                                            "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
                                                                                            "d_shannon","shannon","drymatter","protectedarea_perc","protectedarea_type",
                                                                                            "eulandsystem_cat","eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
@@ -1426,7 +1487,67 @@ res_gamm_bird <- ddply(subsite_data_mainland_trend,
                        .progress = "text")
 res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
 
+res_gamm_bird <- ddply(subsite_data_mainland_trend,#subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out %in% pecbms_species[1:5]),],
+                       .(sci_name_out),.fun=gam_species_PLS2_nomediumfarm, family="nb",
+                       pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                       .progress = "text")
+res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
+
+if_fail <- data.frame(t(rep(NA,45)))
+names(if_fail) <- c("(Intercept)","year",
+                    "milieu_catopenland","milieu_catothers","milieu_caturban",
+                    "tempsrping","precspring","shannon",
+                    "drymatter","year:d_impervious","year:d_treedensity",
+                    "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
+                    "year:eulandsystem_farmland_low","year:eulandsystem_farmland_high","year:d_tempsrping",
+                    "year:d_tempsrpingvar","year:d_precspring","year:d_shannon",
+                    "year:protectedarea_perc","dev_exp","n_obs",
+                    "PLS","(Intercept)_sd","year_sd",
+                    "milieu_catopenland_sd","milieu_catothers_sd","milieu_caturban_sd",
+                    "tempsrping_sd","precspring_sd","shannon_sd",
+                    "drymatter_sd","year:d_impervious_sd","year:d_treedensity_sd",
+                    "year:eulandsystem_forest_lowmedium_sd","year:eulandsystem_forest_high_sd","year:d_agri_sd",
+                    "year:eulandsystem_farmland_low_sd","year:eulandsystem_farmland_high_sd","year:d_tempsrping_sd",
+                    "year:d_tempsrpingvar_sd","year:d_precspring_sd","year:d_shannon_sd",
+                    "year:protectedarea_perc_sd")
+
+res_gamm_bird <- ddply(subsite_data_mainland_trend,#subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out %in% pecbms_species[1:5]),],
+                       .(sci_name_out),.fun=purrr::possibly(otherwise=if_fail,gam_species_PLS2_nomediumfarm),
+                       family="nb",
+                       pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                       .progress = "text")
+res_gamm_bird <- res_gamm_bird[which(!is.na(res_gamm_bird$PLS)),]
+
+res_gamm_bird2 <- ddply(subsite_data_mainland_trend[which(!(subsite_data_mainland_trend$sci_name_out %in% unique(res_gamm_bird$sci_name_out[which(res_gamm_bird$PLS=="europe")]))),],
+                       .(sci_name_out),.fun=purrr::possibly(otherwise=if_fail,gam_species_PLS2_nomediumfarm15),
+                       family="nb",
+                       pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                       .progress = "text")
+res_gamm_bird2 <- res_gamm_bird2[which(!is.na(res_gamm_bird2$PLS)),]
+
+res_gamm_bird3 <- ddply(subsite_data_mainland_trend[which(!(subsite_data_mainland_trend$sci_name_out %in% c(unique(res_gamm_bird$sci_name_out[which(res_gamm_bird$PLS=="europe")]),unique(res_gamm_bird2$sci_name_out[which(res_gamm_bird2$PLS=="europe")])))),],
+                        .(sci_name_out),.fun=purrr::possibly(otherwise=if_fail,gam_species_PLS2_nomediumfarm10),
+                        family="nb",
+                        pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                        .progress = "text")
+res_gamm_bird3 <- res_gamm_bird3[which(!is.na(res_gamm_bird3$PLS)),]
+
+res_gamm_bird_123 <- rbind(res_gamm_bird,res_gamm_bird2,res_gamm_bird3)
+
+saveRDS(res_gamm_bird_123,"output/res_gamm_bird_nb20_species_completed_10_15.rds")
+
+if_fail <- data.frame(t(rep(NA,7)))
+names(if_fail) <- c("(Intercept)","year","dev_exp","n_obs","PLS",paste0(c("(Intercept)","year"),"_sd"))
+
+res_gamm_bird_year <- ddply(subsite_data_mainland_trend,#subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out %in% pecbms_species[1:5]),],
+                       .(sci_name_out),.fun=purrr::possibly(otherwise=if_fail,gam_species_PLS2_nomediumfarm_year),
+                       family="nb",
+                       pressure_data=press_mainland_trend_scale,site_data=site_mainland_sf_reproj,
+                       .progress = "text")
+
 #saveRDS(res_gamm_bird,"output/res_gamm_bird2.rds")
+#res_gamm_bird <- readRDS("output/res_gamm_bird_portugal_yearnotscale_nb.rds")#readRDS("output/res_gamm_bird2_nocenter_nomediumfarm_nb.rds")
+
 
 for(i in sort(unique(res_gamm_bird_correct$sci_name_out))){
   print(i)
@@ -1460,6 +1581,7 @@ res_gamm_bird_year <- ddply(subsite_data_mainland_trend,
 
 pecbms_trend_class <- read.csv("output/pecbms_trend_class.csv", header=TRUE)
 pecbms_species <- na.omit(pecbms_trend_class)$sci_name_out
+pecbms_species <- c(pecbms_species,"Bonasa bonasia")
 pecbms_species_farmland <- na.omit(pecbms_trend_class[which(pecbms_trend_class$Habitat=="Farmland"),])$sci_name_out
 pecbms_species_forest <- na.omit(pecbms_trend_class[which(pecbms_trend_class$Habitat=="Forest"),])$sci_name_out
 pecbms_trend_class <- read.csv("output/pecbms_test2.csv", header=TRUE)
@@ -1468,10 +1590,11 @@ pecbms_trend_class$PECBMS_slope_short <- as.numeric(substr(pecbms_trend_class$PE
 pecbms_trend_class$PECBMS_slope_long[which(pecbms_trend_class$sci_name_out=="Sturnus vulgaris")] <- 0.98
 pecbms_trend_class$PECBMS_slope_short[which(pecbms_trend_class$sci_name_out=="Chloris chloris")] <- 0.98
 
-res_gamm_bird_eu <- res_gamm_bird[which(res_gamm_bird$PLS=="europe"),]
-res_gamm_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe" & predict_trend_all_bird_correct$pressure_removed == "none"),]
+#res_gamm_bird_eu <- res_gamm_bird[which(res_gamm_bird$PLS=="europe"),]
+#res_gamm_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe" & predict_trend_all_bird_correct$pressure_removed == "none"),]
+res_gamm_bird_eu <- predict_trend_all_bird[which(predict_trend_all_bird$PLS=="europe" & predict_trend_all_bird$pressure_removed == "none"),]
 
-res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,ny="sci_name_out")
+res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,by="sci_name_out", all.x=TRUE)
 
 res_gamm_bird_eu$PECBMS_slope_mid <- (res_gamm_bird_eu$PECBMS_slope_long + res_gamm_bird_eu$PECBMS_slope_short)/2
 
@@ -1481,6 +1604,9 @@ plot(exp(trend_past)~PECBMS_slope_short,res_gamm_bird_eu[which(res_gamm_bird_eu$
 plot(exp(trend_past)~PECBMS_slope_mid,res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.2),]) + abline(h = 1,v=1)
 
 data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.15),]
+misclassed_species <- data_plot[which(data_plot$PECBMS_slope_long < 1 & data_plot$trend_past >0 & data_plot$trend_past_signif >0), c("sci_name_out","trend_past","sd_past","trend_past_signif","sd_past_signif","PECBMS_slope_long")]
+misclassed_species <- data_plot[which((data_plot$PECBMS_slope_long < 1 & data_plot$PECBMS_slope_short < 1 & data_plot$trend_past >0 & data_plot$trend_past_signif >0) | (data_plot$PECBMS_slope_long > 1 & data_plot$PECBMS_slope_short > 1 & data_plot$trend_past <0 & data_plot$trend_past_signif <0)), c("sci_name_out","trend_past","sd_past","trend_past_signif","sd_past_signif","PECBMS_slope_long","PECBMS_slope_short")]
+data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp > 0.20 & !(res_gamm_bird_eu$sci_name_out %in% misclassed_species$sci_name_out)),]
 data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","PECBMS_slope_long","PECBMS_slope_short")], id.var=c("sci_name_out","trend_past"))
 
 ggplot(data_plot, aes(y=exp(trend_past))) + 
@@ -1490,7 +1616,7 @@ ggplot(data_plot, aes(y=exp(trend_past))) +
   geom_smooth(aes(x=value, col=variable),method = "lm", se = FALSE) +
   xlab("Slope from PECBMS") + ylab("Observed slope (2000-2021)") +
   #geom_abline(intercept = 0, slope = 1) +
-  xlim(c(0.86,1.07)) +
+  xlim(c(0.86,1.07)) + ylim(0.6,1.4) +
   scale_color_discrete(labels= c("PECBMS_slope_long" = "Long-term slope (1980-2023)", "PECBMS_slope_short" = "Ten-year slope (2014-2023)")) +
   theme_minimal() + theme(legend.title = element_blank(), legend.position = c(0.3, 0.8))
 
@@ -1498,6 +1624,7 @@ ggsave("output/bird_trend_pecbms.png",
        width = 6,
        height = 6,
        dpi = 300)
+
 
 correl_data <- data.frame(cor=NA,pval=NA,rsq=NA)
 for(i in seq(0,0.5, by=0.01)){
@@ -1508,6 +1635,18 @@ for(i in seq(0,0.5, by=0.01)){
 res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15),]
 res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15 & res_gamm_bird$sci_name_out %in% pecbms_species),]
 #res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.15 & res_gamm_bird$sci_name_out %in% pecbms_trend_class$sci_name_out),]
+#res_gamm_bird_correct <- res_gamm_bird_correct[which(!(res_gamm_bird_correct$sci_name_out %in% misclassed_species$sci_name_out)),]
+
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2),]
+
+predict_trend_all_bird_correct <- merge(res_gamm_bird,predict_trend_all_bird, by=c("sci_name_out","PLS"),all.x=TRUE)
+res_gamm_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe" & predict_trend_all_bird_correct$pressure_removed == "none"),]
+res_gamm_bird_eu <- merge(res_gamm_bird_eu,pecbms_trend_class,by="sci_name_out", all.x=TRUE)
+res_gamm_bird_eu$PECBMS_slope_mid <- (res_gamm_bird_eu$PECBMS_slope_long + res_gamm_bird_eu$PECBMS_slope_short)/2
+data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.15),]
+misclassed_species <- data_plot[which((data_plot$PECBMS_slope_long < 1 & data_plot$PECBMS_slope_short < 1 & data_plot$trend_past >0 & data_plot$trend_past_signif >0) | (data_plot$PECBMS_slope_long > 1 & data_plot$PECBMS_slope_short > 1 & data_plot$trend_past <0 & data_plot$trend_past_signif <0)), c("sci_name_out","trend_past","sd_past","trend_past_signif","sd_past_signif","PECBMS_slope_long","PECBMS_slope_short","dev_exp")]
+res_gamm_bird_correct <- res_gamm_bird[which(res_gamm_bird$dev_exp>0.2 & res_gamm_bird$sci_name_out %in% pecbms_species & !(res_gamm_bird$sci_name_out %in% misclassed_species$sci_name_out)),]
+
 
 unique(res_gamm_bird_correct$sci_name_out[which(res_gamm_bird_correct$PLS=="europe")])
 
@@ -1902,13 +2041,42 @@ write.csv(table_species_bird2,"output/table_species_bird3.csv", row.names = FALS
 
 # other representation
 
-pressure_EU_bird <- res_gam_bird[which(res_gam_bird$PLS=="europe"),]
+res_gamm_bird_correct_nosignif <- predict_trend_all_bird[which(predict_trend_all_bird$dev_exp > 0.2 & predict_trend_all_bird$PLS== "europe" & predict_trend_all_bird$pressure_removed=="none"),
+                                                c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                                  "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                                  "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_high",
+                                                  "milieu_catopenland","milieu_caturban","tempsrping",
+                                                  "precspring","shannon","drymatter",
+                                                  "PLS","dev_exp","n_obs","sci_name_out")]
+
+res_gamm_bird_correct <- predict_trend_all_bird[which(predict_trend_all_bird$dev_exp > 0.2 & predict_trend_all_bird$PLS== "europe" & predict_trend_all_bird$pressure_removed=="none"),
+                                                c("year:d_impervious_signif","year:d_tempsrping_signif","year:d_tempsrpingvar_signif","year:d_precspring_signif",
+                                                  "year:d_shannon_signif","year:protectedarea_perc_signif","year:d_treedensity_signif","year:eulandsystem_forest_lowmedium_signif","year:eulandsystem_forest_high_signif",
+                                                  "year:d_agri_signif","year:eulandsystem_farmland_low_signif","year:eulandsystem_farmland_high_signif",
+                                                  "milieu_catopenland_signif","milieu_caturban_signif","tempsrping_signif",
+                                                  "precspring_signif","shannon_signif","drymatter_signif",
+                                                  "PLS","dev_exp","n_obs","sci_name_out")]
+
+
 pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe"),]
 pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Farmland")])),]
 pressure_EU_bird <- res_gamm_bird_correct[which(res_gamm_bird_correct$PLS=="europe" & res_gamm_bird_correct$sci_name_out %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Forest")])),]
 pressure_EU_bird_long <- reshape::melt(pressure_EU_bird, id.vars=c("sci_name_out","PLS"))
 pressure_EU_bird_long <- pressure_EU_bird_long[which(!pressure_EU_bird_long$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
 
+pressure_EU_bird_nosignif <- res_gamm_bird_correct_nosignif[which(res_gamm_bird_correct_nosignif$PLS=="europe"),]
+pressure_EU_bird_nosignif <- res_gamm_bird_correct_nosignif[which(res_gamm_bird_correct_nosignif$PLS=="europe" & res_gamm_bird_correct_nosignif$sci_name_out %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Farmland")])),]
+pressure_EU_bird_nosignif <- res_gamm_bird_correct_nosignif[which(res_gamm_bird_correct_nosignif$PLS=="europe" & res_gamm_bird_correct_nosignif$sci_name_out %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Forest")])),]
+pressure_EU_bird_long_nosignif <- reshape::melt(pressure_EU_bird_nosignif, id.vars=c("sci_name_out","PLS"))
+pressure_EU_bird_long_nosignif <- pressure_EU_bird_long_nosignif[which(!pressure_EU_bird_long_nosignif$variable %in% c("(Intercept)","PLS","dev_exp","n_obs")),]
+
+
+pressure_EU_bird_long$value_nosignif <- pressure_EU_bird_long_nosignif$value
+pressure_EU_bird_long$signif <- as.factor(ifelse(is.na(pressure_EU_bird_long$value), 0,1))
+pressure_EU_bird_long$variable_nosignif <- pressure_EU_bird_long$variable 
+pressure_EU_bird_long$variable_nosignif[which(pressure_EU_bird_long$signif==0)] <- NA
+pressure_EU_bird_long$variable_nosignif <- gsub(pattern = "_signif","",pressure_EU_bird_long$variable_nosignif)
+pressure_EU_bird_long$variable <- gsub(pattern = "_signif","",pressure_EU_bird_long$variable)
 
 ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
                                                                          "year:d_shannon","year:protectedarea_perc","year:d_treedensity:eulandsystem_forest_lowmedium","year:d_treedensity:eulandsystem_forest_high",
@@ -1976,8 +2144,45 @@ ggsave("output/pressure_trend_bird_eu_hist.png",
        dpi = 300
 )
 
+pressure_EU_bird_long_d$signif2 <- NA
+pressure_EU_bird_long_d$signif2[which(pressure_EU_bird_long_d$signif==0 & pressure_EU_bird_long_d$value_nosignif > 0)] <- "Positive, p-value > 0.05"
+pressure_EU_bird_long_d$signif2[which(pressure_EU_bird_long_d$signif==0 & pressure_EU_bird_long_d$value_nosignif < 0)] <- "Negative, p-value > 0.05"
+pressure_EU_bird_long_d$signif2[which(pressure_EU_bird_long_d$signif==1 & pressure_EU_bird_long_d$value_nosignif > 0)] <- "Positive, p-value < 0.05"
+pressure_EU_bird_long_d$signif2[which(pressure_EU_bird_long_d$signif==1 & pressure_EU_bird_long_d$value_nosignif < 0)] <- "Negative, p-value < 0.05"
+pressure_EU_bird_long_d$signif2 <- factor(pressure_EU_bird_long_d$signif2, levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
 
-mean_pressure_bird <- mean_pressure(pressure_EU_bird[,c("year:eulandsystem_farmland_high","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_low","year:d_agri",
+pressure_EU_bird_likert <- reshape2::dcast(pressure_EU_bird_long_d, sci_name_out ~ variable, value.var = "signif2")
+
+for(i in 2:13){
+  pressure_EU_bird_likert[,i] <- factor(pressure_EU_bird_likert[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
+}
+
+pressure_EU_bird_likert <- pressure_EU_bird_likert[,c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_shannon","year:protectedarea_perc", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
+                                                      "year:d_agri","year:eulandsystem_farmland_low", "year:eulandsystem_farmland_high")]
+
+
+gglikert(pressure_EU_bird_likert,add_totals = FALSE, labels_hide_below = 0.01) +
+  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
+                            "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests on trend (Foh)",
+                            "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:d_CPE" = "Pesticide exposure (CPE)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland (Fam)", "year:eulandsystem_farmland_high" = "High intensive farmland (Fah)"
+  )) + scale_fill_manual(values = c("Negative, p-value > 0.05" = "#fdae61ff","Negative, p-value < 0.05" = "#d7191cff" ,"Positive, p-value < 0.05" = "#2c7bb6ff", "Positive, p-value > 0.05" = "#abd9e9ff")) +
+  theme(legend.position = "none", 
+        strip.text.x = element_blank(),
+        strip.text.y.left = element_text(angle = 0),
+        strip.background.y = element_rect(fill = NA),
+        strip.placement = "outside",
+        panel.grid.major.y = element_blank(),
+        axis.title = element_blank())
+
+ggsave("output/pressure_trend_bird_EU_likert.png",
+       width = 6,
+       height = 6,
+       dpi = 300
+)
+
+#names(pressure_EU_bird) <- gsub("_signif","",names(pressure_EU_bird))
+mean_pressure_bird <- mean_pressure(pressure_EU_bird_nosignif[,c("year:eulandsystem_farmland_high","year:eulandsystem_farmland_low","year:d_agri",
                                                         "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity","year:protectedarea_perc","year:d_shannon",
                                                         "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping")])
 mean_pressure_bird$variable <- factor(mean_pressure_bird$variable , levels = c("year:eulandsystem_farmland_high","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_low","year:d_agri",
@@ -2034,6 +2239,41 @@ ggsave("output/pressure_state_bird_eu_hist.png",
        dpi = 300
 )
 
+
+pressure_EU_bird_long_s$signif2 <- NA
+pressure_EU_bird_long_s$signif2[which(pressure_EU_bird_long_s$signif==0 & pressure_EU_bird_long_s$value_nosignif > 0)] <- "Positive, p-value > 0.05"
+pressure_EU_bird_long_s$signif2[which(pressure_EU_bird_long_s$signif==0 & pressure_EU_bird_long_s$value_nosignif < 0)] <- "Negative, p-value > 0.05"
+pressure_EU_bird_long_s$signif2[which(pressure_EU_bird_long_s$signif==1 & pressure_EU_bird_long_s$value_nosignif > 0)] <- "Positive, p-value < 0.05"
+pressure_EU_bird_long_s$signif2[which(pressure_EU_bird_long_s$signif==1 & pressure_EU_bird_long_s$value_nosignif < 0)] <- "Negative, p-value < 0.05"
+pressure_EU_bird_long_s$signif2 <- factor(pressure_EU_bird_long_s$signif2, levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
+
+pressure_EU_bird_likert <- reshape2::dcast(pressure_EU_bird_long_s, sci_name_out ~ variable, value.var = "signif2")
+
+for(i in 2:7){
+  pressure_EU_bird_likert[,i] <- factor(pressure_EU_bird_likert[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
+}
+
+pressure_EU_bird_likert_s <- pressure_EU_bird_likert[,c("milieu_catopenland","milieu_caturban","tempsrping",
+                                                          "precspring","shannon","drymatter")]
+
+
+gglikert(pressure_EU_bird_likert_s,add_totals = FALSE, labels_hide_below = 0.01) +
+  scale_y_discrete(labels=c("milieu_catopenland" = "Open land vs. forest area (LU)","milieu_caturban" = "Urbanised area vs. forest area (LU)", "tempsrping" = "Temperature (Tstart)", "precspring" = "Rainfall (Rstart)", "shannon" = "Landscape diversity (Hstart)",              
+                            "protectedarea_perc" = "Protected area (P)", "drymatter" = "Dry matter productivity (D)")) +
+  scale_fill_manual(values = c("Negative, p-value > 0.05" = "#fdae61ff","Negative, p-value < 0.05" = "#d7191cff" ,"Positive, p-value < 0.05" = "#2c7bb6ff", "Positive, p-value > 0.05" = "#abd9e9ff")) +
+  theme(legend.position = "none", 
+        strip.text.x = element_blank(),
+        strip.text.y.left = element_text(angle = 0),
+        strip.background.y = element_rect(fill = NA),
+        strip.placement = "outside",
+        panel.grid.major.y = element_blank(),
+        axis.title = element_blank())
+
+ggsave("output/pressure_trend_bird_EU_likert_start.png",
+       width = 6,
+       height = 6,
+       dpi = 300
+)
 
 
 
@@ -2832,3 +3072,111 @@ ggplot(pressure_EU_bird_long[which(pressure_EU_bird_long$variable %in% c("year:d
   theme_ridges() + geom_vline(aes(xintercept = 0), col="white", lty=2, linewidth=1.5) +
   xlab("Pressures") + ylab("Estimate") + theme_void()+
   theme(legend.position = "none", text = element_blank())
+
+
+
+### data habitat_specialisation
+
+hab_spe <- read.csv("raw_data/habitat_specialisation_morelli.csv")
+life_trait <- read.table("raw_data/Life-history+characteristics+of+European+birds.txt", sep="\t", header=TRUE)
+life_trait$Forest <- ifelse(life_trait$Deciduous.forest == 1 | life_trait$Coniferous.forest == 1 | life_trait$Woodland == 1, 1, 0)
+life_trait$Openland <- ifelse(life_trait$Shrub == 1 | life_trait$Savanna == 1 | life_trait$Tundra == 1 | life_trait$Grassland == 1 | life_trait$Mountain.meadows == 1, 1, 0)
+hab_pecbms <- read.csv("raw_data/Habitat_class_PECBMS.csv")
+
+hab_spe$Species[which(hab_spe$Species == "Carduelis chloris")] <- "Chloris chloris"
+hab_spe$Species[which(hab_spe$Species == "Parus caeruleus")] <- "Cyanistes caeruleus"
+hab_spe$Species[which(hab_spe$Species == "Miliaria calandra")] <- "Emberiza calandra"
+hab_spe$Species[which(hab_spe$Species == "Parus ater")] <- "Periparus ater"
+hab_spe$Species[which(hab_spe$Species == "Parus montanus")] <- "Poecile montanus"
+hab_spe$Species[which(hab_spe$Species == "Hirundo rupestris")] <- "Ptyonoprogne rupestris"
+
+life_trait$Species[which(life_trait$Species == "Leiopicus medius")] <- "Dendrocoptes medius"
+life_trait$Species[which(life_trait$Species == "Cyanecula svecica")] <- "Luscinia svecica"
+
+hab_spe_all <- merge(hab_pecbms, hab_spe, by="Species", all.x=TRUE)
+hab_spe_all <- merge(hab_spe_all, life_trait[,c("Species","Forest","Openland","Deciduous.forest","Coniferous.forest","Woodland","Shrub","Savanna","Tundra","Grassland","Mountain.meadows")], by="Species", all.x=TRUE)
+
+hab_spe_all$class <- NA
+hab_spe_all$class[which(hab_spe_all$Openland == 0 & hab_spe_all$Woodland == 0 &(hab_spe_all$Deciduous.forest == 1 | hab_spe_all$Coniferous.forest == 1))] <- "forest_dwellers"
+hab_spe_all$class[which(hab_spe_all$Forest == 0 & hab_spe_all$Openland == 1 & hab_spe_all$Shrub == 0)] <- "openland_dwellers"
+hab_spe_all$class[which(hab_spe_all$Forest == 0 & hab_spe_all$Openland == 0)] <- "other"
+hab_spe_all$class[which((hab_spe_all$Deciduous.forest == 1 | hab_spe_all$Coniferous.forest == 1) & (hab_spe_all$Woodland == 1 | hab_spe_all$Shrub == 1))] <- "forest_edge_dwellers"
+hab_spe_all$class[which((hab_spe_all$Deciduous.forest == 0 & hab_spe_all$Coniferous.forest == 0) & (hab_spe_all$Woodland == 1 | hab_spe_all$Shrub == 1))] <- "shrub_dwellers"
+hab_spe_all$class[which(hab_spe_all$Species=="Turdus torquatus")] <- "forest_edge_dwellers"
+hab_spe_all$class[which(is.na(hab_spe_all$class))] <- "other"
+
+
+
+eatidal_list <- c("Delichon urbicum","Motacilla alba","Phoenicurus ochruros","Acrocephalus palustris","Acrocephalus schoenobaenus",
+                  "Acrocephalus scirpaceus","Sylvia communis","Hirundo rustica","Riparia riparia","Alauda arvensis",
+                  "Saxicola torquatus","Emberiza calandra","Emberiza schoeniclus","Anthus pratensis","Motacilla flava",
+                  "Galerida cristata","Vanellus vanellus","Haematopus ostralegus","Anas platyrhynchos","Anser anser",
+                  "Branta canadensis","Cygnus olor","Fulica atra","Phalacrocorax carbo","Larus ridibundus",
+                  "Larus michahellis","Larus canus","Larus argentatus","Larus fuscus","Columba livia",
+                  "Passer domesticus","Turdus merula","Turdus pilaris","Fringilla coelebs","Spinus spinus",
+                  "Chloris chloris","Carduelis carduelis","Serinus serinus","Emberiza citrinella","Buteo buteo",
+                  "Columba palumbus","Cuculus canorus","Streptopelia turtur","Passer montanus","Pica pica",
+                  "Corvus corone","Corvus monedula","Corvus frugilegus","Sturnus vulgaris","Sturnus unicolor",
+                  "Passer italiae","Fringilla montifringilla","Troglodytes troglodytes","Prunella modularis","Erithacus rubecula",
+                  "Phoenicurus phoenicurus","Turdus philomelos","Turdus viscivorus","Sylvia borin","Sylvia atricapilla",
+                  "Phylloscopus collybita","Phylloscopus trochilus","Regulus regulus","Regulus ignicapilla","Aegithalos caudatus",
+                  "Periparus ater","Cyanistes caeruleus","Parus major","Sitta europaea","Certhia brachydactyla",
+                  "Garrulus glandarius","Oriolus oriolus","Columba oenas","Anthus trivialis","Luscinia megarhynchos",
+                  "Dendrocopos major","Picus viridis","Turdus iliacus")
+
+eatidal_list_spe <- merge(data.frame(Species=eatidal_list), life_trait[,c("Species","Forest","Openland","Deciduous.forest","Coniferous.forest","Woodland","Shrub","Savanna","Tundra","Grassland","Mountain.meadows")], by="Species", all.x=TRUE)
+
+eatidal_list_spe$class <- NA
+eatidal_list_spe$class[which(eatidal_list_spe$Openland == 0 & eatidal_list_spe$Woodland == 0 &(eatidal_list_spe$Deciduous.forest == 1 | eatidal_list_spe$Coniferous.forest == 1))] <- "forest_dwellers"
+eatidal_list_spe$class[which(eatidal_list_spe$Forest == 0 & eatidal_list_spe$Openland == 1 & eatidal_list_spe$Shrub == 0)] <- "openland_dwellers"
+eatidal_list_spe$class[which(eatidal_list_spe$Forest == 0 & eatidal_list_spe$Openland == 0)] <- "other"
+eatidal_list_spe$class[which((eatidal_list_spe$Deciduous.forest == 1 | eatidal_list_spe$Coniferous.forest == 1) & (eatidal_list_spe$Woodland == 1 | eatidal_list_spe$Shrub == 1))] <- "forest_edge_dwellers"
+eatidal_list_spe$class[which((eatidal_list_spe$Deciduous.forest == 0 & eatidal_list_spe$Coniferous.forest == 0) & eatidal_list_spe$Woodland == 1 & eatidal_list_spe$Openland == 0)] <- "forest_edge_dwellers"
+eatidal_list_spe$class[which((eatidal_list_spe$Deciduous.forest == 0 & eatidal_list_spe$Coniferous.forest == 0) & eatidal_list_spe$Shrub == 1)] <- "shrub_dwellers"
+eatidal_list_spe$class[which(is.na(eatidal_list_spe$class))] <- "other"
+#eatidal_list_spe <- merge(eatidal_list_spe,hab_pecbms, by="Species", all.x=TRUE)
+
+eatidal_list_spe$Species[which(eatidal_list_spe$Species == "Picus viridis")] <- "Picus viridis / Picus sharpei"
+
+write.csv(eatidal_list_spe,"output/eatidal_list_spe.csv", row.names = FALSE)
+
+eatidal_list_spe <- read.csv("output/eatidal_list_spe.csv")
+
+
+hab_spe_all$class <- NA
+hab_spe_all$class[which(hab_spe_all$Habitat.specialisation >= 0.5 & hab_spe_all$Habitat %in%  c("Forest","Other") & hab_spe_all$Forest == 1)] <- "forest_specialist"
+hab_spe_all$class[which(hab_spe_all$Habitat.specialisation >= 0.5 & hab_spe_all$Habitat %in%  c("Farmland","Other") & hab_spe_all$Openland == 1)] <- "openland_specialist"
+hab_spe_all$class[which(hab_spe_all$Habitat.specialisation < 0.5 & hab_spe_all$Habitat %in%  c("Forest") & hab_spe_all$Forest == 1)] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Habitat.specialisation < 0.5 & hab_spe_all$Habitat %in%  c("Farmland") & hab_spe_all$Openland == 1)] <- "openland_generalist"
+hab_spe_all$class[which(hab_spe_all$Forest == 0 & hab_spe_all$Openland == 0)] <- "other"
+hab_spe_all$class[which(hab_spe_all$Habitat.specialisation < 0.5 & hab_spe_all$Habitat == "Other" & hab_spe_all$Forest == 1 & hab_spe_all$Openland == 0)] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Habitat.specialisation < 0.5 & hab_spe_all$Habitat == "Other" & hab_spe_all$Forest == 0 & hab_spe_all$Openland == 1)] <- "openland_generalist"
+hab_spe_all$class[which(hab_spe_all$Habitat == "Forest" & is.na(hab_spe_all$class))] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Habitat == "Farmland" & is.na(hab_spe_all$class))] <- "openland_generalist"
+
+hab_spe_all$class[which(hab_spe_all$Species=="Acanthis flammea")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Aegithalos caudatus")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Chloris chloris")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Clamator glandarius")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Cuculus canorus")] <- "other"
+hab_spe_all$class[which(hab_spe_all$Species=="Dendrocopos syriacus")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Erithacus rubecula")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Hippolais icterina")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Hippolais polyglotta")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Iduna pallida")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Lullula arborea")] <- "openland_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Luscinia svecica")] <- "openland_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Lyrurus tetrix")] <- "other"
+hab_spe_all$class[which(hab_spe_all$Species=="Merops apiaster")] <- "openland_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Passer domesticus")] <- "other"
+hab_spe_all$class[which(hab_spe_all$Species=="Phylloscopus trochilus")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Prunella modularis")] <- "forest_generalist"
+hab_spe_all$class[which(hab_spe_all$Species=="Sylvia borin")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Sylvia cantillans")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Sylvia hortensis")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Tringa glareola")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Tringa nebularia")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Turdus iliacus")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Turdus merula")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Turdus philomelos")] <- 
+hab_spe_all$class[which(hab_spe_all$Species=="Turdus torquatus")] <- 

@@ -558,8 +558,8 @@ saveRDS(res_gam_bird_FR_simple,"output/res_gam_bird_fr_simple_nosignif.rds")
 #res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2.rds")
 #res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2.rds")
 
-res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2small2.rds")
-res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2small2.rds")
+res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_simple.rds") # readRDS("output/res_gam_bird_fr_agi_CPE2small2.rds")
+res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_simple_nosignif.rds") # readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2small2.rds")
 
 #res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2medium.rds")
 #res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2medium.rds")
@@ -1503,13 +1503,37 @@ species_list_fr <- merge(species_list_fr, res_gam_bird_FR_nosignif[which(res_gam
 species_list_fr$pressure_removed <- NULL
 species_list_fr$PLS <- NULL
 
-names(species_list_fr)[6:27] <- c("Openland_vs_forest_on_abundance","Otherland_vs_forest_on_abundance","Urban_vs_forest_on_abundance",
+names(species_list_fr)[6:25] <- c("Protected_area_on_abundance","Openland_vs_forest_on_abundance","Otherland_vs_forest_on_abundance","Urban_vs_forest_on_abundance",
                                   "Temperature_on_abundance","Precipitation_on_abundance","Landscape_diversity_on_abundance",
                                   "Primary_production_on_abundance","d_urbanisation_on_trend","d_tree_density_on_trend",
                                   "lowmedium_intensive_forest_on_trend","high_intensive_forest_on_trend","d_agricultural_cover_on_trend",
                                   "low_intensive_farmland_on_trend","high_intensive_farmland_on_trend","pesticide_exposure_on_trend",
-                                  "d_temperature_on_trend","d_temperature_variation_on_trend","d_precipitation_on_trend",
-                                  "d_landscape_diversity_on_trend","Protected_area_on_trend","Deviance_explained",
+                                  "d_temperature_on_trend","d_landscape_diversity_on_trend","Deviance_explained",
                                   "Number_observation")
 
 write.csv(species_list_fr,"output/species_list_fr.csv", row.names = FALSE)
+
+species_list_fr <- read.csv("output/species_list_fr.csv")
+
+
+
+life_trait <- read.table("raw_data/Life-history+characteristics+of+European+birds.txt", sep="\t", header=TRUE)
+life_trait$Forest <- ifelse(life_trait$Deciduous.forest == 1 | life_trait$Coniferous.forest == 1 | life_trait$Woodland == 1, 1, 0)
+life_trait$Openland <- ifelse(life_trait$Shrub == 1 | life_trait$Savanna == 1 | life_trait$Tundra == 1 | life_trait$Grassland == 1 | life_trait$Mountain.meadows == 1, 1, 0)
+life_trait$Species[which(life_trait$Species == "Leiopicus medius")] <- "Dendrocoptes medius"
+life_trait$Species[which(life_trait$Species == "Cyanecula svecica")] <- "Luscinia svecica"
+
+
+species_list_fr2 <- merge(species_list_fr, life_trait[,c("Species","Forest","Openland","Deciduous.forest","Coniferous.forest","Woodland","Shrub","Savanna","Tundra","Grassland","Mountain.meadows")], by="Species", all.x=TRUE)
+
+species_list_fr2$class <- NA
+species_list_fr2$class[which(species_list_fr2$Openland == 0 & species_list_fr2$Woodland == 0 &(species_list_fr2$Deciduous.forest == 1 | species_list_fr2$Coniferous.forest == 1))] <- "forest_dwellers"
+species_list_fr2$class[which(species_list_fr2$Forest == 0 & species_list_fr2$Openland == 1 & species_list_fr2$Shrub == 0)] <- "openland_dwellers"
+species_list_fr2$class[which(species_list_fr2$Forest == 0 & species_list_fr2$Openland == 0)] <- "other"
+species_list_fr2$class[which((species_list_fr2$Deciduous.forest == 1 | species_list_fr2$Coniferous.forest == 1) & (species_list_fr2$Woodland == 1 | species_list_fr2$Shrub == 1))] <- "forest_edge_dwellers"
+species_list_fr2$class[which((species_list_fr2$Deciduous.forest == 0 & species_list_fr2$Coniferous.forest == 0) & species_list_fr2$Woodland == 1 & species_list_fr2$Openland == 0)] <- "forest_edge_dwellers"
+species_list_fr2$class[which((species_list_fr2$Deciduous.forest == 0 & species_list_fr2$Coniferous.forest == 0) & species_list_fr2$Shrub == 1)] <- "shrub_dwellers"
+species_list_fr2$class[which(is.na(species_list_fr2$class))] <- "other"
+
+write.csv(species_list_fr2,"output/species_list_fr2.csv", row.names = FALSE)
+

@@ -136,7 +136,9 @@ scheme_sites <- sites[which(sites$transect_id %in% unique(butterfly_data_preclea
 scheme_sites <- scheme_sites %>% group_by(bms_id) %>% summarize(count=n())
 
 # remove records of large groups
-butterfly_data_preclean <- butterfly_data_preclean[which(butterfly_data_preclean$count_corrected <= quantile(butterfly_data_preclean$count_corrected,0.99)),]
+#butterfly_data_preclean <- butterfly_data_preclean[which(butterfly_data_preclean$count_corrected <= quantile(butterfly_data_preclean$count_corrected,0.99)),]
+butterfly_data_preclean$count_corrected[which(butterfly_data_preclean$count_corrected > quantile(butterfly_data_preclean$count_corrected,0.99))] <- quantile(butterfly_data_preclean$count_corrected,0.99)
+
 
 butterfly_data_clean <- butterfly_data_preclean
 
@@ -151,7 +153,7 @@ sub_species <- c("Thymelicus acteon","Euphydryas aurinia","Ochlodes sylvanus","E
 
 butterfly_data_test <- droplevels(butterfly_data[which(butterfly_data$species_name %in% sub_species),])
 
-butterfly_data_test <- butterfly_data_test[which(butterfly_data_test$count_corrected <= 31.33),]
+butterfly_data_test$count_corrected[which(butterfly_data_test$count_corrected > 31.33)] <- 31.33
 
 
 sites <- read.csv(file = "raw_data/butterfly/ebms_transect_coord.csv", header = TRUE)
@@ -191,6 +193,8 @@ temp_sp <- list(c(2005:2020),c(1994:2020),c(1990:2020),c(1999:2020),c(1990:2020)
 result_butterfly_test <- data.frame(name=NA,coef=NA,se=NA,pval=NA)
 
 for(i in 1:16){
+  print(i)
+  
   butterfly_data_sub <- droplevels(subsite_data_mainland_trend[which(subsite_data_mainland_trend$species_name == sub_species[i] &
                                                                        subsite_data_mainland_trend$year %in% temp_sp[[i]]),])
   
@@ -198,7 +202,7 @@ for(i in 1:16){
   
   poisson_df <- na.omit(species_data_year)
   
-  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
+  #poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
   
   if(length(table(poisson_df$transect_length)) > length(unique(poisson_df$bms_id))){
     one_scheme_time_area <- 0 
@@ -214,8 +218,8 @@ for(i in 1:16){
   col_names <- c("(Intercept)","year")
   
   if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
-    global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                      family="quasipoisson", data=poisson_df)
+    global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=20)"), collapse = " + "))),
+                      family="nb", data=poisson_df, random=list(transect_id=~1|bms_id))
   }
   
   result_butterfly_test <- rbind(result_butterfly_test,data.frame(name=sub_species[i],coef=summary(global_mod)$p.coef[2],se=summary(global_mod)$se[2],pval=summary(global_mod)$p.pv[2]))
@@ -231,6 +235,8 @@ temp_sp_eu27 <- list(c(2005:2020),c(2010:2020),c(1991:2020),c(2004:2020),c(1991:
 result_butterfly_test_eu27 <- data.frame(name=NA,coef27=NA,se27=NA,pval27=NA)
 
 for(i in 1:15){
+  print(i)
+  
   butterfly_data_sub <- droplevels(subsite_data_mainland_trend[which(subsite_data_mainland_trend$species_name == sub_species[i] &
                                                                        subsite_data_mainland_trend$year %in% temp_sp_eu27[[i]]),])
   
@@ -238,7 +244,7 @@ for(i in 1:15){
   
   poisson_df <- na.omit(species_data_year)
   
-  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
+ #poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
   
   if(length(table(poisson_df$transect_length)) > length(unique(poisson_df$bms_id))){
     one_scheme_time_area <- 0 
@@ -254,8 +260,8 @@ for(i in 1:15){
   col_names <- c("(Intercept)","year")
   
   if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
-    global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                      family="quasipoisson", data=poisson_df)
+    global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=20)"), collapse = " + "))),
+                      family="nb", data=poisson_df, random=list(transect_id=~1|bms_id))
   }
   
   result_butterfly_test_eu27 <- rbind(result_butterfly_test_eu27,data.frame(name=sub_species[i],coef27=summary(global_mod)$p.coef[2],se27=summary(global_mod)$se[2],pval27=summary(global_mod)$p.pv[2]))
@@ -301,7 +307,7 @@ ggplot(result_butterfly_GBI,aes(x=name)) +
   theme_bw() + theme(legend.position = "none")
 
 ggplot(result_butterfly_GBI,aes(x=name)) + 
-  geom_bar(aes(y=exp(coef)-1, fill=coef_signif),stat="identity", alpha=.6, width=.4) +
+  geom_bar(aes(y=coef, fill=coef_signif),stat="identity", alpha=.6, width=.4) +
   scale_fill_manual(values = c("Uncertain" = "#bdbdbdff","Decrease" = "#f98071ff", "Increase"="#a1cd5aff")) +
   coord_flip() + ylim(c(-0.12,0.12)) +
   xlab("") + ylab("Calculated trend") +
@@ -315,10 +321,10 @@ ggplot(result_butterfly_GBI,aes(x=name)) +
   theme_bw() + theme(legend.position = "none")
 
 ggplot(result_butterfly_GBI,aes(x=name)) + 
-  geom_bar(aes(y=exp(coef27)-1, fill=coef27_signif),stat="identity", alpha=.6, width=.4) +
+  geom_bar(aes(y=coef27, fill=coef27_signif),stat="identity", alpha=.6, width=.4) +
   scale_fill_manual(values = c("Uncertain" = "#bdbdbdff","Decrease" = "#f98071ff", "Increase"="#a1cd5aff")) +
   coord_flip() + ylim(c(-0.12,0.12)) +
-  xlab("") + 
+  xlab("") +  ylab("Calculated trend EU 27") +
   theme_bw() + theme(legend.position = "none")
 
 
