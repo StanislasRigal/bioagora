@@ -2618,19 +2618,20 @@ gam_species_PLS3 <- function(bird_data,pressure_data,site_data,
 
 
 gam_species_PLS2_check <- function(bird_data,pressure_data,site_data,
-                             pressure_name = c("d_impervious","d_treedensity","d_agri",
-                                               "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
-                                               "d_shannon","shannon","drymatter","protectedarea_perc",
-                                               "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
-                                               "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
-                             min_site_number_per_species = 60,
-                             min_occurence_species=200,
-                             family="quasipoisson"){
+                                   pressure_name = c("d_impervious","d_treedensity","d_agri",
+                                                     "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                                     "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                     "eulandsystem_farmland_low","eulandsystem_farmland_high",
+                                                     "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
+                                   min_site_number_per_species = 60,
+                                   min_occurence_species=200,
+                                   family="nb"){
   
   species_press_data_year <- merge(bird_data, pressure_data[which(pressure_data$siteID %in% unique(bird_data$siteID) & pressure_data$year %in% unique(bird_data$year)),], by =c("siteID","year"), all.x=TRUE)
   
   poisson_df <- na.omit(species_press_data_year[,c("siteID","count","year","area_sampled_m2","scheme_code","Long_LAEA","Lat_LAEA",
                                                    pressure_name,"PLS")])
+  
   
   poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
   
@@ -2646,9 +2647,9 @@ gam_species_PLS2_check <- function(bird_data,pressure_data,site_data,
   if(length(pressure_name) > 1){
     formula_gam <- "count_scale_all ~ year + year:d_impervious + year:d_treedensity +
     year:eulandsystem_forest_lowmedium + year:eulandsystem_forest_high +
-    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_medium + year:eulandsystem_farmland_high +
+    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_high +
     year:d_tempsrping + year:d_tempsrpingvar + year:d_precspring + year:d_shannon + year:protectedarea_perc +
-    milieu_cat + tempsrping + precspring + shannon + drymatter"
+    as.factor(milieu_cat) + tempsrping + precspring + shannon + drymatter"
   }else{
     formula_gam <- paste("count_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
   }
@@ -2656,47 +2657,79 @@ gam_species_PLS2_check <- function(bird_data,pressure_data,site_data,
   col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
                  "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_treedensity",
                  "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
-                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_high",
                  "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc")
   
-  
-  if(nrow(poisson_df) >= min_occurence_species){
-    
-    ### global poisson model (gamm too resource consumming over the whole Europe)
-    
-    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2:scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
-    }
-    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
-    }
-    if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("scheme_code","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
-    }
-    if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
-    }
-    
 
-    fv <- predict(global_mod, type = "response")
-    res_data <- data.frame(data.frame(siteID=poisson_df$siteID,year=poisson_df$year,res=residuals(global_mod,type="deviance")) %>% group_by(siteID) %>% summarise(res=mean(res)))
-    res_data <- merge(site_data,res_data,by="siteID")
+  if(nrow(poisson_df[which(poisson_df$count>0),]) >= min_occurence_species){
     
-    p1 <- ggplot(data.frame(x = as.numeric(fv), y=napredict(global_mod$na.action, global_mod$y)), aes(x,y)) + geom_point() + theme_minimal() + labs(x = "Fitted Values", y = paste0("Response ",unique(bird_data$sci_name_out)), title = "Response vs. Fitted Values")
+    ### global poisson model
     
-    p2 <- ggplot(data.frame(y=residuals(global_mod, type = "deviance")), aes(sample = y)) + stat_qq() + theme_minimal() + labs(x="Theoretical quantile",y="deviance residuals",title = "Normal Q-Q plot")
     
-    p3 <- ggplot(grid_eu_mainland_outline) +  geom_sf() + geom_sf(data=res_data,aes(col=res), size=0.5) + scale_color_gradient2() + theme_void() + theme(legend.position = c(0.1,0.8), legend.title = element_blank())
+    global_mod_fun <- purrr::possibly(.f=function(formula_gam,family,poisson_df,one_scheme_time_area){
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1))
+      }
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1))
+      }
+      return(global_mod)
+    }, otherwise = NULL
+    )
     
-    figure <- ggarrange(p1, p2, p3, ncol = 3, nrow = 1)
+    global_mod <- global_mod_fun(formula_gam,family,poisson_df,one_scheme_time_area)
+    
+    global_mod_fun_quasipoisson <- purrr::possibly(.f=function(formula_gam,poisson_df,one_scheme_time_area){
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1))
+      }
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1))
+      }
+      return(global_mod)
+    }, otherwise = NULL
+    )
+    
+    if(is.null(global_mod)){
+      global_mod <- global_mod_fun_quasipoisson(formula_gam,poisson_df,one_scheme_time_area)
+    }
+    
+    if(!is.null(global_mod)){
+      fv <- predict(global_mod, type = "response")
+      res_data <- data.frame(data.frame(siteID=poisson_df$siteID,year=poisson_df$year,res=residuals(global_mod,type="deviance")) %>% group_by(siteID) %>% summarise(res=mean(res)))
+      res_data <- merge(site_data,res_data,by="siteID")
+      
+      p1 <- ggplot(data.frame(x = as.numeric(fv), y=napredict(global_mod$na.action, global_mod$y)), aes(x,y)) + geom_point() + theme_minimal() + labs(x = "Fitted Values", y = paste0("Response ",unique(bird_data$sci_name_out)), title = "Response vs. Fitted Values")
+      
+      p2 <- ggplot(data.frame(y=residuals(global_mod, type = "deviance")), aes(sample = y)) + stat_qq() + theme_minimal() + labs(x="Theoretical quantile",y="deviance residuals",title = "Normal Q-Q plot")
+      
+      p3 <- ggplot(grid_eu_mainland_outline) +  geom_sf() + geom_sf(data=res_data,aes(col=res), size=0.5) + scale_color_gradient2() + theme_void() + theme(legend.position = c(0.1,0.8), legend.title = element_blank())
+      
+      figure <- ggarrange(p1, p2, p3, ncol = 3, nrow = 1)
+      
+      return(figure)
+    }
   }
-  
-  return(figure)
-  
 }
 
 
@@ -3473,21 +3506,21 @@ gam_species_PLS2b_nomediumfarm <- function(butterfly_data,pressure_data,site_dat
 
 
 gam_species_PLS2b_check <- function(butterfly_data,pressure_data,site_data,
-                              pressure_name = c("d_impervious","d_treedensity","d_agri",
-                                                "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
-                                                "d_shannon","shannon","drymatter","protectedarea_perc",
-                                                "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
-                                                "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
-                              min_site_number_per_species = 60,
-                              min_occurence_species=200,
-                              family="quasipoisson"){
+                                    pressure_name = c("d_impervious","d_treedensity","d_agri",
+                                                      "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
+                                                      "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                      "eulandsystem_farmland_low","eulandsystem_farmland_high",
+                                                      "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat"),
+                                    min_site_number_per_species = 60,
+                                    min_occurence_species=200,
+                                    family="nb"){
   
   species_press_data_year <- merge(butterfly_data, pressure_data[which(pressure_data$transect_id %in% unique(butterfly_data$transect_id) & pressure_data$year %in% unique(butterfly_data$year)),], by =c("transect_id","year"), all.x=TRUE)
   
   poisson_df <- na.omit(species_press_data_year[,c("transect_id","count_corrected","year","transect_length","bms_id","Long_LAEA","Lat_LAEA",
                                                    pressure_name,"PLS")])
   
-  poisson_df$year <- scale(poisson_df$year)#poisson_df$year - min(poisson_df$year)
+ poisson_df$year <- scale(poisson_df$year)
   
   if(length(table(poisson_df$transect_length)) > length(unique(poisson_df$bms_id))){
     one_scheme_time_area <- 0 
@@ -3496,14 +3529,14 @@ gam_species_PLS2b_check <- function(butterfly_data,pressure_data,site_data,
     one_scheme_time_area <- 1
   }
   
-  poisson_df$count_corrected_scale_all <- poisson_df$count_corrected#scales::rescale(poisson_df$count_corrected)
+  poisson_df$count_corrected_scale_all <- poisson_df$count_corrected
   
   if(length(pressure_name) > 1){
     formula_gam <- "count_corrected_scale_all ~ year + year:d_impervious + year:d_treedensity +
     year:eulandsystem_forest_lowmedium + year:eulandsystem_forest_high +
-    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_medium + year:eulandsystem_farmland_high +
+    year:d_agri + year:eulandsystem_farmland_low + year:eulandsystem_farmland_high +
     year:d_tempsrping + year:d_tempsrpingvar + year:d_precspring + year:d_shannon + year:protectedarea_perc +
-    milieu_cat + tempsrping + precspring + shannon + drymatter"
+    as.factor(milieu_cat) + tempsrping + precspring + shannon + drymatter"
   }else{
     formula_gam <- paste("count_corrected_scale_all ~", paste(pressure_name,sep="", collapse = " + "))
   }
@@ -3511,28 +3544,29 @@ gam_species_PLS2b_check <- function(butterfly_data,pressure_data,site_data,
   col_names <- c("(Intercept)","year","milieu_catopenland","milieu_catothers","milieu_caturban",
                  "tempsrping","precspring","shannon","drymatter","year:d_impervious","year:d_treedensity",
                  "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
-                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium","year:eulandsystem_farmland_high",
+                 "year:eulandsystem_farmland_low","year:eulandsystem_farmland_high",
                  "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring","year:d_shannon","year:protectedarea_perc")
   
-  if(nrow(poisson_df) >= min_occurence_species){
+  
+  if(nrow(poisson_df[which(poisson_df$count_corrected>0),]) >= min_occurence_species){
     
-    ### global poisson model (gamm too resource consumming over the whole Europe)
+    ### global poisson model
     
     if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length:bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
+      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                        family=family, data=poisson_df, random=list(transect_id=~1|bms_id))
     }
     if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 0){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
+      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                        family=family, data=poisson_df, random=list(transect_id=~1))
     }
     if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 1){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("bms_id","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
+      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                        family=family, data=poisson_df, random=list(transect_id=~1|bms_id))
     }
     if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 1){
-      global_mod <- gam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                        family=family, data=poisson_df)
+      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                        family=family, data=poisson_df, random=list(transect_id=~1))
     }
     
     
@@ -8234,6 +8268,15 @@ stanvif <- function(mod){ # from samvif https://gist.github.com/samclifford/e122
   return(VIF.df)
 }
 
+
+bird_data <- droplevels(subsite_data_mainland_trend[which(subsite_data_mainland_trend$sci_name_out == "Alauda arvensis"),])
+pressure_data <- press_mainland_trend_scale
+pressure_data_unscale <-  press_mainland_trend
+site_data <- site_mainland_sf_reproj
+min_site_number_per_species <- 60
+min_occurence_species <- 200
+family <- "nb"
+
 predict_gam_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale,site_data,
                                         lulc_pls_short,climate_pls,pa_pls_short,
                                         pressure_name = c("d_impervious","d_treedensity","d_agri",
@@ -8302,6 +8345,7 @@ predict_gam_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale
     
     ### global poisson model
     
+    global_mod_fun <- purrr::possibly(.f=function(formula_gam,family,poisson_df,one_scheme_time_area){
     if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
       global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=20)"), collapse = " + "))),
                         family=family, data=poisson_df, random=list(siteID=~1|scheme_code))
@@ -8318,6 +8362,37 @@ predict_gam_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale
       global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=20)"), collapse = " + "))),
                         family=family, data=poisson_df, random=list(siteID=~1))
     }
+    return(global_mod)
+    }, otherwise = NULL
+    )
+    
+    global_mod <- global_mod_fun(formula_gam,family,poisson_df,one_scheme_time_area)
+    
+    global_mod_fun_quasipoisson <- purrr::possibly(.f=function(formula_gam,poisson_df,one_scheme_time_area){
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1))
+      }
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(siteID=~1))
+      }
+      return(global_mod)
+    }, otherwise = NULL
+    )
+    
+    if(is.null(global_mod)){
+      global_mod <- global_mod_fun_quasipoisson(formula_gam,poisson_df,one_scheme_time_area)
+    }
+    
     
     #vif
     
@@ -8574,22 +8649,56 @@ predict_gam_trend_butterfly <- function(butterfly_data,pressure_data,pressure_da
     
     ### global poisson model
     
-    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
-      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
-                        family=family, data=poisson_df, random=list(transect_id=~1|bms_id))
+    
+    global_mod_fun <- purrr::possibly(.f=function(formula_gam,family,poisson_df,one_scheme_time_area){
+      if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(transect_id=~1|bms_id))
+      }
+      if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(transect_id=~1))
+      }
+      if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(transect_id=~1|bms_id))
+      }
+      if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(transect_id=~1))
+      }
+      return(global_mod)
+    }, otherwise = NULL
+    )
+    
+    global_mod <- global_mod_fun(formula_gam,family,poisson_df,one_scheme_time_area)
+    
+    global_mod_fun_quasipoisson <- purrr::possibly(.f=function(formula_gam,poisson_df,one_scheme_time_area){
+      if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(transect_id=~1|bms_id))
+      }
+      if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(transect_id=~1))
+      }
+      if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(transect_id=~1|bms_id))
+      }
+      if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family="quasipoisson", data=poisson_df, random=list(transect_id=~1))
+      }
+      return(global_mod)
+    }, otherwise = NULL
+    )
+    
+    if(is.null(global_mod)){
+      global_mod <- global_mod_fun_quasipoisson(formula_gam,poisson_df,one_scheme_time_area)
     }
-    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 0){
-      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("transect_length","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
-                        family=family, data=poisson_df, random=list(transect_id=~1))
-    }
-    if(length(unique(poisson_df$bms_id)) > 1 && one_scheme_time_area == 1){
-      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
-                        family=family, data=poisson_df, random=list(transect_id=~1|bms_id))
-    }
-    if(length(unique(poisson_df$bms_id)) == 1 && one_scheme_time_area == 1){
-      global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
-                        family=family, data=poisson_df, random=list(transect_id=~1))
-    }
+    
+    
     
     #vif
     
@@ -9053,6 +9162,77 @@ mean_pressure <- function(data){
 }
 
 
+median_pressure <- function(data){
+  data[abs(data)>1.5] <- NA
+  n <- nrow(data)#length(na.omit(data$`year:d_impervious`))
+  mu_d_impervious <- exp(median(data$`year:d_impervious`,na.rm=TRUE))
+  #var_d_impervious <- (sum(data$`year:d_impervious_sd`^2 + data$`year:d_impervious`^2, na.rm = TRUE))/n - median(data$`year:d_impervious`,na.rm=TRUE)^2
+  #sd_d_impervious <- sqrt(mu_d_impervious^2*var_d_impervious)
+  se_d_impervious <- mu_d_impervious/sqrt(n)*sd(data$`year:d_impervious`,na.rm=TRUE)
+  mu_d_tempsrping <- exp(median(data$`year:d_tempsrping`,na.rm=TRUE))
+  #var_d_tempsrping <- (sum(data$`year:d_tempsrping_sd`^2 + data$`year:d_tempsrping`^2, na.rm = TRUE))/n - median(data$`year:d_tempsrping`,na.rm=TRUE)^2
+  #sd_d_tempsrping <- sqrt(mu_d_tempsrping^2*var_d_tempsrping)
+  se_d_tempsrping <- mu_d_tempsrping/sqrt(n)*sd(data$`year:d_tempsrping`,na.rm=TRUE)
+  mu_d_tempsrpingvar <- exp(median(data$`year:d_tempsrpingvar`,na.rm=TRUE))
+  #var_d_tempsrpingvar <- (sum(data$`year:d_tempsrpingvar_sd`^2 + data$`year:d_tempsrpingvar`^2, na.rm = TRUE))/n - median(data$`year:d_tempsrpingvar`,na.rm=TRUE)^2
+  #sd_d_tempsrpingvar <- sqrt(mu_d_tempsrpingvar^2*var_d_tempsrpingvar)
+  se_d_tempsrpingvar <- mu_d_tempsrpingvar/sqrt(n)*sd(data$`year:d_tempsrpingvar`,na.rm=TRUE)
+  mu_d_precspring <- exp(median(data$`year:d_precspring`,na.rm=TRUE))
+  #var_d_precspring <- (sum(data$`year:d_precspring_sd`^2 + data$`year:d_precspring`^2, na.rm = TRUE))/n - median(data$`year:d_precspring`,na.rm=TRUE)^2
+  #sd_d_precspring <- sqrt(mu_d_precspring^2*var_d_precspring)
+  se_d_precspring <- mu_d_precspring/sqrt(n)*sd(data$`year:d_precspring`,na.rm=TRUE)
+  mu_d_shannon <- exp(median(data$`year:d_shannon`,na.rm=TRUE))
+  #var_d_shannon <- (sum(data$`year:d_shannon_sd`^2 + data$`year:d_shannon`^2, na.rm = TRUE))/n - median(data$`year:d_shannon`,na.rm=TRUE)^2
+  #sd_d_shannon <- sqrt(mu_d_shannon^2*var_d_shannon)
+  se_d_shannon <- mu_d_shannon/sqrt(n)*sd(data$`year:d_shannon`,na.rm=TRUE)
+  mu_protectedarea_perc <- exp(median(data$`year:protectedarea_perc`,na.rm=TRUE))
+  #var_protectedarea_perc <- (sum(data$`year:protectedarea_perc_sd`^2 + data$`year:protectedarea_perc`^2, na.rm = TRUE))/n - median(data$`year:protectedarea_perc`,na.rm=TRUE)^2
+  #sd_protectedarea_perc <- sqrt(mu_protectedarea_perc^2*var_protectedarea_perc)
+  se_protectedarea_perc <- mu_protectedarea_perc/sqrt(n)*sd(data$`year:protectedarea_perc`,na.rm=TRUE)
+  mu_d_treedensity <- exp(median(data$`year:d_treedensity`,na.rm=TRUE))
+  #var_d_treedensity <- (sum(data$`year:d_treedensity_sd`^2 + data$`year:d_treedensity`^2, na.rm = TRUE))/n - median(data$`year:d_treedensity`,na.rm=TRUE)^2
+  #sd_d_treedensity <- sqrt(mu_d_treedensity^2*var_d_treedensity)
+  se_d_treedensity <- mu_d_treedensity/sqrt(n)*sd(data$`year:d_treedensity`,na.rm=TRUE)
+  mu_eulandsystem_forest_lowmedium <- exp(median(data$`year:eulandsystem_forest_lowmedium`,na.rm=TRUE))
+  #var_eulandsystem_forest_lowmedium <- (sum(data$`year:eulandsystem_forest_lowmedium_sd`^2 + data$`year:eulandsystem_forest_lowmedium`^2, na.rm = TRUE))/n - median(data$`year:eulandsystem_forest_lowmedium`,na.rm=TRUE)^2
+  #sd_eulandsystem_forest_lowmedium <- sqrt(mu_eulandsystem_forest_lowmedium^2*var_eulandsystem_forest_lowmedium)
+  se_eulandsystem_forest_lowmedium <- mu_eulandsystem_forest_lowmedium/sqrt(n)*sd(data$`year:eulandsystem_forest_lowmedium`,na.rm=TRUE)
+  mu_eulandsystem_forest_high <- exp(median(data$`year:eulandsystem_forest_high`,na.rm=TRUE))
+  #var_eulandsystem_forest_high <- (sum(data$`year:eulandsystem_forest_high_sd`^2 + data$`year:eulandsystem_forest_high`^2, na.rm = TRUE))/n - median(data$`year:eulandsystem_forest_high`,na.rm=TRUE)^2
+  #sd_eulandsystem_forest_high <- sqrt(mu_eulandsystem_forest_high^2*var_eulandsystem_forest_high)
+  se_eulandsystem_forest_high <- mu_eulandsystem_forest_high/sqrt(n)*sd(data$`year:eulandsystem_forest_high`,na.rm=TRUE)
+  mu_d_agri <- exp(median(data$`year:d_agri`,na.rm=TRUE))
+  #var_d_agri <- (sum(data$`year:d_agri_sd`^2 + data$`year:d_agri`^2, na.rm = TRUE))/n - median(data$`year:d_agri`,na.rm=TRUE)^2
+  #sd_d_agri <- sqrt(mu_d_agri^2*var_d_agri)
+  se_d_agri <- mu_d_agri/sqrt(n)*sd(data$`year:d_agri`,na.rm=TRUE)
+  mu_eulandsystem_farmland_low <- exp(median(data$`year:eulandsystem_farmland_low`,na.rm=TRUE))
+  #var_eulandsystem_farmland_low <- (sum(data$`year:eulandsystem_farmland_low_sd`^2 + data$`year:eulandsystem_farmland_low`^2, na.rm = TRUE))/n - median(data$`year:eulandsystem_farmland_low`,na.rm=TRUE)^2
+  #sd_eulandsystem_farmland_low <- sqrt(mu_eulandsystem_farmland_low^2*var_eulandsystem_farmland_low)
+  se_eulandsystem_farmland_low <- mu_eulandsystem_farmland_low/sqrt(n)*sd(data$`year:eulandsystem_farmland_low`,na.rm=TRUE)
+  #mu_eulandsystem_farmland_medium <- exp(median(data$`year:eulandsystem_farmland_medium`,na.rm=TRUE))
+  #var_eulandsystem_farmland_medium <- (sum(data$`year:eulandsystem_farmland_medium_sd`^2 + data$`year:eulandsystem_farmland_medium`^2, na.rm = TRUE))/n - median(data$`year:eulandsystem_farmland_medium`,na.rm=TRUE)^2
+  #sd_eulandsystem_farmland_medium <- sqrt(mu_eulandsystem_farmland_medium^2*var_eulandsystem_farmland_medium)
+  #se_eulandsystem_farmland_medium <- mu_eulandsystem_farmland_medium/sqrt(n)*sd(data$`year:eulandsystem_farmland_medium`,na.rm=TRUE)
+  mu_eulandsystem_farmland_high <- exp(median(data$`year:eulandsystem_farmland_high`,na.rm=TRUE))
+  #var_eulandsystem_farmland_high <- (sum(data$`year:eulandsystem_farmland_high_sd`^2 + data$`year:eulandsystem_farmland_high`^2, na.rm = TRUE))/n - median(data$`year:eulandsystem_farmland_high`,na.rm=TRUE)^2
+  #sd_eulandsystem_farmland_high <- sqrt(mu_eulandsystem_farmland_high^2*var_eulandsystem_farmland_high)
+  se_eulandsystem_farmland_high <- mu_eulandsystem_farmland_high/sqrt(n)*sd(data$`year:eulandsystem_farmland_high`,na.rm=TRUE)
+  
+  return(data.frame(mean_value = c(mu_d_impervious, mu_d_tempsrping,mu_d_tempsrpingvar,mu_d_precspring,mu_d_shannon,mu_protectedarea_perc,
+                                   mu_d_treedensity,mu_eulandsystem_forest_lowmedium,mu_eulandsystem_forest_high,mu_d_agri,mu_eulandsystem_farmland_low,
+                                   #mu_eulandsystem_farmland_medium,
+                                   mu_eulandsystem_farmland_high),
+                    se_value = c(se_d_impervious, se_d_tempsrping,se_d_tempsrpingvar,se_d_precspring,se_d_shannon,se_protectedarea_perc,
+                                 se_d_treedensity,se_eulandsystem_forest_lowmedium,se_eulandsystem_forest_high,se_d_agri,se_eulandsystem_farmland_low,
+                                 #se_eulandsystem_farmland_medium,
+                                 se_eulandsystem_farmland_high),
+                    variable = c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
+                                 "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                 "year:d_agri","year:eulandsystem_farmland_low",#"year:eulandsystem_farmland_medium",
+                                 "year:eulandsystem_farmland_high")))
+}
+
+
 
 ### France
 
@@ -9064,7 +9244,7 @@ pressure_change <- pressure_change
 site_data <- site_mainland_sf_reproj
 min_site_number_per_species <- 60
 min_occurence_species <- 200
-family <- "quasipoisson"
+family <- "nb"
 
 
 gam_species_FR <- function(bird_data,pressure_data,pressure_data_unscale,pressure_change,site_data,
@@ -9224,10 +9404,13 @@ gam_species_FR_simple <- function(bird_data,pressure_data,pressure_data_unscale,
     
     ### global poisson model
     
-    global_mod <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=4)"), collapse = " + "))),
-                       family=family, data=poisson_df,random=list(siteID=~1|PLS))
+    #global_mod <- gamm(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=10)"), collapse = " + "))),
+                  #     family=family, data=poisson_df,random=list(siteID=~1|PLS))
     
-    global_vif <- car::vif(lm(as.formula(formula_gam), data=poisson_df), type="predictor")$GVIF
+      global_mod <-  bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=10)"), collapse = " + "))),
+                         family=family, data=poisson_df,random=list(siteID=~1|PLS))
+    
+    #global_vif <- car::vif(lm(as.formula(formula_gam), data=poisson_df), type="predictor")$GVIF
     
     predict_trend_FR_res <- predict_trend_FR_simple(mod=global_mod,
                                              pressure_data_unscale,
@@ -9246,7 +9429,7 @@ gam_species_FR_simple <- function(bird_data,pressure_data,pressure_data_unscale,
       predict_trend_FR_res <- rbind(predict_trend_FR_res,predict_trend_FR_temp)
     }
     
-    global_mod_coef <- summary(global_mod$gam)$p.table
+    global_mod_coef <- summary(global_mod)$p.table#summary(global_mod$gam)$p.table
     
     if(nrow(global_mod_coef) < length(col_names)){
       row_to_add <- matrix(NA,nrow=length(which(!(col_names %in% row.names(global_mod_coef)))), ncol=1)
@@ -9257,7 +9440,7 @@ gam_species_FR_simple <- function(bird_data,pressure_data,pressure_data_unscale,
       global_mod_coef <- global_mod_coef_complet
     }
     
-    global_mod_coef <- rbind(global_mod_coef,c(summary(global_mod$gam)$r.sq,rep(0,3)),c(summary(global_mod$gam)$n,rep(0,3)))
+    global_mod_coef <- rbind(global_mod_coef,c(summary(global_mod)$r.sq,rep(0,3)),c(summary(global_mod)$n,rep(0,3)))#rbind(global_mod_coef,c(summary(global_mod$gam)$r.sq,rep(0,3)),c(summary(global_mod$gam)$n,rep(0,3)))
     
     global_mod_coef1 <- global_mod_coef[,1]
     global_mod_coef1[which(global_mod_coef[,4] > 0.05)] <- NA
@@ -11424,7 +11607,7 @@ predict_trend_FR_simple <- function(mod,
                              nb_rep=1000,
                              pressure_remove = NULL){
   
-  mod_coef <- summary(mod$gam)$p.table[grep("year",row.names(summary(mod$gam)$p.table)),]
+  mod_coef <- summary(mod)$p.table[grep("year",row.names(summary(mod)$p.table)),]#summary(mod$gam)$p.table[grep("year",row.names(summary(mod$gam)$p.table)),]
   
   if(!is.null(pressure_remove)){
     mod_coef[pressure_remove,c("Estimate","Std. Error")] <- 0
@@ -13227,6 +13410,524 @@ lv1out_predict <- function(pred_bird,
     geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
     geom_point(size = 3.5, aes(color = variable)) + 
     scale_color_manual(values = c("past"="black","bau"="#f88587ff","ssp1"="#96c3dcff","ssp3"="blue","nfn"="#a4db77ff","nfs"="#fbb25cff","nac"="#bea0ccff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+}
+
+pred_bird_correct <- predict_trend_all_bird_correct
+pred_butterfly_correct <- predict_trend_all_butterfly_correct
+
+lv1out_predict <- function(pred_bird_correct,
+                           farmland_bird,
+                           forest_bird,
+                           pred_butterfly_correct,
+                           press_butterfly,
+                           butterfly_sublist = NULL,
+                           grassland_butterfly,
+                           woodland_butterfly,
+                           dev_min,
+                           thres){
+  
+
+  
+  predict_trend_all_bird_eu <- pred_bird_correct[which(pred_bird_correct$PLS=="europe" & pred_bird_correct$pressure_removed=="none"),]
+  
+  pred_bird_correct <- ddply(predict_trend_all_bird_eu,
+                             .(PLS),.fun=function(x){
+                               for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
+                                 x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                 x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                               }
+                               for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
+                                 x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                 x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                               }
+                               return(x)
+                             },
+                             .progress = "text")
+  
+  
+  overall_trend_bird_all <- overall_mean_sd_trend(pred_bird_correct)
+  
+  overall_trend_bird_all <- data.frame(species="all",
+                                       value = c(overall_trend_bird_all$mu_past,overall_trend_bird_all$mu_bau,overall_trend_bird_all$mu_ssp1,overall_trend_bird_all$mu_ssp3,
+                                                 overall_trend_bird_all$mu_nac,overall_trend_bird_all$mu_nfn,overall_trend_bird_all$mu_nfs),
+                                       sd = c(overall_trend_bird_all$sd_past,overall_trend_bird_all$sd_bau,overall_trend_bird_all$sd_ssp1,overall_trend_bird_all$sd_ssp3,
+                                              overall_trend_bird_all$sd_nac,overall_trend_bird_all$sd_nfn,overall_trend_bird_all$sd_nfs),
+                                       se = c(overall_trend_bird_all$se_past,overall_trend_bird_all$se_bau,overall_trend_bird_all$se_ssp1,overall_trend_bird_all$se_ssp3,
+                                              overall_trend_bird_all$se_nac,overall_trend_bird_all$se_nfn,overall_trend_bird_all$se_nfs),
+                                       variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_bird_correct$sci_name_out)){
+    
+    overall_trend_bird_lv1out <- overall_mean_sd_trend(pred_bird_correct[-i,])
+    
+    overall_trend_bird_lv1out <- data.frame(species=pred_bird_correct$sci_name_out[i],
+                                            value = c(overall_trend_bird_lv1out$mu_past,overall_trend_bird_lv1out$mu_bau,overall_trend_bird_lv1out$mu_ssp1,overall_trend_bird_lv1out$mu_ssp3,
+                                                      overall_trend_bird_lv1out$mu_nac,overall_trend_bird_lv1out$mu_nfn,overall_trend_bird_lv1out$mu_nfs),
+                                            sd = c(overall_trend_bird_lv1out$sd_past,overall_trend_bird_lv1out$sd_bau,overall_trend_bird_lv1out$sd_ssp1,overall_trend_bird_lv1out$sd_ssp3,
+                                                   overall_trend_bird_lv1out$sd_nac,overall_trend_bird_lv1out$sd_nfn,overall_trend_bird_lv1out$sd_nfs),
+                                            se = c(overall_trend_bird_lv1out$se_past,overall_trend_bird_lv1out$se_bau,overall_trend_bird_lv1out$se_ssp1,overall_trend_bird_lv1out$se_ssp3,
+                                                   overall_trend_bird_lv1out$se_nac,overall_trend_bird_lv1out$se_nfn,overall_trend_bird_lv1out$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_bird_all <- rbind(overall_trend_bird_all,overall_trend_bird_lv1out)
+  }
+  
+  overall_trend_bird_all$variable <- factor(overall_trend_bird_all$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_bird_all, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+  pred_bird_correct_farm <- pred_bird_correct[which(pred_bird_correct$sci_name_out %in% farmland_bird),]
+  
+  overall_trend_bird_farmland <- overall_mean_sd_trend(pred_bird_correct_farm)
+  
+  overall_trend_bird_farmland <- data.frame(species="all",
+                                            value = c(overall_trend_bird_farmland$mu_past,overall_trend_bird_farmland$mu_bau,overall_trend_bird_farmland$mu_ssp1,overall_trend_bird_farmland$mu_ssp3,
+                                                      overall_trend_bird_farmland$mu_nac,overall_trend_bird_farmland$mu_nfn,overall_trend_bird_farmland$mu_nfs),
+                                            sd = c(overall_trend_bird_farmland$sd_past,overall_trend_bird_farmland$sd_bau,overall_trend_bird_farmland$sd_ssp1,overall_trend_bird_farmland$sd_ssp3,
+                                                   overall_trend_bird_farmland$sd_nac,overall_trend_bird_farmland$sd_nfn,overall_trend_bird_farmland$sd_nfs),
+                                            se = c(overall_trend_bird_farmland$se_past,overall_trend_bird_farmland$se_bau,overall_trend_bird_farmland$se_ssp1,overall_trend_bird_farmland$se_ssp3,
+                                                   overall_trend_bird_farmland$se_nac,overall_trend_bird_farmland$se_nfn,overall_trend_bird_farmland$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_bird_correct_farm$sci_name_out)){
+    
+    overall_trend_bird_lv1out <- overall_mean_sd_trend(pred_bird_correct_farm[-i,])
+    
+    overall_trend_bird_lv1out <- data.frame(species=pred_bird_correct_farm$sci_name_out[i],
+                                            value = c(overall_trend_bird_lv1out$mu_past,overall_trend_bird_lv1out$mu_bau,overall_trend_bird_lv1out$mu_ssp1,overall_trend_bird_lv1out$mu_ssp3,
+                                                      overall_trend_bird_lv1out$mu_nac,overall_trend_bird_lv1out$mu_nfn,overall_trend_bird_lv1out$mu_nfs),
+                                            sd = c(overall_trend_bird_lv1out$sd_past,overall_trend_bird_lv1out$sd_bau,overall_trend_bird_lv1out$sd_ssp1,overall_trend_bird_lv1out$sd_ssp3,
+                                                   overall_trend_bird_lv1out$sd_nac,overall_trend_bird_lv1out$sd_nfn,overall_trend_bird_lv1out$sd_nfs),
+                                            se = c(overall_trend_bird_lv1out$se_past,overall_trend_bird_lv1out$se_bau,overall_trend_bird_lv1out$se_ssp1,overall_trend_bird_lv1out$se_ssp3,
+                                                   overall_trend_bird_lv1out$se_nac,overall_trend_bird_lv1out$se_nfn,overall_trend_bird_lv1out$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_bird_farmland <- rbind(overall_trend_bird_farmland,overall_trend_bird_lv1out)
+  }
+  
+  overall_trend_bird_farmland$variable <- factor(overall_trend_bird_farmland$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_bird_farmland, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  pred_bird_correct_forest <- pred_bird_correct[which(pred_bird_correct$sci_name_out %in% forest_bird),]
+  
+  overall_trend_bird_forest <- overall_mean_sd_trend(pred_bird_correct_forest)
+  
+  overall_trend_bird_forest <- data.frame(species="all",
+                                          value = c(overall_trend_bird_forest$mu_past,overall_trend_bird_forest$mu_bau,overall_trend_bird_forest$mu_ssp1,overall_trend_bird_forest$mu_ssp3,
+                                                    overall_trend_bird_forest$mu_nac,overall_trend_bird_forest$mu_nfn,overall_trend_bird_forest$mu_nfs),
+                                          sd = c(overall_trend_bird_forest$sd_past,overall_trend_bird_forest$sd_bau,overall_trend_bird_forest$sd_ssp1,overall_trend_bird_forest$sd_ssp3,
+                                                 overall_trend_bird_forest$sd_nac,overall_trend_bird_forest$sd_nfn,overall_trend_bird_forest$sd_nfs),
+                                          se = c(overall_trend_bird_forest$se_past,overall_trend_bird_forest$se_bau,overall_trend_bird_forest$se_ssp1,overall_trend_bird_forest$se_ssp3,
+                                                 overall_trend_bird_forest$se_nac,overall_trend_bird_forest$se_nfn,overall_trend_bird_forest$se_nfs),
+                                          variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_bird_correct_forest$sci_name_out)){
+    
+    overall_trend_bird_lv1out <- overall_mean_sd_trend(pred_bird_correct_forest[-i,])
+    
+    overall_trend_bird_lv1out <- data.frame(species=pred_bird_correct_forest$sci_name_out[i],
+                                            value = c(overall_trend_bird_lv1out$mu_past,overall_trend_bird_lv1out$mu_bau,overall_trend_bird_lv1out$mu_ssp1,overall_trend_bird_lv1out$mu_ssp3,
+                                                      overall_trend_bird_lv1out$mu_nac,overall_trend_bird_lv1out$mu_nfn,overall_trend_bird_lv1out$mu_nfs),
+                                            sd = c(overall_trend_bird_lv1out$sd_past,overall_trend_bird_lv1out$sd_bau,overall_trend_bird_lv1out$sd_ssp1,overall_trend_bird_lv1out$sd_ssp3,
+                                                   overall_trend_bird_lv1out$sd_nac,overall_trend_bird_lv1out$sd_nfn,overall_trend_bird_lv1out$sd_nfs),
+                                            se = c(overall_trend_bird_lv1out$se_past,overall_trend_bird_lv1out$se_bau,overall_trend_bird_lv1out$se_ssp1,overall_trend_bird_lv1out$se_ssp3,
+                                                   overall_trend_bird_lv1out$se_nac,overall_trend_bird_lv1out$se_nfn,overall_trend_bird_lv1out$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_bird_forest <- rbind(overall_trend_bird_forest,overall_trend_bird_lv1out)
+  }
+  
+  overall_trend_bird_forest$variable <- factor(overall_trend_bird_forest$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_bird_forest, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+  
+  overall_trend_bird_all_signif <- overall_mean_sd_trend(pred_bird_correct)
+  
+  overall_trend_bird_all_signif <- data.frame(species="all",
+                                              value = c(overall_trend_bird_all_signif$mu_past_signif,overall_trend_bird_all_signif$mu_bau_signif,overall_trend_bird_all_signif$mu_ssp1_signif,overall_trend_bird_all_signif$mu_ssp3_signif,
+                                                        overall_trend_bird_all_signif$mu_nac_signif,overall_trend_bird_all_signif$mu_nfn_signif,overall_trend_bird_all_signif$mu_nfs_signif),
+                                              sd = c(overall_trend_bird_all_signif$sd_past_signif,overall_trend_bird_all_signif$sd_bau_signif,overall_trend_bird_all_signif$sd_ssp1_signif,overall_trend_bird_all_signif$sd_ssp3_signif,
+                                                     overall_trend_bird_all_signif$sd_nac_signif,overall_trend_bird_all_signif$sd_nfn_signif,overall_trend_bird_all_signif$sd_nfs),
+                                              se = c(overall_trend_bird_all_signif$se_past_signif,overall_trend_bird_all_signif$se_bau_signif,overall_trend_bird_all_signif$se_ssp1_signif,overall_trend_bird_all_signif$se_ssp3_signif,
+                                                     overall_trend_bird_all_signif$se_nac_signif,overall_trend_bird_all_signif$se_nfn_signif,overall_trend_bird_all_signif$se_nfs),
+                                              variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_bird_correct$sci_name_out)){
+    
+    overall_trend_bird_lv1out <- overall_mean_sd_trend(pred_bird_correct[-i,])
+    
+    overall_trend_bird_lv1out <- data.frame(species=pred_bird_correct$sci_name_out[i],
+                                            value = c(overall_trend_bird_lv1out$mu_past_signif,overall_trend_bird_lv1out$mu_bau_signif,overall_trend_bird_lv1out$mu_ssp1_signif,overall_trend_bird_lv1out$mu_ssp3_signif,
+                                                      overall_trend_bird_lv1out$mu_nac_signif,overall_trend_bird_lv1out$mu_nfn_signif,overall_trend_bird_lv1out$mu_nfs_signif),
+                                            sd = c(overall_trend_bird_lv1out$sd_past_signif,overall_trend_bird_lv1out$sd_bau_signif,overall_trend_bird_lv1out$sd_ssp1_signif,overall_trend_bird_lv1out$sd_ssp3_signif,
+                                                   overall_trend_bird_lv1out$sd_nac_signif,overall_trend_bird_lv1out$sd_nfn_signif,overall_trend_bird_lv1out$sd_nfs),
+                                            se = c(overall_trend_bird_lv1out$se_past_signif,overall_trend_bird_lv1out$se_bau_signif,overall_trend_bird_lv1out$se_ssp1_signif,overall_trend_bird_lv1out$se_ssp3_signif,
+                                                   overall_trend_bird_lv1out$se_nac_signif,overall_trend_bird_lv1out$se_nfn_signif,overall_trend_bird_lv1out$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_bird_all_signif <- rbind(overall_trend_bird_all_signif,overall_trend_bird_lv1out)
+  }
+  
+  overall_trend_bird_all_signif$variable <- factor(overall_trend_bird_all_signif$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_bird_all_signif, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+  overall_trend_bird_farmland_signif <- overall_mean_sd_trend(pred_bird_correct_farm)
+  
+  overall_trend_bird_farmland_signif <- data.frame(species="all",
+                                                   value = c(overall_trend_bird_farmland_signif$mu_past_signif,overall_trend_bird_farmland_signif$mu_bau_signif,overall_trend_bird_farmland_signif$mu_ssp1_signif,overall_trend_bird_farmland_signif$mu_ssp3_signif,
+                                                             overall_trend_bird_farmland_signif$mu_nac_signif,overall_trend_bird_farmland_signif$mu_nfn_signif,overall_trend_bird_farmland_signif$mu_nfs_signif),
+                                                   sd = c(overall_trend_bird_farmland_signif$sd_past_signif,overall_trend_bird_farmland_signif$sd_bau_signif,overall_trend_bird_farmland_signif$sd_ssp1_signif,overall_trend_bird_farmland_signif$sd_ssp3_signif,
+                                                          overall_trend_bird_farmland_signif$sd_nac_signif,overall_trend_bird_farmland_signif$sd_nfn_signif,overall_trend_bird_farmland_signif$sd_nfs),
+                                                   se = c(overall_trend_bird_farmland_signif$se_past_signif,overall_trend_bird_farmland_signif$se_bau_signif,overall_trend_bird_farmland_signif$se_ssp1_signif,overall_trend_bird_farmland_signif$se_ssp3_signif,
+                                                          overall_trend_bird_farmland_signif$se_nac_signif,overall_trend_bird_farmland_signif$se_nfn_signif,overall_trend_bird_farmland_signif$se_nfs),
+                                                   variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_bird_correct_farm$sci_name_out)){
+    
+    overall_trend_bird_lv1out <- overall_mean_sd_trend(pred_bird_correct_farm[-i,])
+    
+    overall_trend_bird_lv1out <- data.frame(species=pred_bird_correct_farm$sci_name_out[i],
+                                            value = c(overall_trend_bird_lv1out$mu_past_signif,overall_trend_bird_lv1out$mu_bau_signif,overall_trend_bird_lv1out$mu_ssp1_signif,overall_trend_bird_lv1out$mu_ssp3_signif,
+                                                      overall_trend_bird_lv1out$mu_nac_signif,overall_trend_bird_lv1out$mu_nfn_signif,overall_trend_bird_lv1out$mu_nfs_signif),
+                                            sd = c(overall_trend_bird_lv1out$sd_past_signif,overall_trend_bird_lv1out$sd_bau_signif,overall_trend_bird_lv1out$sd_ssp1_signif,overall_trend_bird_lv1out$sd_ssp3_signif,
+                                                   overall_trend_bird_lv1out$sd_nac_signif,overall_trend_bird_lv1out$sd_nfn_signif,overall_trend_bird_lv1out$sd_nfs),
+                                            se = c(overall_trend_bird_lv1out$se_past_signif,overall_trend_bird_lv1out$se_bau_signif,overall_trend_bird_lv1out$se_ssp1_signif,overall_trend_bird_lv1out$se_ssp3_signif,
+                                                   overall_trend_bird_lv1out$se_nac_signif,overall_trend_bird_lv1out$se_nfn_signif,overall_trend_bird_lv1out$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_bird_farmland_signif <- rbind(overall_trend_bird_farmland_signif,overall_trend_bird_lv1out)
+  }
+  
+  overall_trend_bird_farmland_signif$variable <- factor(overall_trend_bird_farmland_signif$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_bird_farmland_signif, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  overall_trend_bird_forest_signif <- overall_mean_sd_trend(pred_bird_correct_forest)
+  
+  overall_trend_bird_forest_signif <- data.frame(species="all",
+                                                 value = c(overall_trend_bird_forest_signif$mu_past_signif,overall_trend_bird_forest_signif$mu_bau_signif,overall_trend_bird_forest_signif$mu_ssp1_signif,overall_trend_bird_forest_signif$mu_ssp3_signif,
+                                                           overall_trend_bird_forest_signif$mu_nac_signif,overall_trend_bird_forest_signif$mu_nfn_signif,overall_trend_bird_forest_signif$mu_nfs_signif),
+                                                 sd = c(overall_trend_bird_forest_signif$sd_past_signif,overall_trend_bird_forest_signif$sd_bau_signif,overall_trend_bird_forest_signif$sd_ssp1_signif,overall_trend_bird_forest_signif$sd_ssp3_signif,
+                                                        overall_trend_bird_forest_signif$sd_nac_signif,overall_trend_bird_forest_signif$sd_nfn_signif,overall_trend_bird_forest_signif$sd_nfs),
+                                                 se = c(overall_trend_bird_forest_signif$se_past_signif,overall_trend_bird_forest_signif$se_bau_signif,overall_trend_bird_forest_signif$se_ssp1_signif,overall_trend_bird_forest_signif$se_ssp3_signif,
+                                                        overall_trend_bird_forest_signif$se_nac_signif,overall_trend_bird_forest_signif$se_nfn_signif,overall_trend_bird_forest_signif$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_bird_correct_forest$sci_name_out)){
+    
+    overall_trend_bird_lv1out <- overall_mean_sd_trend(pred_bird_correct_forest[-i,])
+    
+    overall_trend_bird_lv1out <- data.frame(species=pred_bird_correct_forest$sci_name_out[i],
+                                            value = c(overall_trend_bird_lv1out$mu_past_signif,overall_trend_bird_lv1out$mu_bau_signif,overall_trend_bird_lv1out$mu_ssp1_signif,overall_trend_bird_lv1out$mu_ssp3_signif,
+                                                      overall_trend_bird_lv1out$mu_nac_signif,overall_trend_bird_lv1out$mu_nfn_signif,overall_trend_bird_lv1out$mu_nfs_signif),
+                                            sd = c(overall_trend_bird_lv1out$sd_past_signif,overall_trend_bird_lv1out$sd_bau_signif,overall_trend_bird_lv1out$sd_ssp1_signif,overall_trend_bird_lv1out$sd_ssp3_signif,
+                                                   overall_trend_bird_lv1out$sd_nac_signif,overall_trend_bird_lv1out$sd_nfn_signif,overall_trend_bird_lv1out$sd_nfs),
+                                            se = c(overall_trend_bird_lv1out$se_past_signif,overall_trend_bird_lv1out$se_bau_signif,overall_trend_bird_lv1out$se_ssp1_signif,overall_trend_bird_lv1out$se_ssp3_signif,
+                                                   overall_trend_bird_lv1out$se_nac_signif,overall_trend_bird_lv1out$se_nfn_signif,overall_trend_bird_lv1out$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_bird_forest_signif <- rbind(overall_trend_bird_forest_signif,overall_trend_bird_lv1out)
+  }
+  
+  overall_trend_bird_forest_signif$variable <- factor(overall_trend_bird_forest_signif$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_bird_forest_signif, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+  
+  
+  
+
+  predict_trend_all_butterfly_eu <- pred_butterfly_correct[which(pred_butterfly_correct$PLS=="europe" & pred_butterfly_correct$pressure_removed=="none"),]
+  
+  pred_butterfly_correct <- ddply(predict_trend_all_butterfly_eu,
+                                  .(PLS),.fun=function(x){
+                                    for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
+                                      x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                      x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                    }
+                                    for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
+                                      x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                      x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                    }
+                                    return(x)
+                                  },
+                                  .progress = "text")
+  
+  
+  overall_trend_butterfly_all <- overall_mean_sd_trend(pred_butterfly_correct)
+  
+  overall_trend_butterfly_all <- data.frame(species="all",
+                                            value = c(overall_trend_butterfly_all$mu_past,overall_trend_butterfly_all$mu_bau,overall_trend_butterfly_all$mu_ssp1,overall_trend_butterfly_all$mu_ssp3,
+                                                      overall_trend_butterfly_all$mu_nac,overall_trend_butterfly_all$mu_nfn,overall_trend_butterfly_all$mu_nfs),
+                                            sd = c(overall_trend_butterfly_all$sd_past,overall_trend_butterfly_all$sd_bau,overall_trend_butterfly_all$sd_ssp1,overall_trend_butterfly_all$sd_ssp3,
+                                                   overall_trend_butterfly_all$sd_nac,overall_trend_butterfly_all$sd_nfn,overall_trend_butterfly_all$sd_nfs),
+                                            se = c(overall_trend_butterfly_all$se_past,overall_trend_butterfly_all$se_bau,overall_trend_butterfly_all$se_ssp1,overall_trend_butterfly_all$se_ssp3,
+                                                   overall_trend_butterfly_all$se_nac,overall_trend_butterfly_all$se_nfn,overall_trend_butterfly_all$se_nfs),
+                                            variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_butterfly_correct$species_name)){
+    
+    overall_trend_butterfly_lv1out <- overall_mean_sd_trend(pred_butterfly_correct[-i,])
+    
+    overall_trend_butterfly_lv1out <- data.frame(species=pred_butterfly_correct$species_name[i],
+                                                 value = c(overall_trend_butterfly_lv1out$mu_past,overall_trend_butterfly_lv1out$mu_bau,overall_trend_butterfly_lv1out$mu_ssp1,overall_trend_butterfly_lv1out$mu_ssp3,
+                                                           overall_trend_butterfly_lv1out$mu_nac,overall_trend_butterfly_lv1out$mu_nfn,overall_trend_butterfly_lv1out$mu_nfs),
+                                                 sd = c(overall_trend_butterfly_lv1out$sd_past,overall_trend_butterfly_lv1out$sd_bau,overall_trend_butterfly_lv1out$sd_ssp1,overall_trend_butterfly_lv1out$sd_ssp3,
+                                                        overall_trend_butterfly_lv1out$sd_nac,overall_trend_butterfly_lv1out$sd_nfn,overall_trend_butterfly_lv1out$sd_nfs),
+                                                 se = c(overall_trend_butterfly_lv1out$se_past,overall_trend_butterfly_lv1out$se_bau,overall_trend_butterfly_lv1out$se_ssp1,overall_trend_butterfly_lv1out$se_ssp3,
+                                                        overall_trend_butterfly_lv1out$se_nac,overall_trend_butterfly_lv1out$se_nfn,overall_trend_butterfly_lv1out$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_butterfly_all <- rbind(overall_trend_butterfly_all,overall_trend_butterfly_lv1out)
+  }
+  
+  overall_trend_butterfly_all$variable <- factor(overall_trend_butterfly_all$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_butterfly_all, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+  pred_butterfly_correct_farm <- pred_butterfly_correct[which(pred_butterfly_correct$species_name %in% grassland_butterfly),]
+  
+  overall_trend_butterfly_farmland <- overall_mean_sd_trend(pred_butterfly_correct_farm)
+  
+  overall_trend_butterfly_farmland <- data.frame(species="all",
+                                                 value = c(overall_trend_butterfly_farmland$mu_past,overall_trend_butterfly_farmland$mu_bau,overall_trend_butterfly_farmland$mu_ssp1,overall_trend_butterfly_farmland$mu_ssp3,
+                                                           overall_trend_butterfly_farmland$mu_nac,overall_trend_butterfly_farmland$mu_nfn,overall_trend_butterfly_farmland$mu_nfs),
+                                                 sd = c(overall_trend_butterfly_farmland$sd_past,overall_trend_butterfly_farmland$sd_bau,overall_trend_butterfly_farmland$sd_ssp1,overall_trend_butterfly_farmland$sd_ssp3,
+                                                        overall_trend_butterfly_farmland$sd_nac,overall_trend_butterfly_farmland$sd_nfn,overall_trend_butterfly_farmland$sd_nfs),
+                                                 se = c(overall_trend_butterfly_farmland$se_past,overall_trend_butterfly_farmland$se_bau,overall_trend_butterfly_farmland$se_ssp1,overall_trend_butterfly_farmland$se_ssp3,
+                                                        overall_trend_butterfly_farmland$se_nac,overall_trend_butterfly_farmland$se_nfn,overall_trend_butterfly_farmland$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_butterfly_correct_farm$species_name)){
+    
+    overall_trend_butterfly_lv1out <- overall_mean_sd_trend(pred_butterfly_correct_farm[-i,])
+    
+    overall_trend_butterfly_lv1out <- data.frame(species=pred_butterfly_correct_farm$species_name[i],
+                                                 value = c(overall_trend_butterfly_lv1out$mu_past,overall_trend_butterfly_lv1out$mu_bau,overall_trend_butterfly_lv1out$mu_ssp1,overall_trend_butterfly_lv1out$mu_ssp3,
+                                                           overall_trend_butterfly_lv1out$mu_nac,overall_trend_butterfly_lv1out$mu_nfn,overall_trend_butterfly_lv1out$mu_nfs),
+                                                 sd = c(overall_trend_butterfly_lv1out$sd_past,overall_trend_butterfly_lv1out$sd_bau,overall_trend_butterfly_lv1out$sd_ssp1,overall_trend_butterfly_lv1out$sd_ssp3,
+                                                        overall_trend_butterfly_lv1out$sd_nac,overall_trend_butterfly_lv1out$sd_nfn,overall_trend_butterfly_lv1out$sd_nfs),
+                                                 se = c(overall_trend_butterfly_lv1out$se_past,overall_trend_butterfly_lv1out$se_bau,overall_trend_butterfly_lv1out$se_ssp1,overall_trend_butterfly_lv1out$se_ssp3,
+                                                        overall_trend_butterfly_lv1out$se_nac,overall_trend_butterfly_lv1out$se_nfn,overall_trend_butterfly_lv1out$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_butterfly_farmland <- rbind(overall_trend_butterfly_farmland,overall_trend_butterfly_lv1out)
+  }
+  
+  overall_trend_butterfly_farmland$variable <- factor(overall_trend_butterfly_farmland$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_butterfly_farmland, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  pred_butterfly_correct_forest <- pred_butterfly_correct[which(pred_butterfly_correct$species_name %in% woodland_butterfly),]
+  
+  overall_trend_butterfly_forest <- overall_mean_sd_trend(pred_butterfly_correct_forest)
+  
+  overall_trend_butterfly_forest <- data.frame(species="all",
+                                               value = c(overall_trend_butterfly_forest$mu_past,overall_trend_butterfly_forest$mu_bau,overall_trend_butterfly_forest$mu_ssp1,overall_trend_butterfly_forest$mu_ssp3,
+                                                         overall_trend_butterfly_forest$mu_nac,overall_trend_butterfly_forest$mu_nfn,overall_trend_butterfly_forest$mu_nfs),
+                                               sd = c(overall_trend_butterfly_forest$sd_past,overall_trend_butterfly_forest$sd_bau,overall_trend_butterfly_forest$sd_ssp1,overall_trend_butterfly_forest$sd_ssp3,
+                                                      overall_trend_butterfly_forest$sd_nac,overall_trend_butterfly_forest$sd_nfn,overall_trend_butterfly_forest$sd_nfs),
+                                               se = c(overall_trend_butterfly_forest$se_past,overall_trend_butterfly_forest$se_bau,overall_trend_butterfly_forest$se_ssp1,overall_trend_butterfly_forest$se_ssp3,
+                                                      overall_trend_butterfly_forest$se_nac,overall_trend_butterfly_forest$se_nfn,overall_trend_butterfly_forest$se_nfs),
+                                               variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_butterfly_correct_forest$species_name)){
+    
+    overall_trend_butterfly_lv1out <- overall_mean_sd_trend(pred_butterfly_correct_forest[-i,])
+    
+    overall_trend_butterfly_lv1out <- data.frame(species=pred_butterfly_correct_forest$species_name[i],
+                                                 value = c(overall_trend_butterfly_lv1out$mu_past,overall_trend_butterfly_lv1out$mu_bau,overall_trend_butterfly_lv1out$mu_ssp1,overall_trend_butterfly_lv1out$mu_ssp3,
+                                                           overall_trend_butterfly_lv1out$mu_nac,overall_trend_butterfly_lv1out$mu_nfn,overall_trend_butterfly_lv1out$mu_nfs),
+                                                 sd = c(overall_trend_butterfly_lv1out$sd_past,overall_trend_butterfly_lv1out$sd_bau,overall_trend_butterfly_lv1out$sd_ssp1,overall_trend_butterfly_lv1out$sd_ssp3,
+                                                        overall_trend_butterfly_lv1out$sd_nac,overall_trend_butterfly_lv1out$sd_nfn,overall_trend_butterfly_lv1out$sd_nfs),
+                                                 se = c(overall_trend_butterfly_lv1out$se_past,overall_trend_butterfly_lv1out$se_bau,overall_trend_butterfly_lv1out$se_ssp1,overall_trend_butterfly_lv1out$se_ssp3,
+                                                        overall_trend_butterfly_lv1out$se_nac,overall_trend_butterfly_lv1out$se_nfn,overall_trend_butterfly_lv1out$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_butterfly_forest <- rbind(overall_trend_butterfly_forest,overall_trend_butterfly_lv1out)
+  }
+  
+  overall_trend_butterfly_forest$variable <- factor(overall_trend_butterfly_forest$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_butterfly_forest, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+  pred_butterfly_correct[pred_butterfly_correct==0] <- NA
+  overall_trend_butterfly_all_signif <- overall_mean_sd_trend(pred_butterfly_correct)
+  
+  overall_trend_butterfly_all_signif <- data.frame(species="all",
+                                                   value = c(overall_trend_butterfly_all_signif$mu_past_signif,overall_trend_butterfly_all_signif$mu_bau_signif,overall_trend_butterfly_all_signif$mu_ssp1_signif,overall_trend_butterfly_all_signif$mu_ssp3_signif,
+                                                             overall_trend_butterfly_all_signif$mu_nac_signif,overall_trend_butterfly_all_signif$mu_nfn_signif,overall_trend_butterfly_all_signif$mu_nfs_signif),
+                                                   sd = c(overall_trend_butterfly_all_signif$sd_past_signif,overall_trend_butterfly_all_signif$sd_bau_signif,overall_trend_butterfly_all_signif$sd_ssp1_signif,overall_trend_butterfly_all_signif$sd_ssp3_signif,
+                                                          overall_trend_butterfly_all_signif$sd_nac_signif,overall_trend_butterfly_all_signif$sd_nfn_signif,overall_trend_butterfly_all_signif$sd_nfs),
+                                                   se = c(overall_trend_butterfly_all_signif$se_past_signif,overall_trend_butterfly_all_signif$se_bau_signif,overall_trend_butterfly_all_signif$se_ssp1_signif,overall_trend_butterfly_all_signif$se_ssp3_signif,
+                                                          overall_trend_butterfly_all_signif$se_nac_signif,overall_trend_butterfly_all_signif$se_nfn_signif,overall_trend_butterfly_all_signif$se_nfs),
+                                                   variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_butterfly_correct$species_name)){
+    
+    overall_trend_butterfly_lv1out <- overall_mean_sd_trend(pred_butterfly_correct[-i,])
+    
+    overall_trend_butterfly_lv1out <- data.frame(species=pred_butterfly_correct$species_name[i],
+                                                 value = c(overall_trend_butterfly_lv1out$mu_past_signif,overall_trend_butterfly_lv1out$mu_bau_signif,overall_trend_butterfly_lv1out$mu_ssp1_signif,overall_trend_butterfly_lv1out$mu_ssp3_signif,
+                                                           overall_trend_butterfly_lv1out$mu_nac_signif,overall_trend_butterfly_lv1out$mu_nfn_signif,overall_trend_butterfly_lv1out$mu_nfs_signif),
+                                                 sd = c(overall_trend_butterfly_lv1out$sd_past_signif,overall_trend_butterfly_lv1out$sd_bau_signif,overall_trend_butterfly_lv1out$sd_ssp1_signif,overall_trend_butterfly_lv1out$sd_ssp3_signif,
+                                                        overall_trend_butterfly_lv1out$sd_nac_signif,overall_trend_butterfly_lv1out$sd_nfn_signif,overall_trend_butterfly_lv1out$sd_nfs),
+                                                 se = c(overall_trend_butterfly_lv1out$se_past_signif,overall_trend_butterfly_lv1out$se_bau_signif,overall_trend_butterfly_lv1out$se_ssp1_signif,overall_trend_butterfly_lv1out$se_ssp3_signif,
+                                                        overall_trend_butterfly_lv1out$se_nac_signif,overall_trend_butterfly_lv1out$se_nfn_signif,overall_trend_butterfly_lv1out$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_butterfly_all_signif <- rbind(overall_trend_butterfly_all_signif,overall_trend_butterfly_lv1out)
+  }
+  
+  overall_trend_butterfly_all_signif$variable <- factor(overall_trend_butterfly_all_signif$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_butterfly_all_signif, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  
+  overall_trend_butterfly_farmland_signif <- overall_mean_sd_trend(pred_butterfly_correct_farm)
+  
+  overall_trend_butterfly_farmland_signif <- data.frame(species="all",
+                                                        value = c(overall_trend_butterfly_farmland_signif$mu_past_signif,overall_trend_butterfly_farmland_signif$mu_bau_signif,overall_trend_butterfly_farmland_signif$mu_ssp1_signif,overall_trend_butterfly_farmland_signif$mu_ssp3_signif,
+                                                                  overall_trend_butterfly_farmland_signif$mu_nac_signif,overall_trend_butterfly_farmland_signif$mu_nfn_signif,overall_trend_butterfly_farmland_signif$mu_nfs_signif),
+                                                        sd = c(overall_trend_butterfly_farmland_signif$sd_past_signif,overall_trend_butterfly_farmland_signif$sd_bau_signif,overall_trend_butterfly_farmland_signif$sd_ssp1_signif,overall_trend_butterfly_farmland_signif$sd_ssp3_signif,
+                                                               overall_trend_butterfly_farmland_signif$sd_nac_signif,overall_trend_butterfly_farmland_signif$sd_nfn_signif,overall_trend_butterfly_farmland_signif$sd_nfs),
+                                                        se = c(overall_trend_butterfly_farmland_signif$se_past_signif,overall_trend_butterfly_farmland_signif$se_bau_signif,overall_trend_butterfly_farmland_signif$se_ssp1_signif,overall_trend_butterfly_farmland_signif$se_ssp3_signif,
+                                                               overall_trend_butterfly_farmland_signif$se_nac_signif,overall_trend_butterfly_farmland_signif$se_nfn_signif,overall_trend_butterfly_farmland_signif$se_nfs),
+                                                        variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_butterfly_correct_farm$species_name)){
+    
+    overall_trend_butterfly_lv1out <- overall_mean_sd_trend(pred_butterfly_correct_farm[-i,])
+    
+    overall_trend_butterfly_lv1out <- data.frame(species=pred_butterfly_correct_farm$species_name[i],
+                                                 value = c(overall_trend_butterfly_lv1out$mu_past_signif,overall_trend_butterfly_lv1out$mu_bau_signif,overall_trend_butterfly_lv1out$mu_ssp1_signif,overall_trend_butterfly_lv1out$mu_ssp3_signif,
+                                                           overall_trend_butterfly_lv1out$mu_nac_signif,overall_trend_butterfly_lv1out$mu_nfn_signif,overall_trend_butterfly_lv1out$mu_nfs_signif),
+                                                 sd = c(overall_trend_butterfly_lv1out$sd_past_signif,overall_trend_butterfly_lv1out$sd_bau_signif,overall_trend_butterfly_lv1out$sd_ssp1_signif,overall_trend_butterfly_lv1out$sd_ssp3_signif,
+                                                        overall_trend_butterfly_lv1out$sd_nac_signif,overall_trend_butterfly_lv1out$sd_nfn_signif,overall_trend_butterfly_lv1out$sd_nfs),
+                                                 se = c(overall_trend_butterfly_lv1out$se_past_signif,overall_trend_butterfly_lv1out$se_bau_signif,overall_trend_butterfly_lv1out$se_ssp1_signif,overall_trend_butterfly_lv1out$se_ssp3_signif,
+                                                        overall_trend_butterfly_lv1out$se_nac_signif,overall_trend_butterfly_lv1out$se_nfn_signif,overall_trend_butterfly_lv1out$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_butterfly_farmland_signif <- rbind(overall_trend_butterfly_farmland_signif,overall_trend_butterfly_lv1out)
+  }
+  
+  overall_trend_butterfly_farmland_signif$variable <- factor(overall_trend_butterfly_farmland_signif$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_butterfly_farmland_signif, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
+    theme_minimal() + theme(legend.position = "none") +
+    xlab("Slope") + ylab("Scenarios")
+  
+  overall_trend_butterfly_forest_signif <- overall_mean_sd_trend(pred_butterfly_correct_forest)
+  
+  overall_trend_butterfly_forest_signif <- data.frame(species="all",
+                                                      value = c(overall_trend_butterfly_forest_signif$mu_past_signif,overall_trend_butterfly_forest_signif$mu_bau_signif,overall_trend_butterfly_forest_signif$mu_ssp1_signif,overall_trend_butterfly_forest_signif$mu_ssp3_signif,
+                                                                overall_trend_butterfly_forest_signif$mu_nac_signif,overall_trend_butterfly_forest_signif$mu_nfn_signif,overall_trend_butterfly_forest_signif$mu_nfs_signif),
+                                                      sd = c(overall_trend_butterfly_forest_signif$sd_past_signif,overall_trend_butterfly_forest_signif$sd_bau_signif,overall_trend_butterfly_forest_signif$sd_ssp1_signif,overall_trend_butterfly_forest_signif$sd_ssp3_signif,
+                                                             overall_trend_butterfly_forest_signif$sd_nac_signif,overall_trend_butterfly_forest_signif$sd_nfn_signif,overall_trend_butterfly_forest_signif$sd_nfs),
+                                                      se = c(overall_trend_butterfly_forest_signif$se_past_signif,overall_trend_butterfly_forest_signif$se_bau_signif,overall_trend_butterfly_forest_signif$se_ssp1_signif,overall_trend_butterfly_forest_signif$se_ssp3_signif,
+                                                             overall_trend_butterfly_forest_signif$se_nac_signif,overall_trend_butterfly_forest_signif$se_nfn_signif,overall_trend_butterfly_forest_signif$se_nfs),
+                                                      variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+  
+  for(i in 1:length(pred_butterfly_correct_forest$species_name)){
+    
+    overall_trend_butterfly_lv1out <- overall_mean_sd_trend(pred_butterfly_correct_forest[-i,])
+    
+    overall_trend_butterfly_lv1out <- data.frame(species=pred_butterfly_correct_forest$species_name[i],
+                                                 value = c(overall_trend_butterfly_lv1out$mu_past_signif,overall_trend_butterfly_lv1out$mu_bau_signif,overall_trend_butterfly_lv1out$mu_ssp1_signif,overall_trend_butterfly_lv1out$mu_ssp3_signif,
+                                                           overall_trend_butterfly_lv1out$mu_nac_signif,overall_trend_butterfly_lv1out$mu_nfn_signif,overall_trend_butterfly_lv1out$mu_nfs_signif),
+                                                 sd = c(overall_trend_butterfly_lv1out$sd_past_signif,overall_trend_butterfly_lv1out$sd_bau_signif,overall_trend_butterfly_lv1out$sd_ssp1_signif,overall_trend_butterfly_lv1out$sd_ssp3_signif,
+                                                        overall_trend_butterfly_lv1out$sd_nac_signif,overall_trend_butterfly_lv1out$sd_nfn_signif,overall_trend_butterfly_lv1out$sd_nfs),
+                                                 se = c(overall_trend_butterfly_lv1out$se_past_signif,overall_trend_butterfly_lv1out$se_bau_signif,overall_trend_butterfly_lv1out$se_ssp1_signif,overall_trend_butterfly_lv1out$se_ssp3_signif,
+                                                        overall_trend_butterfly_lv1out$se_nac_signif,overall_trend_butterfly_lv1out$se_nfn_signif,overall_trend_butterfly_lv1out$se_nfs),
+                                                 variable = c("past","bau","ssp1","ssp3","nac","nfn","nfs"))
+    
+    overall_trend_butterfly_forest_signif <- rbind(overall_trend_butterfly_forest_signif,overall_trend_butterfly_lv1out)
+  }
+  
+  overall_trend_butterfly_forest_signif$variable <- factor(overall_trend_butterfly_forest_signif$variable, levels = c("past","bau","ssp1","ssp3","nfn","nfs","nac"))
+  
+  ggplot(overall_trend_butterfly_forest_signif, aes(x=value,y = variable)) + 
+    geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+    geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
+    geom_point(size = 3.5, aes(color = variable)) + 
+    scale_color_manual(values = c("past"="black","bau"="grey","ssp1"="#cc79a7ff","ssp3"="red","nfn"="#009e73ff","nfs"="#0072b2ff","nac"="#e69f00ff")) + 
     theme_minimal() + theme(legend.position = "none") +
     xlab("Slope") + ylab("Scenarios")
   

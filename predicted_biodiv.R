@@ -1433,6 +1433,17 @@ predict_trend_all_bird <- predict_trend_all_bird[which(!is.na(predict_trend_all_
 #predict_trend_all_bird <-  readRDS("output/predict_trend_all_bird_yearnotscale_nb.rds") # readRDS("output/predict_trend_all_bird_nomediumfarm_notcenter_nb.rds") #readRDS("output/predict_trend_all_birdnew_past.rds")
 predict_trend_all_bird <-  readRDS("output/predict_gam_trend_all_bird.rds")
 
+predict_trend_all_bird2 <-  readRDS("output/predict_trend_all_bird_nb_quasipoisson_15.rds")
+names(predict_trend_all_bird)[which(!(names(predict_trend_all_bird) %in% names(predict_trend_all_bird2)))]
+predict_trend_all_bird2$milieu_catothers <- predict_trend_all_bird2$milieu_catothers_signif <- predict_trend_all_bird2$milieu_catothers_sd <- NA
+predict_trend_all_bird <- rbind(predict_trend_all_bird,
+                                predict_trend_all_bird2[which(predict_trend_all_bird2$sci_name_out %in% unique(predict_trend_all_bird2$sci_name_out)[which(!(unique(predict_trend_all_bird2$sci_name_out) %in% predict_trend_all_bird[which(predict_trend_all_bird$PLS=="europe" & predict_trend_all_bird$pressure_removed=="none"),"sci_name_out"]))]
+),])
+
+#saveRDS(predict_trend_all_bird,"output/predict_gam_trend_all_bird_gref.rds")
+
+predict_trend_all_bird <-  readRDS("output/predict_gam_trend_all_bird_gref.rds")
+
 
 predict_trend_all_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
                                 .(species_name),.fun=predict_trend_butterfly,
@@ -1498,9 +1509,12 @@ predict_trend_all_butterfly <- predict_trend_all_butterfly[which(!is.na(predict_
 predict_trend_all_butterfly <-  readRDS("output/predict_gam_trend_all_butterfly.rds")
 
 
+
+
+
 predict_trend_all_bird_correct <- merge(res_gamm_bird_correct,predict_trend_all_bird, by=c("sci_name_out","PLS"),all.x=TRUE)
 
-predict_trend_all_bird_correct <- predict_trend_all_bird[which(predict_trend_all_bird$sci_name_out %in% pecbms_species & predict_trend_all_bird$dev_exp > 0.2 & !(predict_trend_all_bird$sci_name_out %in% misclassed_species$sci_name_out)),]
+predict_trend_all_bird_correct <- predict_trend_all_bird[which(predict_trend_all_bird$sci_name_out %in% pecbms_species & predict_trend_all_bird$dev_exp > 0.2),]# & !(predict_trend_all_bird$sci_name_out %in% misclassed_species$sci_name_out)),]
 
 predict_trend_all_bird_eu <- predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$PLS=="europe" & predict_trend_all_bird_correct$pressure_removed=="none"),]
 
@@ -1533,7 +1547,7 @@ overall_trend_all <- ddply(predict_trend_all_bird_correct,
 overall_trend_all_sp <- ddply(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$sci_name_out %in% SSI$Species[which(SSI$Habitat.specialism >0.5)]),],
                                  .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                  .progress = "text")
-overall_trend_all_gene <- ddply(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$sci_name_out %in% SSI$Species[which(SSI$Habitat.specialism <= 0.5)]),],
+overall_trend_all_gene <- ddply(predict_trend_all_bird_correct[which(predict_trend_all_bird_correct$sci_name_out %in% SSI$Species[which(SSI$Habitat.specialism < 0.5)]),],
                                    .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                    .progress = "text")
 
@@ -1542,7 +1556,9 @@ overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS"
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_all_sf, aes(fill=mu_past), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(min(overall_trend_all[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")]),
+                         max(overall_trend_all[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")])),
+                       midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_all_sf, aes(fill=mu_ssp1-mu_bau), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
@@ -1564,15 +1580,17 @@ overall_trend_farmland <- ddply(predict_trend_farmland,
 overall_trend_farmland_sp <- ddply(predict_trend_farmland[which(predict_trend_farmland$sci_name_out %in% SSI$Species[which(SSI$Habitat >0.5)]),],
                                  .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                  .progress = "text")
-overall_trend_farmland_gene <- ddply(predict_trend_farmland[which(predict_trend_farmland$sci_name_out %in% SSI$Species[which(SSI$Habitat <= 0.5)]),],
+overall_trend_farmland_gene <- ddply(predict_trend_farmland[which(predict_trend_farmland$sci_name_out %in% SSI$Species[which(SSI$Habitat < 0.5)]),],
                                    .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                    .progress = "text")
 
 overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_past_signif), col = NA) + 
+  geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_past), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(min(overall_trend_farmland[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")]),
+                                max(overall_trend_farmland[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")])),
+                       midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
@@ -1592,15 +1610,17 @@ overall_trend_forest_sp <- ddply(predict_trend_forest[which(predict_trend_forest
                               .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                               .progress = "text")
 
-overall_trend_forest_gene <- ddply(predict_trend_forest[which(predict_trend_forest$sci_name_out %in% SSI$Species[which(SSI$Habitat <= 0.5)]),],
+overall_trend_forest_gene <- ddply(predict_trend_forest[which(predict_trend_forest$sci_name_out %in% SSI$Species[which(SSI$Habitat < 0.5)]),],
                                  .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                  .progress = "text")
 
 overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
 ggplot() + geom_sf() +  
-  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_past_signif), col = NA) + 
+  geom_sf(data=overall_trend_forest_sf, aes(fill=mu_past), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
-  scale_fill_gradient2(midpoint = 1, name = NULL) + theme_void()
+  scale_fill_gradient2(limits=c(min(overall_trend_forest[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")]),
+                                max(overall_trend_forest[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")])),
+                       midpoint = 1, name = NULL) + theme_void()
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_ssp1_signif-mu_bau_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
@@ -2415,6 +2435,15 @@ overall_trend_all_gene <- ddply(predict_trend_all_butterfly_correct[which(predic
 
 overall_trend_all_sf <- merge(grid_eu_mainland_biogeo,overall_trend_all,by="PLS",all.x=TRUE)
 
+overall_trend_all_sf <- merge(grid_eu_mainland_biogeo_cast,overall_trend_all,by="PLS",all.x=TRUE)
+
+ggplot() + geom_sf() +  
+  geom_sf(data=overall_trend_all_sf[which(overall_trend_all_sf$point>0),], aes(fill=mu_past), col = NA) + 
+  geom_sf(data=overall_trend_all_sf[which(overall_trend_all_sf$point==0),], fill="grey50", col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(overall_trend_all[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")]),
+                                max(overall_trend_all[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")])),midpoint = 1, name = NULL) + theme_void()
+
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_all_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
@@ -2444,7 +2473,18 @@ overall_trend_farmland_gene <- ddply(predict_trend_farmland[which(predict_trend_
                                 .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                 .progress = "text")
 
-overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo,overall_trend_farmland,by="PLS",all.x=TRUE)
+overall_trend_farmland_sf <- merge(grid_eu_mainland_biogeo_cast,overall_trend_farmland,by="PLS",all.x=TRUE)
+
+ggplot() + geom_sf() +  
+  geom_sf(data=overall_trend_farmland_sf[which(overall_trend_farmland_sf$point>0),], aes(fill=mu_past), col = NA) + 
+  geom_sf(data=overall_trend_farmland_sf[which(overall_trend_farmland_sf$point==0),], fill="grey50", col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(overall_trend_farmland[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")]),
+                                max(overall_trend_farmland[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")])),midpoint = 1, name = NULL) + theme_void()
+
+
+
+
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_farmland_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +
@@ -2470,7 +2510,19 @@ overall_trend_forest_gene <- ddply(predict_trend_forest[which(predict_trend_fore
                                      .(PLS,pressure_removed),.fun=overall_mean_sd_trend,
                                      .progress = "text")
 
-overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo,overall_trend_forest,by="PLS",all.x=TRUE)
+overall_trend_forest_sf <- merge(grid_eu_mainland_biogeo_cast,overall_trend_forest,by="PLS",all.x=TRUE)
+
+
+ggplot() + geom_sf() +  
+  geom_sf(data=overall_trend_forest_sf[which(overall_trend_forest_sf$point>0),], aes(fill=mu_past), col = NA) + 
+  geom_sf(data=overall_trend_forest_sf[which(overall_trend_forest_sf$point==0),], fill="grey50", col = NA) + 
+  geom_sf(data=grid_eu_mainland_outline, fill=NA) +
+  scale_fill_gradient2(limits=c(min(overall_trend_forest[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")]),
+                                max(overall_trend_forest[,c("mu_past","mu_bau","mu_ssp1","mu_nfn","mu_nfs","mu_nac")])),midpoint = 1, name = NULL) + theme_void()
+
+
+
+
 ggplot() + geom_sf() +  
   geom_sf(data=overall_trend_forest_sf, aes(fill=mu_past_signif), col = NA) + 
   geom_sf(data=grid_eu_mainland_outline, fill=NA) +

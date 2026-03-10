@@ -92,10 +92,10 @@ ggsave("output/grid_fr_outline_plot.png",
 
 grid_fr_outline_crop <- st_crop(grid_fr_outline, xmin = 4, xmax = 5,ymin = 48, ymax = 49)
 
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379) # sqrt(4000000/pi) small
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379) # sqrt(4000000/pi) small
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1414.214) # 2000*sqrt(2)/2 small2
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500) # medium
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000) # high
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500) # medium
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000) # high
 
 area_site_mainland <-  st_intersection(site_mainland_buffer, grid_fr)
 area_site_mainland$area <- as.numeric(st_area(area_site_mainland))
@@ -133,9 +133,14 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                humidityspring2020 = weighted.mean(x$humidityspring2020,x$area); humidityspringvar2000 = weighted.mean(x$humidityspringvar2000,x$area); humidityspringvar2020 = weighted.mean(x$humidityspringvar2020,x$area)
                                shannon2000 = weighted.mean(x$shannon_2000,x$area); shannon2018 = weighted.mean(x$shannon_2018,x$area)
                                agri2000 = weighted.mean(x$agri_2000,x$area); agri2018 = weighted.mean(x$agri_2018,x$area)
+                               open2000 = weighted.mean(x$open_2000,x$area); open2018 = weighted.mean(x$open_2018,x$area)
+                               
  
                                PLS = data.frame(x %>% group_by(PLS) %>% summarise(biogeo_surface=sum(area)))
                                PLS = PLS$PLS[which.max(PLS$biogeo_surface)]
+                               
+                               milieu = data.frame(x %>% group_by(frac_max_2000) %>% summarise(biogeo_surface=sum(area)))
+                               milieu_max = milieu$frac_max_2000[which.max(milieu$biogeo_surface)]
                                
                                eulandsystem = data.frame(x %>% group_by(eulandsystem) %>% summarise(biogeo_surface=sum(area)))
                                eulandsystem_max = eulandsystem$eulandsystem[which.max(eulandsystem$biogeo_surface)]
@@ -230,12 +235,12 @@ value_site_mainland <- ddply(area_site_mainland_df,.(siteID),
                                                  smallwoodyfeatures,temp2000,temp2020,tempspring2000,tempspring2020,
                                                  tempspringvar2000,tempspringvar2020,prec2000,prec2020,precspring2000,precspring2020,
                                                  precspringvar2000,precspringvar2020,humidity2000,humidity2020,humidityspring2000,humidityspring2020,
-                                                 humidityspringvar2000,humidityspringvar2020,shannon2000,shannon2018,agri2000,agri2018,
+                                                 humidityspringvar2000,humidityspringvar2020,shannon2000,shannon2018,agri2000,agri2018,open2000,
                                                  PLS,eulandsystem_max,grassland,farmland,
                                                  low_farmland,high_farmland,low_farmland_tot,high_farmland_tot,protectedarea_cat,
                                                  protectedarea_perc,protectedarea_type,protectedarea_size,eulandsystem_cat_forest,eulandsystem_cat_urban,eulandsystem_cat_farmland,
                                                  eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
-                                                 eulandsystem_forest_lowmedium,eulandsystem_forest_high))
+                                                 eulandsystem_forest_lowmedium,eulandsystem_forest_high, milieu_max))
                                
                              },.progress = "text")
 
@@ -249,10 +254,10 @@ pesticide_fr <- st_read("raw_data/pesticide_fr/Yearly_exposure_to_active_substan
 site_mainland_sf_reproj_fr <- st_transform(site_mainland_sf_reproj_fr,st_crs(pesticide_fr))
 
 
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379)
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379)
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1414.214)
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500)
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000)
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500)
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000)
 area_site_pesticide <- st_intersection(site_mainland_buffer, pesticide_fr)
 area_site_pesticide$area <- as.numeric(st_area(area_site_pesticide))
 
@@ -302,10 +307,10 @@ site_mainland_sf_reproj_fr <- site_mainland_sf_reproj[which(site_mainland_sf_rep
 abs_intensity_fr <- raster("raw_data/nest/Crop_management_systems_dom50_def.tif")
 site_mainland_sf_reproj_fr <- st_transform(site_mainland_sf_reproj_fr,st_crs(abs_intensity_fr))
 
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379)
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1128.379)
 site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1414.214) 
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500)
-site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000)
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 2500)
+#site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 5000)
 area_site_agi <- exact_extract(abs_intensity_fr,site_mainland_buffer, fun=c("frac"))
 
 area_site_agi$low <- area_site_agi$frac_3 + area_site_agi$frac_5 + area_site_agi$frac_16 +
@@ -372,7 +377,9 @@ press_mainland_trend_fr <- ddply(distinct(subsite_data_mainland_trend_fr,siteID,
                                 d_CPE <- (pressure_subdata$CPE2020-pressure_subdata$CPE2013)/8
                                 CPE <- pressure_subdata$CPEmean
                                 
-                                milieu <- pressure_subdata$eulandsystem_max
+                                milieu <- pressure_subdata$milieu_max
+                                
+                                milieu_old <- pressure_subdata$eulandsystem_max
                                 
                                 drymatter <- sum(pressure_subdata$drymatter2000,pressure_subdata$drymatter2018, na.rm = TRUE)/2
                                 
@@ -394,21 +401,26 @@ press_mainland_trend_fr <- ddply(distinct(subsite_data_mainland_trend_fr,siteID,
                                 
                                 trend_result <- data.frame(impervious_2018,treedensity_2018,agri_2018,tempspring_2020,tempspringvar_2020,precspring_2020,shannon_2018,CPE_2020,
                                                            d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,d_CPE,CPE,
-                                                           d_shannon,shannon,milieu,drymatter,protectedarea_perc,protectedarea_type,
+                                                           d_shannon,shannon,milieu,milieu_old,drymatter,protectedarea_perc,protectedarea_type,
                                                            eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
                                                            eulandsystem_forest_lowmedium,eulandsystem_forest_high,agi_low,agi_medium,agi_high,PLS)
                                 return(trend_result)
                               },pressure_data = value_site_mainland_fr,
                               .progress = "text")
 
+press_mainland_trend_fr$milieu_cat_old <- NA
+press_mainland_trend_fr$milieu_cat_old[which(press_mainland_trend_fr$milieu_old %in% c(21,22,23))] <- "urban"
+press_mainland_trend_fr$milieu_cat_old[which(press_mainland_trend_fr$milieu_old %in% c(41,42,43,71,72,74,75))] <- "forest and shrub"
+press_mainland_trend_fr$milieu_cat_old[which(press_mainland_trend_fr$milieu_old %in% c(31,32,51,52,53,61,62,63,731,732,733))] <- "openland"
+press_mainland_trend_fr$milieu_cat_old[which(press_mainland_trend_fr$milieu_old %in% c(0,11,12,13,80,90))] <- "others"
+
 press_mainland_trend_fr$milieu_cat <- NA
-press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c(21,22,23))] <- "urban"
-press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c(41,42,43,71,72,74,75))] <- "forest and shrub"
-press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c(31,32,51,52,53,61,62,63,731,732,733))] <- "openland"
-press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c(0,11,12,13,80,90))] <- "others"
+press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c("frac_1"))] <- "urban"
+press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c("frac_3"))] <- "forest and shrub"
+press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c("frac_2"))] <- "openland"
+press_mainland_trend_fr$milieu_cat[which(press_mainland_trend_fr$milieu %in% c("frac_4","frac_5"))] <- "others"
 
-
-
+press_mainland_trend_fr <- press_mainland_trend_fr[which(press_mainland_trend_fr$milieu_cat != "others"),]
 
 ###
 
@@ -427,8 +439,8 @@ press_mainland_trend_scale_fr[,c("d_impervious","d_treedensity","d_agri",
 
 #saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffersmall.rds") 
 #saveRDS(press_mainland_trend_scale_fr,"output/press_mainland_trend_scale_fr_buffersmall.rds")
-#saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffersmall2.rds") 
-#saveRDS(press_mainland_trend_scale_fr,"output/press_mainland_trend_scale_fr_buffersmall2.rds")
+saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffersmall2.rds") 
+saveRDS(press_mainland_trend_scale_fr,"output/press_mainland_trend_scale_fr_buffersmall2.rds")
 #saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffermedium.rds") 
 #saveRDS(press_mainland_trend_scale_fr,"output/press_mainland_trend_scale_fr_buffermedium.rds")
 #saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_bufferhigh.rds") 
@@ -544,7 +556,7 @@ res_gam_bird_FR_simple <- ddply(subsite_data_trend_fr,
                          pressure_data=press_trend_scale,
                          pressure_data_unscale=press_trend,
                          pressure_change=pressure_change,
-                         site_data=site_mainland_sf_reproj_fr,
+                         site_data=site_mainland_sf_reproj_fr,family="nb",
                          .progress = "text")
 
 #saveRDS(res_gam_bird_FR,"output/res_gam_bird_fr_final.rds")
@@ -625,7 +637,7 @@ ggplot(data_plot[which(data_plot$variable=="STOC"),], aes(y=exp(trend_past))) +
   #geom_abline(intercept = 0, slope = 1) +
   #xlim(c(0.86,1.07)) + ylim(c(0.65,1.2)) +
   geom_label_repel(aes(x = value, label = sci_name_out)) +
-  geom_text(x = 0.98, y = 1.3, label = lm_eqn(data_plot[which(data_plot$variable=="STOC"),]), parse = TRUE) +
+  geom_text(x = 0.98, y = 1.2, label = lm_eqn(data_plot[which(data_plot$variable=="STOC"),]), parse = TRUE) +
   scale_color_discrete(labels= c("PECBMS_slope_long" = "Long-term slope (1980-2023)", "PECBMS_slope_short" = "Ten-year slope (2014-2023)")) +
   theme_minimal() + theme(legend.position = "none")
 
@@ -1160,16 +1172,18 @@ res_gam_bird_FR_correct_trend <- ddply(res_gam_bird_FR_correct,
                                         .(PLS),.fun=function(x){
                                           for(i in c("trend_past","trend_tend","trend_s1","trend_s2","trend_s3","trend_s4")){
                                             #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                            value_max <- max(abs(quantile(res_gam_bird_FR_correct$trend_past[which(res_gam_bird_FR_correct$pressure_removed=="none")],0.1)),abs(quantile(res_gam_bird_FR_correct$trend_past[which(res_gam_bird_FR_correct$pressure_removed=="none")],0.9)))
-                                            x[which(x[,i]>value_max),i] <- value_max
-                                            x[which(x[,i]<(-value_max)),i] <- -value_max
+                                            #value_max <- max(abs(quantile(res_gam_bird_FR_correct$trend_past[which(res_gam_bird_FR_correct$pressure_removed=="none")],0.1)),abs(quantile(res_gam_bird_FR_correct$trend_past[which(res_gam_bird_FR_correct$pressure_removed=="none")],0.9)))
+                                            #x[which(x[,i]>value_max),i] <- value_max
+                                            #x[which(x[,i]<(-value_max)),i] <- -value_max
+                                            x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                            x[which(x[,i]<log(0.95)),i] <- log(0.95)
                                           }
                                           for(i in c("trend_past_signif","trend_tend_signif","trend_s1_signif","trend_s2_signif","trend_s3_signif","trend_s4_signif")){
                                             #x[which(x[,i]>max(x$trend_past_signif)),i] <- max(x$trend_past_signif)
                                             #x[which(x[,i]<min(x$trend_past_signif)),i] <- min(x$trend_past_signif)
                                             #x[which(abs(x[,i]) < abs(x[,(which(names(x)==i)+1)])),i] <- 0
-                                            x[which(x[,i]>value_max),i] <- value_max
-                                            x[which(x[,i]<(-value_max)),i] <- -value_max
+                                            x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                            x[which(x[,i]<log(0.95)),i] <- log(0.95)
                                           }
                                           return(x)
                                         },

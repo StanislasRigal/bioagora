@@ -386,6 +386,7 @@ press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_1
 press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_3"))] <- "forest and shrub"
 press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_2"))] <- "openland"
 press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_4","frac_5"))] <- "others"
+#press_mainland_trend$milieu_cat[which(press_mainland_trend$milieu %in% c("frac_2","frac_4","frac_5"))] <- "openland"
 
 press_mainland_trend_butterfly <- press_mainland_trend
 saveRDS(press_mainland_trend_butterfly,"output/press_mainland_trend_butterfly.rds") 
@@ -409,6 +410,18 @@ press_mainland_trend_scale[,c("d_impervious","d_treedensity","d_agri",
 press_mainland_trend_butterfly_scale <- press_mainland_trend_scale
 saveRDS(press_mainland_trend_butterfly_scale,"output/press_mainland_trend_butterfly_scale.rds") 
 
+
+# Split PLS with and without points
+
+grid_eu_mainland_biogeo_cast <- na.omit(st_cast(grid_eu_mainland_biogeo,"POLYGON"))
+
+PLS_with_point <- st_intersects(grid_eu_mainland_biogeo_cast,site_mainland_sf_reproj_butterfly[which(site_mainland_sf_reproj_butterfly$transect_id %in% unique(subsite_data_mainland_trend_butterfly$transect_id)),])
+
+grid_eu_mainland_biogeo_cast$point <- NA
+
+for(i in 1:length(PLS_with_point)){
+  grid_eu_mainland_biogeo_cast$point[i] <- length(PLS_with_point[[i]])
+}
 
 ###### Analysis
 
@@ -552,7 +565,7 @@ res_gamm_butterfly <- res_gamm_butterfly[which(!is.na(res_gamm_butterfly$PLS)),]
 #saveRDS(res_gamm_butterfly,"output/res_gamm_butterfly2.rds")
 #res_gamm_butterfly <- readRDS("output/res_gamm_butterfly2_nomediumfarm_notcenter_site5.rds")
 
-for(i in sort(unique(res_gamm_butterfly_correct$species_name))){
+for(i in sort(unique(predict_trend_all_butterfly_eu$species_name))){
   print(i)
   plot_check <- gam_species_PLS2b_check(subsite_data_mainland_trend_butterfly[which(subsite_data_mainland_trend_butterfly$species_name == i),],
                                        pressure_data=press_mainland_trend_butterfly_scale,site_data=site_mainland_sf_reproj_butterfly)
@@ -867,38 +880,6 @@ pressure_EU_butterfly_long$variable_nosignif <- gsub(pattern = "_signif","",pres
 pressure_EU_butterfly_long$variable <- gsub(pattern = "_signif","",pressure_EU_butterfly_long$variable)
 
 
-ggplot(pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
-                                                                         "year:d_shannon","year:protectedarea_perc","year:d_treedensity:eulandsystem_forest_lowmedium","year:d_treedensity:eulandsystem_forest_high",
-                                                                         "year:d_agri:eulandsystem_farmland_low","year:d_agri:eulandsystem_farmland_medium",
-                                                                         "year:d_agri:eulandsystem_farmland_high","year:protectedarea_perc:protectedarea_type")),], aes(x = value, y = variable, fill = variable)) +
-  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
-                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity:eulandsystem_forest_lowmedium" = "D tree density in low/medium intensive forests on trend", "year:d_treedensity:eulandsystem_forest_high" = "D tree density in high intensive forests on trend", "year:d_agri:eulandsystem_farmland_low" = "D agricultural surface in low intensive farmland on trend",             
-                            "year:d_agri:eulandsystem_farmland_medium" = "D agricultural surface in medium intensive farmland on trend", "year:d_agri:eulandsystem_farmland_high" = "D agricultural surface in high intensive farmland on trend", "year:protectedarea_perc:protectedarea_type" = "Protected area type on trend")) + 
-  geom_density_ridges(stat = "binline",
-                      bins = 60, draw_baseline = FALSE) + xlim(c(-0.05,0.05))+
-  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
-                      quantiles = 2) +
-  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
-  xlab("Pressures") + ylab("Estimate") +
-  theme(legend.position = "none")
-
-ggplot(pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
-                                                                                   "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
-                                                                                   "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
-                                                                                   "year:eulandsystem_farmland_high")),], aes(x = value, y = variable, fill = variable)) +
-  scale_y_discrete(labels=c("year:d_impervious" = "D urbanisation on trend","year:d_tempsrping" = "D temperature on trend", "year:d_tempsrpingvar" = "D temperature variation on trend", "year:d_precspring" = "D precipitation on trend", "year:d_shannon" = "D landscape diversity on trend",              
-                            "year:protectedarea_perc" = "Protected area percentage on trend", "year:d_treedensity" = "D tree density on trend","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests on trend", "year:eulandsystem_forest_high" = "High intensive forests on trend",
-                            "year:d_agri" = "D agricultural surface on trend","year:eulandsystem_farmland_low" = "Low intensive farmland on trend",
-                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland on trend", "year:eulandsystem_farmland_high" = "High intensive farmland on trend")) + 
-  geom_density_ridges(stat = "binline",
-                      bins = 60, draw_baseline = FALSE) + xlim(c(-1,1))+
-  stat_density_ridges(quantile_lines = TRUE, alpha = 0.75,
-                      quantiles = 2) +
-  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
-  xlab("Pressures") + ylab("Estimate") +
-  theme(legend.position = "none")
-
-
 pressure_EU_butterfly_long_d <- pressure_EU_butterfly_long[which(pressure_EU_butterfly_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
                                                                                              "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
                                                                                              "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
@@ -925,6 +906,35 @@ ggplot(pressure_EU_butterfly_long_d, aes(x = value, y = variable, fill = variabl
   theme(legend.position = "none", axis.title = element_blank())
 
 
+ggplot(pressure_EU_butterfly_long_d, aes(x = value_nosignif)) +
+  geom_histogram(aes(fill = variable_nosignif, y=after_stat(density)),col="lightgrey",
+                 bins = 30)  + stat_central_tendency(type = "median", color = "black", linetype = 1) +
+  xlim(c(-0.5,0.5)) +
+  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
+                            "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests (Foh)",
+                            "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
+                            "year:eulandsystem_farmland_medium" = "Medium intensive farmland (Fam)", "year:eulandsystem_farmland_high" = "High intensive farmland (Fah)")) + 
+  scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
+                               "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
+                               "year:d_agri"="#33a02c","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
+                               "year:eulandsystem_farmland_high"="#b2df8a"), na.value = "#f5f5f5ff") +
+  geom_vline(aes(xintercept = 0), lty=2) +
+  facet_grid(factor(variable, levels = c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_shannon",              
+                                         "year:protectedarea_perc", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
+                                         "year:d_agri","year:eulandsystem_farmland_low",
+                                         "year:eulandsystem_farmland_high"),
+                    labels = c("Temperature (\u03B4T)","Temperature variation (\u03B4Tva)","Rainfall (\u03B4R)","Urbanisation (\u03B4Urb)","Landscape diversity (\u03B4H)",              
+                               "Protected area (P)","Tree density (\u03B4TD)","Low/medium intensive forests (Folw)","High intensive forests (Foh)",
+                               "Agricultural surface (\u03B4Fa)","Low intensive farmland (Fal)","High intensive farmland (Fah)"))~., switch = "y") + theme_ridges() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_blank(),
+        strip.text.y.left = element_text(angle = 0),
+        strip.background.y = element_rect(fill = NA),
+        strip.placement = "outside",
+        panel.grid.major.y = element_blank(),
+        axis.title = element_blank())
+
+
 ggsave("output/pressure_trend_butterfly_eu_hist.png",
        width = 6,
        height = 6,
@@ -945,8 +955,8 @@ for(i in 2:13){
   pressure_EU_butterfly_likert[,i] <- factor(pressure_EU_butterfly_likert[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
 }
 
-pressure_EU_butterfly_likert <- pressure_EU_butterfly_likert[,c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
-                                                      "year:d_agri","year:eulandsystem_farmland_low", "year:eulandsystem_farmland_high", "year:d_shannon","year:protectedarea_perc")]
+pressure_EU_butterfly_likert <- pressure_EU_butterfly_likert[,c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_shannon","year:protectedarea_perc", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
+                                                                "year:d_agri","year:eulandsystem_farmland_low", "year:eulandsystem_farmland_high")]
 
 
 gglikert(pressure_EU_butterfly_likert,add_totals = FALSE, labels_hide_below = 0.01) +
@@ -1019,6 +1029,27 @@ ggplot(pressure_EU_butterfly_long_s, aes(x = value, y = variable, fill = variabl
   theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
   xlab("Pressures") + ylab("Estimate") +
   theme(legend.position = "none")
+
+ggplot(pressure_EU_butterfly_long_s, aes(x = value_nosignif)) +
+  geom_histogram(aes(fill = variable_nosignif, y=after_stat(density)),col="lightgrey",
+                 bins = 30)  + stat_central_tendency(type = "median", color = "black", linetype = 1) +
+  xlim(c(-5,5)) +
+  scale_y_discrete(labels=c("tempsrping" = "Temperature on abundance","precspring"= "Precipitation on abundance","milieu_catopenland" = "Openland vs forest on abundance",
+                            "milieu_caturban" = "Urban vs forest on abundance","shannon" = "Landscape diversity on abundance","drymatter" = "Productivity on abundance")) + 
+  scale_fill_manual(values = c("tempsrping"="#1f78b4","precspring"="#1f78b4","milieu_catopenland"="#33a02c","milieu_catothers"="#33a02c",
+                               "milieu_caturban"="#33a02c","shannon"="#33a02c","drymatter"="#33a02c"), na.value = "#f5f5f5ff") +
+  geom_vline(aes(xintercept = 0), lty=2) +
+  facet_grid(factor(variable, levels = c("tempsrping","precspring","milieu_catopenland",
+                                         "milieu_caturban","shannon","drymatter"),
+                    labels = c("Temperature on abundance","Precipitation on abundance","Openland vs forest on abundance",
+                               "Urban vs forest on abundance","Landscape diversity on abundance","Productivity on abundance"))~., switch = "y") + theme_ridges() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_blank(),
+        strip.text.y.left = element_text(angle = 0),
+        strip.background.y = element_rect(fill = NA),
+        strip.placement = "outside",
+        panel.grid.major.y = element_blank(),
+        axis.title = element_blank())
 
 ggsave("output/pressure_state_butterfly_eu_hist.png",
        width = 6,
