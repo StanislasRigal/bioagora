@@ -8368,6 +8368,29 @@ predict_gam_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale
     
     global_mod <- global_mod_fun(formula_gam,family,poisson_df,one_scheme_time_area)
     
+    global_mod_fun <- purrr::possibly(.f=function(formula_gam,family,poisson_df,one_scheme_time_area){
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1))
+      }
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1))
+      }
+      return(global_mod)
+    }, otherwise = NULL
+    )
+    
+    global_mod <- global_mod_fun(formula_gam,family,poisson_df,one_scheme_time_area)
+    
     global_mod_fun_quasipoisson <- purrr::possibly(.f=function(formula_gam,poisson_df,one_scheme_time_area){
       if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
         global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=15)"), collapse = " + "))),
@@ -8393,6 +8416,28 @@ predict_gam_trend_bird <- function(bird_data,pressure_data,pressure_data_unscale
       global_mod <- global_mod_fun_quasipoisson(formula_gam,poisson_df,one_scheme_time_area)
     }
     
+    global_mod_fun <- purrr::possibly(.f=function(formula_gam,family,poisson_df,one_scheme_time_area){
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=10)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 0){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("area_sampled_m2","te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=10)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1))
+      }
+      if(length(unique(poisson_df$scheme_code)) > 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=10)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1|scheme_code))
+      }
+      if(length(unique(poisson_df$scheme_code)) == 1 && one_scheme_time_area == 1){
+        global_mod <- bam(as.formula(paste(formula_gam,sep=" + ",paste(c("te(Long_LAEA,Lat_LAEA,bs='tp',fx=TRUE,k=10)"), collapse = " + "))),
+                          family=family, data=poisson_df, random=list(siteID=~1))
+      }
+      return(global_mod)
+    }, otherwise = NULL
+    )
+    
+    global_mod <- global_mod_fun(formula_gam,family,poisson_df,one_scheme_time_area)
     
     #vif
     

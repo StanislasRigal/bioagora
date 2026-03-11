@@ -1609,7 +1609,7 @@ plot(exp(trend_past)~PECBMS_slope_mid,res_gamm_bird_eu[which(res_gamm_bird_eu$de
 data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp>0.15),]
 misclassed_species <- data_plot[which(data_plot$PECBMS_slope_long < 1 & data_plot$trend_past >0 & data_plot$trend_past_signif >0), c("sci_name_out","trend_past","sd_past","trend_past_signif","sd_past_signif","PECBMS_slope_long")]
 misclassed_species <- data_plot[which((data_plot$PECBMS_slope_long < 1 & data_plot$PECBMS_slope_short < 1 & data_plot$trend_past >0 & data_plot$trend_past_signif >0) | (data_plot$PECBMS_slope_long > 1 & data_plot$PECBMS_slope_short > 1 & data_plot$trend_past <0 & data_plot$trend_past_signif <0)), c("sci_name_out","trend_past","sd_past","trend_past_signif","sd_past_signif","PECBMS_slope_long","PECBMS_slope_short")]
-data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp > 0.20 & !(res_gamm_bird_eu$sci_name_out %in% misclassed_species$sci_name_out)),]
+data_plot <- res_gamm_bird_eu[which(res_gamm_bird_eu$dev_exp > 0.20 & res_gamm_bird_eu$sci_name_out %in% pecbms_species),]
 data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","PECBMS_slope_long","PECBMS_slope_short")], id.var=c("sci_name_out","trend_past"))
 
 ggplot(data_plot, aes(y=exp(trend_past))) + 
@@ -2005,6 +2005,7 @@ give.n <- function(x){
 data_plot_r2 <- res_gamm_bird
 data_plot_r2 <- res_gamm_bird_correct
 data_plot_r2$PLS <- factor(data_plot_r2$PLS, levels = c(as.character(c(1:25)),"europe"))
+data_plot_r2$dev_exp[which(data_plot_r2$dev_exp<0)] <- 0
 ggplot(data_plot_r2, aes(x= PLS, y=dev_exp, fill=PLS)) + 
   geom_boxplot() + ylim(c(0,0.75)) + xlab("Biophysical region") + ylab("Explained deviance") +
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="A") +
@@ -2018,11 +2019,11 @@ ggsave("output/deviance_bird_before.png",
        dpi = 300)
 
 
-table_species_bird <- data.frame(Species = unique(res_gamm_bird$sci_name_out))
-table_species_bird$`Habitat indicator`[which(table_species_bird$Species %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Farmland")]))] <- "Farmland"
-table_species_bird$`Habitat indicator`[which(table_species_bird$Species %in% unique(species_habitat$Species[which(species_habitat$Habitat=="Forest")]))] <- "Forest"
-table_species_bird$`All bird index`[which(table_species_bird$Species %in% unique(species_habitat$Species))] <- "ABI"
-
+table_species_bird <- data.frame(Species = unique(predict_trend_all_bird$sci_name_out))
+table_species_bird$`Habitat indicator`[which(table_species_bird$Species %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Farmland")]))] <- "Farmland"
+table_species_bird$`Habitat indicator`[which(table_species_bird$Species %in% unique(species_habitat$Species_new[which(species_habitat$Habitat=="Forest")]))] <- "Forest"
+table_species_bird$`All bird index`[which(table_species_bird$Species %in% unique(predict_trend_all_bird[which(predict_trend_all_bird$sci_name_out %in% pecbms_species & predict_trend_all_bird$dev_exp > 0.2 & predict_trend_all_bird$PLS=="europe"),]$sci_name_out))] <- "ABI"
+table_species_bird$`Habitat indicator used` <- ifelse(!(is.na(table_species_bird$`Habitat indicator`)) & !(is.na(table_species_bird$`All bird index`)), table_species_bird$`Habitat indicator`, NA)
 
 write.csv(table_species_bird,"output/table_species_bird.csv", row.names = FALSE)
 
@@ -2308,12 +2309,12 @@ ggsave("output/pressure_trend_bird_EU_likert_start.png",
 
 
 
-matrix_pressure_PLS <- data.frame(res_gamm_bird_correct %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity` <0 |`year:d_agri` < 0)),
+matrix_pressure_PLS <- data.frame(predict_trend_all_bird[which(predict_trend_all_bird$dev_exp > 0.2 & predict_trend_all_bird$pressure_removed=="none"),] %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity` <0 |`year:d_agri` < 0)),
                                                                                              nb_sp_neg_lulc_int = length(which(`year:eulandsystem_farmland_high` < 0 | `year:eulandsystem_forest_high` < 0)),
                                                                                              nb_sp_neg_climate = length(which(`year:d_tempsrping` < 0 | `year:d_tempsrpingvar` < 0 | `year:d_precspring` < 0)),
                                                                                              #max_effect = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, "lulc", "climate"),
-                                                                                             nb_sp_neg = length(which(year < 0)),
-                                                                                             nb_sp_pos = length(which(year > 0)),
+                                                                                             #nb_sp_neg = length(which(year < 0)),
+                                                                                             #nb_sp_pos = length(which(year > 0)),
                                                                                              nb_sp = n(),
                                                                                              perc_sp_neg_lulc = nb_sp_neg_lulc/nb_sp,
                                                                                              perc_sp_neg_lulc_int = nb_sp_neg_lulc_int/nb_sp,
@@ -2338,15 +2339,15 @@ matrix_pressure_PLS <- data.frame(res_gamm_bird_correct %>% group_by(PLS) %>% su
 matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc), col=NA) + 
-  scale_fill_gradient(low= "white",high = "#33a02c") +
+  scale_fill_gradient(limits = c(min(matrix_pressure_PLS[,c("perc_sp_neg_lulc","perc_sp_neg_lulc_int","perc_sp_neg_climate")]),1),low= "white",high = "#33a02c") +
   theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc_int), col=NA) + 
-  scale_fill_gradient(low= "white",high = "#b2df8a") +
+  scale_fill_gradient(limits = c(min(matrix_pressure_PLS[,c("perc_sp_neg_lulc","perc_sp_neg_lulc_int","perc_sp_neg_climate")]),1),low= "white",high = "#b2df8a") +
   theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_climate), col=NA) + 
-  scale_fill_gradient(low= "white",high = "#1f78b4") +
+  scale_fill_gradient(limits = c(min(matrix_pressure_PLS[,c("perc_sp_neg_lulc","perc_sp_neg_lulc_int","perc_sp_neg_climate")]),1),low= "white",high = "#1f78b4") +
   theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
   geom_sf(data=matrix_pressure_PLS_sf, aes(fill=nb_sp), col=NA) + 

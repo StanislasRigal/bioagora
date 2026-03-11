@@ -1094,7 +1094,7 @@ ggsave("output/pressure_trend_butterfly_EU_likert_start.png",
 )
 
 
-matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity` <0 |`year:d_agri` < 0)),
+matrix_pressure_PLS <- data.frame(predict_trend_all_butterfly[which(predict_trend_all_butterfly$dev_exp > 0.2 & predict_trend_all_butterfly$pressure_removed=="none"),] %>% group_by(PLS) %>% summarise(nb_sp_neg_lulc = length(which(`year:d_impervious` < 0 | `year:d_shannon` < 0 | `year:d_treedensity` <0 |`year:d_agri` < 0)),
                                                                                              nb_sp_neg_lulc_int = length(which(`year:eulandsystem_farmland_high` < 0 | `year:eulandsystem_forest_high` < 0)),
                                                                                              nb_sp_neg_climate = length(which(`year:d_tempsrping` < 0 | `year:d_tempsrpingvar` < 0 | `year:d_precspring` < 0)),
                                                                                              #max_effect = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, "lulc", "climate"),
@@ -1122,21 +1122,25 @@ matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %
                                                                                         mean_protected = mean(`year:protectedarea_perc`,na.rm=TRUE)))
 
 
-matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo,matrix_pressure_PLS,by="PLS",all.x=TRUE)
+matrix_pressure_PLS_sf <- merge(grid_eu_mainland_biogeo_cast,matrix_pressure_PLS,by="PLS",all.x=TRUE)
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
-  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc), col=NA) + 
-  scale_fill_gradient(low= "white",high = "#33a02c") +
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point>0),], aes(fill=perc_sp_neg_lulc), col=NA) + 
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point==0),], fill="grey50", col = NA) + 
+  scale_fill_gradient(limits = c(min(matrix_pressure_PLS[,c("perc_sp_neg_lulc","perc_sp_neg_lulc_int","perc_sp_neg_climate")]),1),low= "white",high = "#33a02c") +
   theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
-  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_lulc_int), col=NA) + 
-  scale_fill_gradient(low= "white",high = "#b2df8a") +
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point>0),], aes(fill=perc_sp_neg_lulc_int), col=NA) + 
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point==0),], fill="grey50", col = NA) + 
+  scale_fill_gradient(limits = c(min(matrix_pressure_PLS[,c("perc_sp_neg_lulc","perc_sp_neg_lulc_int","perc_sp_neg_climate")]),1),low= "white",high = "#b2df8a") +
   theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
-  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=perc_sp_neg_climate), col=NA) + 
-  scale_fill_gradient(low= "white",high = "#1f78b4") +
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point>0),], aes(fill=perc_sp_neg_climate), col=NA) + 
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point==0),], fill="grey50", col = NA) + 
+  scale_fill_gradient(limits = c(min(matrix_pressure_PLS[,c("perc_sp_neg_lulc","perc_sp_neg_lulc_int","perc_sp_neg_climate")]),1),low= "white",high = "#1f78b4") +
   theme_void() + theme(legend.title = element_blank())
 ggplot(grid_eu_mainland_outline) + geom_sf(fill=NA) +  
-  geom_sf(data=matrix_pressure_PLS_sf, aes(fill=nb_sp), col=NA) + 
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point>0),], aes(fill=nb_sp), col=NA) + 
+  geom_sf(data=matrix_pressure_PLS_sf[which(matrix_pressure_PLS_sf$point==0),], fill="grey50", col = NA) + 
   scale_fill_gradient(low= "white",high = "#fb9a99") +
   theme_void() + theme(legend.title = element_blank())
 

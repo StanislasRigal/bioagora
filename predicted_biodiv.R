@@ -742,19 +742,19 @@ MVA.plot(ACP, fac = sign(log(value_pls$mu_nfn_signif)), col=c("red","blue"))
 MVA.plot(ACP,"corr")
 
 ## lda
-exp_impact_FaB <- c("green","grey","red","red","green","red","green","grey","red","red","red","grey","green")
-exp_impact_FoB <- c("red","grey","red","red","red","green","grey","red","red","red","red","red","grey")
-exp_impact_GB <- c("red","grey","red","green","green","red","green","green","grey","grey","grey","green","green")
-exp_impact_WB <- c("green","green","grey","green","grey","grey","grey","grey","grey","red","red","red","red")
+exp_impact_FaB <- c("green","green","red","red","grey","green","red","red","red","green","green","red")
+exp_impact_FoB <- c("red","red","red","red","grey","red","grey","green","red","green","green","red")
+exp_impact_GB <- c("red","green","red","green","green","grey","green","red","green","green","grey","red")
+exp_impact_WB <- c("green","red","red","green","green","red","grey","red","grey","red","grey","red")
 
-lda_data <- pls_scenario_all[which(!is.na(value_pls$mu_nfn_signif) & value_pls$mu_nfn_signif != 1),c("temp_change","tempvar_change","prec_change","urban","farmland","forest","farmland_low",
-                                                                      "farmland_medium","farmland_high","forest_lowmedium","forest_high","landscape_div","pa_change")]
-names(lda_data) <- c("Temperature change","Temperature variance change","Precipitation change","Urbanisation","Agricultural surface change","Forest cover change","Low intensive farmland change",
-                     "Medium intensive farmland change","High intensive farmland change","Low/medium intensive forest change","High intensive forest change","Landscape diversity change","Protected area change")
+lda_data <- pls_scenario_all[which(!is.na(value_pls$mu_nfn_signif) & value_pls$mu_nfn_signif != 1),c("temp_change","tempvar_change","prec_change","urban","landscape_div","pa_change",
+                                                                                                     "forest","forest_lowmedium","forest_high","farmland","farmland_low","farmland_high")]
+names(lda_data) <- c("Temperature change","Temperature variance change","Precipitation change","Urbanisation","Landscape diversity change","Protected area change","Forest cover change","Low/medium intensive forest change","High intensive forest change",
+                     "Agricultural surface change","Low intensive farmland change","High intensive farmland change")
 #anova(betadisper(dist(pls_scenario_all[-1]),sign(log(value_pls$mu_nfn_signif))))
 LDA <- lda(lda_data,sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif) & value_pls$mu_nfn_signif != 1)])))
 MVA.plot(LDA,fac=sign(log(value_pls$mu_nfn_signif[which(!is.na(value_pls$mu_nfn_signif) & value_pls$mu_nfn_signif != 1)])))
-MVA.plot(LDA,"corr", col=exp_impact_WB)
+MVA.plot(LDA,"corr", col=exp_impact_FaB)
 
 
 
@@ -1442,7 +1442,7 @@ predict_trend_all_bird <- rbind(predict_trend_all_bird,
 
 #saveRDS(predict_trend_all_bird,"output/predict_gam_trend_all_bird_gref.rds")
 
-predict_trend_all_bird <-  readRDS("output/predict_gam_trend_all_bird_gref.rds")
+predict_trend_all_bird <-  readRDS("output/predict_gam_trend_all_bird_gref2.rds")
 
 
 predict_trend_all_butterfly <- ddply(subsite_data_mainland_trend_butterfly,
@@ -1523,13 +1523,17 @@ predict_trend_all_bird_correct <- ddply(predict_trend_all_bird_correct,
                                              .(PLS),.fun=function(x){
                                                for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
                                                  #value_max <- max(abs(quantile(predict_trend_all_bird_eu$trend_past,0.1)),abs(quantile(predict_trend_all_bird_eu$trend_past,0.9)))
-                                                 x[which(x[,i]>log(1.05)),i] <- log(1.05)
-                                                 x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                                 #x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                                 #x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                                 x[which(x[,i]>log(1.07)),i] <- log(1.07)
+                                                 x[which(x[,i]<log(0.93)),i] <- log(0.93)
                                                }
                                                for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
                                                  #value_max <- max(abs(quantile(predict_trend_all_bird_eu$trend_past,0.1)),abs(quantile(predict_trend_all_bird_eu$trend_past,0.9)))
-                                                 x[which(x[,i]>log(1.05)),i] <- log(1.05)
-                                                 x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                                 #x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                                 #x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                                 x[which(x[,i]>log(1.07)),i] <- log(1.07)
+                                                 x[which(x[,i]<log(0.93)),i] <- log(0.93)
                                                }
                                                return(x)
                                              },
@@ -2403,15 +2407,19 @@ predict_trend_all_butterfly_correct <- ddply(predict_trend_all_butterfly_correct
                                         .(PLS),.fun=function(x){
                                           for(i in c("trend_past","trend_BAU","trend_SSP1","trend_SSP3","trend_nac","trend_nfn","trend_nfs")){
                                             #value_max <- max(abs(quantile(predict_trend_all_butterfly_eu$trend_past,0.1)),abs(quantile(predict_trend_all_butterfly_eu$trend_past,0.9)))
-                                            x[which(x[,i]>log(1.05)),i] <- log(1.05)
-                                            x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                            #x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                            #x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                            x[which(x[,i]>log(1.07)),i] <- log(1.07)
+                                            x[which(x[,i]<log(0.93)),i] <- log(0.93)
                                           }
                                           for(i in c("trend_past_signif","trend_BAU_signif","trend_SSP1_signif","trend_SSP3_signif","trend_nac_signif","trend_nfn_signif","trend_nfs_signif")){
                                             #value_max <- max(abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.1)),abs(quantile(predict_trend_all_butterfly_eu$trend_past_signif,0.9)))
                                             #x[which(x[,i]>value_max),i] <- value_max
                                             #x[which(x[,i]<(-value_max)),i] <- -value_max
-                                            x[which(x[,i]>log(1.05)),i] <- log(1.05)
-                                            x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                            #x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                            #x[which(x[,i]<log(0.95)),i] <- log(0.95)
+                                            x[which(x[,i]>log(1.07)),i] <- log(1.07)
+                                            x[which(x[,i]<log(0.93)),i] <- log(0.93)
                                           }
                                           return(x)
                                         },
