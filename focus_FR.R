@@ -334,6 +334,33 @@ value_site_intensity$high <- area_site_agi$high
 
 value_site_mainland <- merge(value_site_mainland, value_site_intensity, by="siteID", all.x=TRUE)
 
+# add haie https://cartes.gouv.fr/rechercher-une-donnee/dataset/IGNF_BD-HAIE
+
+site_mainland_sf_reproj_fr <- site_mainland_sf_reproj[which(site_mainland_sf_reproj$scheme_code=="FR"),]
+haie_fr <- st_read("raw_data/nest/HAIE_1-0__GPKG_LAMB93_FXX_2020-01-01/HAIE/1_DONNEES_LIVRAISON_2024-10-00087/HAIE_1-0__GPKG_LAMB93_FXX_2020-01-01/haie.gpkg")
+site_mainland_sf_reproj_fr <- st_transform(site_mainland_sf_reproj_fr,st_crs(haie_fr))
+
+site_mainland_buffer <- st_buffer(site_mainland_sf_reproj_fr, dist = 1414.214)
+area_site_haie <- st_intersection(site_mainland_buffer, haie_fr)
+area_site_haie$length <- as.numeric(st_length(area_site_haie))
+
+area_site_haie_df <- area_site_haie
+st_geometry(area_site_haie_df) <- NULL
+
+value_site_haie <- ddply(area_site_haie_df,.(siteID),
+                              .fun = function(x){
+                                
+                                haie_sum <- sum(x$length)
+                                
+                                return(haie_sum)
+                                
+                              },.progress = "text")
+
+names(value_site_haie)[2] <- "haie_length"
+
+value_site_mainland <- merge(value_site_mainland_fr, value_site_haie, by="siteID", all.x=TRUE)
+value_site_mainland$haie_length[which(is.na(value_site_mainland$haie_length))] <- 0
+
 
 #saveRDS(value_site_mainland, "output/value_site_mainland_buffersmall.rds")
 #saveRDS(value_site_mainland, "output/value_site_mainland_buffersmall2.rds")
@@ -343,7 +370,7 @@ value_site_mainland <- merge(value_site_mainland, value_site_intensity, by="site
 value_site_mainland_fr <- readRDS("output/value_site_mainland_buffersmall2.rds")
 
 #subsite_data_mainland_trend <- readRDS("output/subsite_data_mainland_trend.rds")
-#subsite_data_mainland_trend_fr <- subsite_data_mainland_trend[which(subsite_data_mainland_trend$scheme_code=="FR"),]
+#subsite_data_mainland_trend_fr <- subsite_data_mainland_trend[which(subsite_data_mainland_trend$scheme_code=="FR" & subsite_data_mainland_trend$year < 2020),]
 #saveRDS(subsite_data_mainland_trend_fr,"output/subsite_data_mainland_trend_fr.rds")
 subsite_data_mainland_trend_fr <- readRDS("output/subsite_data_mainland_trend_fr.rds")
 
@@ -376,6 +403,7 @@ press_mainland_trend_fr <- ddply(distinct(subsite_data_mainland_trend_fr,siteID,
                                 shannon <- pressure_subdata$shannon2000
                                 d_CPE <- (pressure_subdata$CPE2020-pressure_subdata$CPE2013)/8
                                 CPE <- pressure_subdata$CPEmean
+                                haie <- pressure_subdata$haie_length
                                 
                                 milieu <- pressure_subdata$milieu_max
                                 
@@ -400,7 +428,7 @@ press_mainland_trend_fr <- ddply(distinct(subsite_data_mainland_trend_fr,siteID,
                                 PLS <- pressure_subdata$PLS
                                 
                                 trend_result <- data.frame(impervious_2018,treedensity_2018,agri_2018,tempspring_2020,tempspringvar_2020,precspring_2020,shannon_2018,CPE_2020,
-                                                           d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,d_CPE,CPE,
+                                                           d_impervious,d_treedensity,d_agri,d_tempsrping,tempsrping,d_tempsrpingvar,d_precspring,precspring,d_CPE,CPE,haie,
                                                            d_shannon,shannon,milieu,milieu_old,drymatter,protectedarea_perc,protectedarea_type,
                                                            eulandsystem_farmland_low,eulandsystem_farmland_medium,eulandsystem_farmland_high,
                                                            eulandsystem_forest_lowmedium,eulandsystem_forest_high,agi_low,agi_medium,agi_high,PLS)
@@ -427,14 +455,23 @@ press_mainland_trend_fr <- press_mainland_trend_fr[which(press_mainland_trend_fr
 
 press_mainland_trend_scale_fr <- press_mainland_trend_fr
 press_mainland_trend_scale_fr[,c("d_impervious","d_treedensity","d_agri",
-                              "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
-                              "d_shannon","shannon","drymatter","protectedarea_perc",
-                              "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",   
-                              "eulandsystem_forest_lowmedium","eulandsystem_forest_high","CPE","d_CPE","agi_high","agi_medium","agi_low")] <- scale(press_mainland_trend_scale_fr[,c("d_impervious","d_treedensity","d_agri",
-                                                                                                                                                                                     "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
-                                                                                                                                                                                     "d_shannon","shannon","drymatter","protectedarea_perc",
-                                                                                                                                                                                     "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",   
-                                                                                                                                                                                     "eulandsystem_forest_lowmedium","eulandsystem_forest_high","CPE","d_CPE","agi_high","agi_medium","agi_low")])
+                                 "d_tempsrping","tempsrping","precspring",
+                                 "d_shannon","shannon","drymatter","protectedarea_perc",
+                                 "agi_low","agi_high",
+                                 "CPE","d_CPE","haie",
+                                 "eulandsystem_forest_lowmedium","eulandsystem_forest_high")] <- scale(press_mainland_trend_scale_fr[,c("d_impervious","d_treedensity","d_agri",
+                                                                                                                                        "d_tempsrping","tempsrping","precspring",
+                                                                                                                                        "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                                                                                                        "agi_low","agi_high",
+                                                                                                                                        "CPE","d_CPE","haie",
+                                                                                                                                        "eulandsystem_forest_lowmedium","eulandsystem_forest_high"),],
+                                                                                                       center= FALSE,
+                                                                                                       scale = apply(press_mainland_trend_scale_fr[,c("d_impervious","d_treedensity","d_agri",
+                                                                                                                                                      "d_tempsrping","tempsrping","precspring",
+                                                                                                                                                      "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                                                                                                                      "agi_low","agi_high",
+                                                                                                                                                      "CPE","d_CPE","haie",
+                                                                                                                                                      "eulandsystem_forest_lowmedium","eulandsystem_forest_high"),], 2, sd, na.rm = TRUE))
 
 
 #saveRDS(press_mainland_trend_fr,"output/press_mainland_trend_fr_buffersmall.rds") 
@@ -473,11 +510,11 @@ press_trend <- readRDS("output/press_mainland_trend_fr_buffersmall2.rds")
 subsite_data_trend_fr <- readRDS("output/subsite_data_mainland_trend_fr.rds")
 site_mainland_sf_reproj <- readRDS("output/site_mainland_sf_reproj.rds")
 
-test_multicor <- press_trend[which(press_trend$year==2010),c("d_impervious","d_treedensity","d_agri",
-                                                             "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
-                                                             "d_shannon","shannon","drymatter","protectedarea_perc","protectedarea_type",
-                                                             "eulandsystem_farmland_low","eulandsystem_farmland_medium","eulandsystem_farmland_high",
-                                                             "CPE","d_CPE","agi_high","agi_medium","agi_low",
+test_multicor <- press_trend[which(press_trend$year==2017),c("d_impervious","d_treedensity","d_agri",
+                                                             "d_tempsrping","tempsrping","precspring",
+                                                             "d_shannon","shannon","drymatter","protectedarea_perc",
+                                                             "agi_low","agi_high",
+                                                             "CPE","d_CPE","haie",
                                                              "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat")]
 test_multicor$milieu_cat <- as.numeric(as.factor(test_multicor$milieu_cat))
 test_multicor <- round(cor(na.omit(test_multicor)),2)
@@ -519,13 +556,13 @@ names(if_fail) <- c(col_names,"dev_exp","n_obs","PLS","trend_past","sd_past",
                            "trend_s2_signif","sd_s2_signif","trend_s3_signif","sd_s3_signif",
                            "trend_s4_signif","sd_s4_signif","pressure_removed")
 
-col_names_simple <- c("(Intercept)","year","protectedarea_perc","milieu_catopenland","milieu_catothers","milieu_caturban",
+col_names_simple <- c("(Intercept)","year","protectedarea_perc","milieu_catopenland","milieu_caturban",
                       "tempsrping","precspring","shannon","drymatter",
                       "year:d_impervious","year:d_treedensity",
                       "year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high","year:d_agri",
                       "year:agi_low","year:agi_high",
                       "year:d_CPE",
-                      "year:d_tempsrping","year:d_shannon")
+                      "year:d_tempsrping","year:haie")
 
 if_fail_simple <- data.frame(t(rep(NA,(length(col_names_simple)+28))))
 names(if_fail_simple) <- c(col_names_simple,"dev_exp","n_obs","PLS","trend_past","sd_past",
@@ -570,8 +607,8 @@ saveRDS(res_gam_bird_FR_simple,"output/res_gam_bird_fr_simple_nosignif.rds")
 #res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2.rds")
 #res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2.rds")
 
-res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_simple.rds") # readRDS("output/res_gam_bird_fr_agi_CPE2small2.rds")
-res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_simple_nosignif.rds") # readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2small2.rds")
+res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_simple_30_03_26.rds") # readRDS("output/res_gam_bird_fr_agi_CPE2small2.rds")
+res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_simple_nosignif_31_03_2026.rds") # readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2small2.rds")
 
 #res_gam_bird_FR <- readRDS("output/res_gam_bird_fr_agi_CPE2medium.rds")
 #res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_agi_CPE_nosignif2medium.rds")
@@ -584,11 +621,17 @@ res_gam_bird_FR_nosignif <- readRDS("output/res_gam_bird_fr_simple_nosignif.rds"
 pecbms_trend_class <- read.csv("output/pecbms_trend_class.csv", header=TRUE)
 pecbms_trend_class <- read.csv("output/pecbms_test2.csv", header=TRUE)
 pecbms_trend_class <- read.csv("output/pecbms_test_fr.csv", header=TRUE)
+pecbms_trend_class <- read.csv("output/pecbms_test_fr2.csv", header=TRUE)
 pecbms_trend_class$PECBMS_slope_long <- as.numeric(substr(pecbms_trend_class$PECBMS_slope_long,1,6))
 pecbms_trend_class$PECBMS_slope_short <- as.numeric(substr(pecbms_trend_class$PECBMS_slope_short,1,6))
 pecbms_trend_class$PECBMS_slope_long[which(pecbms_trend_class$sci_name_out=="Sturnus vulgaris")] <- 0.98
 pecbms_trend_class$PECBMS_slope_short[which(pecbms_trend_class$sci_name_out=="Chloris chloris")] <- 0.98
 
+res_gam_bird_FR2 <- merge(res_gam_bird_FR[which(res_gam_bird_FR$pressure_removed=="none"),],pecbms_trend_class,by.x="sci_name_out", by.y="sci_name_out_new")
+res_gam_bird_FR2 <- res_gam_bird_FR2[which(!is.na(res_gam_bird_FR2$STOC)),]
+misclass_species <- res_gam_bird_FR2$sci_name_out[which((res_gam_bird_FR2$trend_past > 0 & res_gam_bird_FR2$STOC < 1) | (res_gam_bird_FR2$trend_past < 0 & res_gam_bird_FR2$STOC > 1))]
+
+res_gam_bird_FR2 <- merge(res_gam_bird_FR[which(res_gam_bird_FR$pressure_removed=="none"),],pecbms_trend_class,by.x="sci_name_out", by.y="sci_name_out_new")
 res_gam_bird_FR2 <- merge(res_gam_bird_FR[which(res_gam_bird_FR$dev_exp > 0.1 & res_gam_bird_FR$pressure_removed=="none"),],pecbms_trend_class,by.x="sci_name_out", by.y="sci_name_out_new")
 res_gam_bird_FR2 <- merge(res_gam_bird_FR_correct_trend[which(res_gam_bird_FR_correct_trend$pressure_removed=="none"),],pecbms_trend_class,by.x="sci_name_out", by.y="sci_name_out_new")
 
@@ -598,6 +641,8 @@ plot(exp(year)~PECBMS_slope_long,res_gam_bird_FR2)
 
 
 data_plot <- res_gam_bird_FR2
+data_plot <- res_gam_bird_FR2[which(res_gam_bird_FR2$dev_exp > 0.15),]
+data_plot <- res_gam_bird_FR2[which(!(res_gam_bird_FR2$sci_name_out %in% misclass_species)),]
 data_plot <- reshape2::melt(data_plot[,c("sci_name_out","trend_past","sd_past","trend_past_signif","sd_past_signif","PECBMS_slope_long","PECBMS_slope_short","STOC")], id.var=c("sci_name_out","trend_past","sd_past","trend_past_signif","sd_past_signif"))
 
 ggplot(data_plot, aes(y=exp(trend_past))) + 
@@ -637,21 +682,25 @@ ggplot(data_plot[which(data_plot$variable=="STOC"),], aes(y=exp(trend_past))) +
   #geom_abline(intercept = 0, slope = 1) +
   #xlim(c(0.86,1.07)) + ylim(c(0.65,1.2)) +
   geom_label_repel(aes(x = value, label = sci_name_out)) +
-  geom_text(x = 0.98, y = 1.2, label = lm_eqn(data_plot[which(data_plot$variable=="STOC"),]), parse = TRUE) +
+  geom_text(x = 0.98, y = 1.25, label = lm_eqn(data_plot[which(data_plot$variable=="STOC"),]), parse = TRUE) +
   scale_color_discrete(labels= c("PECBMS_slope_long" = "Long-term slope (1980-2023)", "PECBMS_slope_short" = "Ten-year slope (2014-2023)")) +
-  theme_minimal() + theme(legend.position = "none")
+  theme_minimal() + theme(legend.position = "none",
+                          axis.text = element_text(size = 15),
+                          axis.title = element_text(size = 15))
 
 ggsave("output/bird_trend_FR_stoc.png",
-       width = 15,
-       height = 15,
+       width = 12,
+       height = 12,
        dpi = 300)
 
 STOC_species <- pecbms_trend_class$sci_name_out_new[which(!is.na(pecbms_trend_class$STOC))]
 
-res_gam_bird_FR_correct <- res_gam_bird_FR[which(res_gam_bird_FR$dev_exp > 0.1 & res_gam_bird_FR$sci_name_out %in% STOC_species),]
-res_gam_bird_FR_correct_nosignif <- res_gam_bird_FR_nosignif[which(res_gam_bird_FR_nosignif$dev_exp > 0.1 & res_gam_bird_FR_nosignif$sci_name_out %in% STOC_species),]
+res_gam_bird_FR_correct <- res_gam_bird_FR[which(res_gam_bird_FR$dev_exp > 0.15 & res_gam_bird_FR$sci_name_out %in% STOC_species),]
+res_gam_bird_FR_correct_nosignif <- res_gam_bird_FR_nosignif[which(res_gam_bird_FR_nosignif$dev_exp > 0.15 & res_gam_bird_FR_nosignif$sci_name_out %in% STOC_species),]
+#res_gam_bird_FR_correct <- res_gam_bird_FR[which(!(res_gam_bird_FR$sci_name_out %in% misclass_species) & res_gam_bird_FR$sci_name_out %in% STOC_species),]
+#res_gam_bird_FR_correct_nosignif <- res_gam_bird_FR_nosignif[which(!(res_gam_bird_FR_nosignif$sci_name_out %in% misclass_species) & res_gam_bird_FR_nosignif$sci_name_out %in% STOC_species),]
 #res_gam_bird_FR_correct <- res_gam_bird_FR[which(res_gam_bird_FR$dev_exp > 0.2),]
-
+unique(res_gam_bird_FR_correct$sci_name_out)
 
 ### check with Benoit a priori expectation
 
@@ -816,6 +865,11 @@ ggplot(obs_vs_expected, aes(x=Diversité.des.paysages, y=`year:d_shannon`)) +
   labs(x = "Expected effect of landscape diversity", y = "Observed effect of landscape diversity increase on trend") +
   geom_label_repel(aes(label = sci_name_out)) +
   geom_point(color="black", size=2, alpha=0.9) + theme_minimal()
+ggplot(obs_vs_expected, aes(x=Diversité.des.paysages, y=`year:haie`)) + 
+  geom_boxplot(color="blue",fill="blue",alpha=0.2,,outliers =FALSE) +
+  labs(x = "Expected effect of landscape diversity", y = "Observed effect of landscape diversity increase on trend") +
+  geom_label_repel(aes(label = sci_name_out)) +
+  geom_point(color="black", size=2, alpha=0.9) + theme_minimal()
 
 ggsave("output/exp_obs_shannon.png",
        width = 10,
@@ -869,6 +923,22 @@ pressure_change_long$s4 <- pressure_change_long$s4 - pressure_change_long$initia
 pressure_change_long <- reshape::melt(pressure_change_long, id.vars = "variable")
 names(pressure_change_long)[2] <- "scenario"
 
+pressure_change_long2 <- pressure_change
+pressure_change_long2[1:3,2:7] <- pressure_change_long2[1:3,2:7]*100
+pressure_change_long2[4,2:7] <- pressure_change_long2[4,2:7]/16914*100
+pressure_change_long2[5,2:7] <- pressure_change_long2[5,2:7]/5263*100
+pressure_change_long2[6,2:7] <- pressure_change_long2[6,2:7]/28.77855*100
+pressure_change_long2[7,2:7] <- pressure_change_long2[7,2:7]/14.1*100
+pressure_change_long2[8,2:7] <- pressure_change_long2[8,2:7]/51.8*100
+pressure_change_long2[9,2:7] <- pressure_change_long2[9,2:7]/500*100
+pressure_change_long2[10,2:7] <- pressure_change_long2[10,2:7]/pressure_change_long2[10,2]*100
+pressure_change_long2$tend <- pressure_change_long2$tend - pressure_change_long2$initial
+pressure_change_long2$s1 <- pressure_change_long2$s1 - pressure_change_long2$initial
+pressure_change_long2$s2 <- pressure_change_long2$s2 - pressure_change_long2$initial
+pressure_change_long2$s3 <- pressure_change_long2$s3 - pressure_change_long2$initial
+pressure_change_long2$s4 <- pressure_change_long2$s4 - pressure_change_long2$initial
+pressure_change_long2 <- reshape::melt(pressure_change_long2, id.vars = "variable")
+names(pressure_change_long2)[2] <- "scenario"
 
 
 pressure_change_long$scenario <- factor(pressure_change_long$scenario, levels = c("initial","tend","s1","s2","s3","s4"), labels = c("Current", "BAU", "S1", "S2", "S3", "S4"))
@@ -891,8 +961,130 @@ ggsave("output/ademe_scenarios.png",
        height = 7,
        dpi = 300)
 
+pressure_change_long$variable2 <- as.character(pressure_change_long$variable)
+pressure_change_long$variable2[which(pressure_change_long$variable2 %in% c("Low input farmland","Integrated production farmland","Reasoned conventional farmland"))] <- "Farmland type"
+pressure_change_long$scenario2 <- as.character(pressure_change_long$scenario)
+pressure_change_long$scenario2[which(pressure_change_long$variable %in% c("Low input farmland"))] <- paste0(pressure_change_long$scenario2[which(pressure_change_long$variable %in% c("Low input farmland"))],"_1low")
+pressure_change_long$scenario2[which(pressure_change_long$variable %in% c("Integrated production farmland"))] <- paste0(pressure_change_long$scenario2[which(pressure_change_long$variable %in% c("Integrated production farmland"))],"_2medium")
+pressure_change_long$scenario2[which(pressure_change_long$variable %in% c("Reasoned conventional farmland"))] <- paste0(pressure_change_long$scenario2[which(pressure_change_long$variable %in% c("Reasoned conventional farmland"))],"_3high")
+
+pressure_change_long$variable2 <- factor(pressure_change_long$variable2, levels = c("Temperature","Urban cover","Forest cover","Wood production","Agricultural cover",
+                                                   "Farmland type","Pesticides","Hedge"))
+
+ggplot(droplevels(pressure_change_long[which(pressure_change_long$scenario != "Current"),]), aes(fill=scenario2, y=value, x=scenario)) + 
+  geom_bar(position="dodge", stat="identity") +
+  scale_fill_manual(values = c("Current" = "black", "BAU"="#7f7f7fff","S1"="#6293c9ff","S2"="#a8338fff","S3"="#85ba4cff","S4"="#ef7132ff",
+                               "BAU_1low"="#ccccccff","S1_1low"="#c0d4e9ff","S2_1low"="#dcadd2ff","S3_1low"="#cee3b7ff","S4_1low"="#f9c6adff",
+                               "BAU_2medium"="#a2a2a2ff","S1_2medium"="#82aad3ff","S2_2medium"="#cf8ec1ff","S3_2medium"="#a5cc7bff","S4_2medium"="#f2854fff",
+                               "BAU_3high"="#7f7f7fff","S1_3high"="#6293c9ff","S2_3high"="#a8338fff","S3_3high"="#85ba4cff","S4_3high"="#ef7132ff")) + 
+  facet_wrap(~variable2, scales="free_y", nrow=2) +
+  #theme_minimal() +
+  #theme(legend.position="none") + xlab("") + ylab("")
+  theme(legend.position="none",
+        panel.spacing = ggplot2::unit(7,"mm"),
+        # Set background color to white
+        panel.background = element_rect(fill = "white"),
+        strip.background = element_rect(fill="white"),
+        # Remove all grid lines
+        panel.grid = element_blank(),
+        # But add grid lines for the vertical axis, customizing color and size 
+        panel.grid.major.y = element_line(color = "#A8BAC4", size = 0.2),
+        panel.grid.minor.y = element_line(color = "#A8BAC4", size = 0.1),
+        # Remove the title for both axes
+        axis.title = element_blank(),
+        # Only the bottom line of the vertical axis is painted in black
+        axis.line.x.bottom = element_line(color = "grey")
+  )
+
+ggsave("output/ademe_scenarios_newlook.png",
+       width = 10,
+       height = 7,
+       dpi = 300)
 
 
+pressure_change_long2$scenario <- factor(pressure_change_long2$scenario, levels = c("initial","tend","s1","s2","s3","s4"), labels = c("Current", "BAU", "S1", "S2", "S3", "S4"))
+pressure_change_long2$variable <- factor(pressure_change_long2$variable, levels = c("Temperature","Urban cover","Forest cover","Wood production","Agricultural cover",
+                                                                                  "Low intensity farmland","Medium intensity farmland","High intensity farmland",
+                                                                                  "NODU","Hedge"),
+                                        labels = c("Temperature","Urban cover","Forest cover","Wood production","Agricultural cover",
+                                                   "Low input farmland","Integrated production farmland","Reasoned conventional farmland",
+                                                   "Pesticides","Hedge"))
+
+data <- droplevels(pressure_change_long2[which(pressure_change_long2$scenario != "Current"),])
+data <- with(data, data[order(scenario, variable),])
+# Set a number of 'empty bar' to add at the end of each group
+empty_bar <- 3
+to_add <- data.frame( matrix(NA, empty_bar*nlevels(data$scenario), ncol(data)) )
+colnames(to_add) <- colnames(data)
+to_add$scenario <- rep(levels(data$scenario), each=empty_bar)
+data <- rbind(data, to_add)
+data <- data %>% arrange(scenario)
+data$id <- seq(1, nrow(data))
+
+# Get the name and the y position of each label
+label_data <- data
+number_of_bar <- nrow(label_data)
+angle <- 90 - 360 * (label_data$id-0.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+label_data$hjust <- ifelse( angle < -90, 1, 0)
+label_data$angle <- ifelse(angle < -90, angle+180, angle)
+
+# prepare a data frame for base lines
+base_data <- data %>% 
+  group_by(scenario) %>% 
+  summarize(start=min(id), end=max(id) - empty_bar) %>% 
+  rowwise() %>% 
+  mutate(title=mean(c(start, end)))
+
+# prepare a data frame for grid (scales)
+grid_data <- base_data
+grid_data$end <- grid_data$end[ c( nrow(grid_data), 1:nrow(grid_data)-1)] + 1
+grid_data$start <- grid_data$start - 1
+grid_data <- grid_data[-1,]
+
+# Make the plot
+ggplot(data, aes(x=as.factor(id), y=value, fill=scenario)) +       # Note that id is a factor. If x is numeric, there is some space between the first bar
+  
+  geom_bar(aes(x=as.factor(id), y=value, fill=scenario), stat="identity", alpha=0.5) +
+  
+  # Add a val=100/75/50/25 lines. I do it at the beginning to make sur barplots are OVER it.
+  geom_segment(data=grid_data, aes(x = end, y = 80, xend = start, yend = 80), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = 60, xend = start, yend = 60), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = 40, xend = start, yend = 40), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = 20, xend = start, yend = 20), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = 0, xend = start, yend = 0), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = -20, xend = start, yend = -20), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = -40, xend = start, yend = -40), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = -60, xend = start, yend = -60), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  geom_segment(data=grid_data, aes(x = end, y = -80, xend = start, yend = -80), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
+  
+  # Add text showing the value of each 100/75/50/25 lines
+  annotate("text", x = rep(max(data$id),9), y = c(-80,-60,-40,-20,0,20, 40, 60, 80), label = c("-80","-60","-40","-20","0","20", "40", "60", "80") , color="grey", size=3 , angle=0, fontface="bold", hjust=1) +
+  
+  geom_bar(aes(x=as.factor(id), y=value, fill=variable), stat="identity", alpha=1) +
+  ylim(-150,150) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank()
+    #plot.margin = unit(rep(-1,4), "cm") 
+  ) +
+  coord_polar() + 
+  geom_text(data=label_data, aes(x=id, y=ifelse(value >= 0, value+10, 10), label=variable, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= label_data$angle, inherit.aes = FALSE ) +
+  scale_fill_manual(values = c("Temperature"="grey","Urban cover"="#0050ae","Forest cover" = "#0e3724","Wood production" = "#008c5c",
+                    "Agricultural cover"="#f98517","Low input farmland"="#ff9e9eff","Integrated production farmland" = "#ff6060ff","Reasoned conventional farmland" = "#ac0000",
+                    "Pesticides"="#9b54f3","Hedge"="#33b983")) +
+  
+  # Add base line information
+  geom_segment(data=base_data, aes(x = start, y = 0, xend = end, yend = 0, , colour = scenario), alpha=0.8, size=0.6 , inherit.aes = FALSE )  +
+  geom_text(data=base_data, aes(x = title, y = -30, label=scenario, colour = scenario), alpha=0.8, size=5, fontface="bold", inherit.aes = FALSE) +
+  scale_color_manual(values = c("Current" = "black", "BAU"="grey","S1"="#6293c9ff","S2"="#a8338fff","S3"="#85ba4cff","S4"="#ef7132ff"))
+
+ggsave("output/ademe_scenarios_circular.png",
+       width = 7,
+       height = 7,
+       dpi = 300)
 
 
 # by species type:
@@ -957,11 +1149,11 @@ pressure_FR_bird_long$variable_nosignif <- pressure_FR_bird_long$variable
 pressure_FR_bird_long$variable_nosignif[which(pressure_FR_bird_long$signif==0)] <- NA
 
 pressure_FR_bird_long_d <- pressure_FR_bird_long[which(pressure_FR_bird_long$variable %in% c("year:d_impervious","year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",
-                                                                                             "year:d_shannon","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                                                                             "year:haie","year:protectedarea_perc","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
                                                                                              "year:d_agri","year:d_CPE","year:agi_low","year:eulandsystem_farmland_low","year:eulandsystem_farmland_medium",
                                                                                              "year:agi_high")),]
 
-pressure_FR_bird_long_d$variable <- factor(pressure_FR_bird_long_d$variable , levels = c("year:protectedarea_perc","year:d_shannon","year:d_CPE","year:agi_high","year:agi_low","year:d_agri",
+pressure_FR_bird_long_d$variable <- factor(pressure_FR_bird_long_d$variable , levels = c("year:protectedarea_perc","year:haie","year:d_CPE","year:agi_high","year:agi_low","year:d_agri",
                                                                                          "year:eulandsystem_forest_high","year:eulandsystem_forest_lowmedium","year:d_treedensity",
                                                                                          "year:d_impervious","year:d_precspring","year:d_tempsrpingvar","year:d_tempsrping"
                                                                                          ))
@@ -969,25 +1161,25 @@ pressure_FR_bird_long_d$variable <- factor(pressure_FR_bird_long_d$variable , le
 ggplot(pressure_FR_bird_long_d, aes(x = value_nosignif)) +
   geom_histogram(aes(fill = variable_nosignif),col="lightgrey",
                  bins = 30) + 
-  xlim(c(-0.21,0.21)) +
-  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
+  xlim(c(-0.21,0.21)) + stat_central_tendency(type = "median", color = "black", linetype = 1) +
+  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:haie" = "Hedge length(\u03B4H)",              
                             "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests on trend (Foh)",
                             "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:d_CPE" = "Pesticide exposure (\u03B4CPE)","year:agi_low" = "Low intensive farmland (Fal)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland (Fam)", "year:agi_high" = "High intensive farmland (Fah)"
   )) + 
   scale_fill_manual(values = c("year:d_impervious"="#33a02c","year:d_tempsrping"="#1f78b4","year:d_tempsrpingvar"="#1f78b4","year:d_precspring"="#1f78b4",
-                               "year:d_shannon"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
+                               "year:haie"="#33a02c","year:protectedarea_perc"="#b2df8a","year:d_treedensity"="#33a02c","year:eulandsystem_forest_lowmedium"="#b2df8a","year:eulandsystem_forest_high"="#b2df8a",
                                "year:d_agri"="#33a02c","year:d_CPE"="#b2df8a","year:agi_low"="#b2df8a","year:eulandsystem_farmland_low"="#b2df8a","year:eulandsystem_farmland_medium"="#b2df8a",
                                "year:agi_high"="#b2df8a"), na.value = "#f5f5f5ff") +
   geom_vline(aes(xintercept = 0), lty=2) +
-  facet_grid(factor(variable, levels = c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_shannon",              
+  facet_grid(factor(variable, levels = c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious",              
                                          "year:protectedarea_perc", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
                                          "year:d_agri",
-                                         "year:agi_low", "year:agi_high","year:d_CPE"),
-                    labels = c("Temperature","Temperature variation","Rainfall","Urbanisation","Landscape diversity",              
+                                         "year:agi_low", "year:agi_high","year:d_CPE", "year:haie"),
+                    labels = c("Temperature","Temperature variation","Rainfall","Urbanisation",              
                                "Protected area","Tree density","Low/medium intensive forests","High intensive forests",
                                "Agricultural surface",
-                               "Low intensive farmland","High intensive farmland","Pesticide exposure"))~., switch = "y") + theme_ridges() + 
+                               "Low intensive farmland","High intensive farmland","Pesticide exposure","Hedge length"))~., switch = "y") + theme_ridges() + 
   theme(legend.position = "none", 
         strip.text.x = element_blank(),
         strip.text.y.left = element_text(angle = 0),
@@ -1011,23 +1203,23 @@ pressure_FR_bird_long_d$signif2 <- factor(pressure_FR_bird_long_d$signif2, level
 
 pressure_FR_bird_likert <- reshape2::dcast(pressure_FR_bird_long_d, sci_name_out ~ variable, value.var = "signif2")
 
-for(i in 2:14){
-  pressure_FR_bird_likert[,i] <- factor(pressure_FR_bird_likert[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
-}
+#for(i in 2:14){
+#  pressure_FR_bird_likert[,i] <- factor(pressure_FR_bird_likert[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
+#}
 
-pressure_FR_bird_likert <- pressure_FR_bird_likert[,c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
-                                                      "year:d_agri","year:agi_low", "year:agi_high","year:d_CPE", "year:d_shannon","year:protectedarea_perc")]
+#pressure_FR_bird_likert <- pressure_FR_bird_likert[,c("year:d_tempsrping", "year:d_tempsrpingvar", "year:d_precspring", "year:d_impervious", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
+#                                                      "year:d_agri","year:agi_low", "year:agi_high","year:d_CPE", "year:d_shannon","year:protectedarea_perc")]
 
 for(i in 2:11){
   pressure_FR_bird_likert[,i] <- factor(pressure_FR_bird_likert[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
 }
 
 pressure_FR_bird_likert <- pressure_FR_bird_likert[,c("year:d_tempsrping", "year:d_impervious", "year:d_treedensity","year:eulandsystem_forest_lowmedium", "year:eulandsystem_forest_high",
-                                                      "year:d_agri","year:agi_low", "year:agi_high","year:d_CPE", "year:d_shannon")]
+                                                      "year:d_agri","year:agi_low", "year:agi_high","year:d_CPE", "year:haie")]
 
 
 gglikert(pressure_FR_bird_likert,add_totals = FALSE, labels_hide_below = 0.01) +
-  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:d_shannon" = "Landscape diversity (\u03B4H)",              
+  scale_y_discrete(labels=c("year:d_impervious" = "Urbanisation (\u03B4Urb)","year:d_tempsrping" = "Temperature (\u03B4T)", "year:d_tempsrpingvar" = "Temperature variation (\u03B4Tva)", "year:d_precspring" = "Rainfall (\u03B4R)", "year:haie" = "Hedge length (\u03B4H)",              
                             "year:protectedarea_perc" = "Protected area (P)", "year:d_treedensity" = "Tree density (\u03B4TD)","year:eulandsystem_forest_lowmedium" = "Low/medium intensive forests (Folw)", "year:eulandsystem_forest_high" = "High intensive forests on trend (Foh)",
                             "year:d_agri" = "Agricultural surface (\u03B4Fa)","year:d_CPE" = "Pesticide exposure (CPE)","year:agi_low" = "Low intensive farmland (Fal)","year:eulandsystem_farmland_low" = "Low intensive farmland (Fal)",
                             "year:eulandsystem_farmland_medium" = "Medium intensive farmland (Fam)", "year:agi_high" = "High intensive farmland (Fah)"
@@ -1106,18 +1298,32 @@ pressure_FR_bird_long_s <- pressure_FR_bird_long[which(pressure_FR_bird_long$var
 pressure_FR_bird_long_s$variable <- factor(pressure_FR_bird_long_s$variable , levels = c("protectedarea_perc","tempsrping","precspring","milieu_catopenland",
                                                                                          "milieu_caturban","shannon","drymatter"))
 
-ggplot(pressure_FR_bird_long_s, aes(x = value, y = variable, fill = variable)) +
+ggplot(pressure_FR_bird_long_s,  aes(x = value_nosignif)) +
+  geom_histogram(aes(fill = variable_nosignif, y=after_stat(density)),col="lightgrey",
+                 bins = 30)  + stat_central_tendency(type = "median", color = "black", linetype = 1) +
+  xlim(c(-2,2)) +
   scale_y_discrete(labels=c("tempsrping" = "Temperature on abundance","precspring"= "Precipitation on abundance","milieu_catopenland" = "Openland vs forest on abundance",
-                            "milieu_caturban" = "Urban vs forest on abundance","shannon" = "Landscape diversity on abundance","drymatter" = "Productivity on abundance")) + 
-  geom_density_ridges(stat = "binline", col=NA,scale = 0.9,
-                      bins = 60, draw_baseline = FALSE) + xlim(c(-3,3))+
-  stat_density_ridges(quantile_lines = TRUE, alpha = 0.2, scale = 0.9,
-                      quantiles = 2) +
-  scale_fill_manual(values = c("tempsrping"="#1f78b4","precspring"="#1f78b4","milieu_catopenland"="#33a02c","milieu_catothers"="#33a02c",
-                               "milieu_caturban"="#33a02c","shannon"="#33a02c","drymatter"="#33a02c")) +
-  theme_ridges() + geom_vline(aes(xintercept = 0), lty=2) +
-  xlab("Pressures") + ylab("Estimate") +
-  theme(legend.position = "none")
+                            "milieu_caturban" = "Urban vs forest on abundance","shannon" = "Landscape diversity on abundance","drymatter" = "Productivity on abundance","protectedarea_perc" = "Protected area on abundance")) + 
+  scale_fill_manual(values = c("tempsrping"="#1f78b4","precspring"="#1f78b4","milieu_catopenland"="#33a02c","protectedarea_perc"="#33a02c",
+                               "milieu_caturban"="#33a02c","shannon"="#33a02c","drymatter"="#33a02c"), na.value = "#f5f5f5ff") +
+  geom_vline(aes(xintercept = 0), lty=2) +
+  facet_grid(factor(variable, levels = c("tempsrping","precspring","milieu_catopenland",
+                                         "milieu_caturban","shannon","drymatter","protectedarea_perc"),
+                    labels = c("Temperature on abundance","Precipitation on abundance","Openland vs forest on abundance",
+                               "Urban vs forest on abundance","Landscape diversity on abundance","Productivity on abundance","Protected area on abundance"))~., switch = "y") + theme_ridges() + 
+  theme(legend.position = "none", 
+        strip.text.x = element_blank(),
+        strip.text.y.left = element_text(angle = 0),
+        strip.background.y = element_rect(fill = NA),
+        strip.placement = "outside",
+        panel.grid.major.y = element_blank(),
+        axis.title = element_blank())
+
+ggsave("output/pressure_start_bird_FR_hist.png",
+       width = 6,
+       height = 6,
+       dpi = 300
+)
 
 pressure_FR_bird_long_s$signif2 <- NA
 pressure_FR_bird_long_s$signif2[which(pressure_FR_bird_long_s$signif==0 & pressure_FR_bird_long_s$value_nosignif > 0)] <- "Positive, p-value > 0.05"
@@ -1132,8 +1338,7 @@ for(i in 2:8){
   pressure_FR_bird_likert_s[,i] <- factor(pressure_FR_bird_likert_s[,i], levels = c("Negative, p-value > 0.05","Negative, p-value < 0.05","Positive, p-value < 0.05","Positive, p-value > 0.05"))
 }
 
-pressure_FR_bird_likert_s <- pressure_FR_bird_likert_s[,c("protectedarea_perc","milieu_catopenland","milieu_caturban","tempsrping",
-                                                          "precspring","shannon","drymatter")]
+pressure_FR_bird_likert_s <- pressure_FR_bird_likert_s[,c("tempsrping","precspring","milieu_catopenland","milieu_caturban","drymatter","shannon","protectedarea_perc")]
 
 
 gglikert(pressure_FR_bird_likert_s,add_totals = FALSE, labels_hide_below = 0.01) +
@@ -1175,7 +1380,7 @@ res_gam_bird_FR_correct_trend <- ddply(res_gam_bird_FR_correct,
                                             #value_max <- max(abs(quantile(res_gam_bird_FR_correct$trend_past[which(res_gam_bird_FR_correct$pressure_removed=="none")],0.1)),abs(quantile(res_gam_bird_FR_correct$trend_past[which(res_gam_bird_FR_correct$pressure_removed=="none")],0.9)))
                                             #x[which(x[,i]>value_max),i] <- value_max
                                             #x[which(x[,i]<(-value_max)),i] <- -value_max
-                                            x[which(x[,i]>log(1.05)),i] <- log(1.05)
+                                            x[which(x[,i]>log(1.05)),i] <- log(1.05) # quantile(pecbms_trend_class$STOC, na.rm=TRUE,probs = seq(0, 1, 0.1))
                                             x[which(x[,i]<log(0.95)),i] <- log(0.95)
                                           }
                                           for(i in c("trend_past_signif","trend_tend_signif","trend_s1_signif","trend_s2_signif","trend_s3_signif","trend_s4_signif")){
@@ -1203,17 +1408,14 @@ overall_trend_all <- ddply(res_gam_bird_FR_correct_trend[which(res_gam_bird_FR_c
                            .progress = "text"); addon <- "_forest.png"
 overall_trend_all <- ddply(res_gam_bird_FR_correct_trend[which(res_gam_bird_FR_correct_trend$sci_name_out %in% urban_species),],
                            .(pressure_removed),.fun=overall_mean_sd_trend_FR,
-                           .progress = "text")
+                           .progress = "text"); addon <- "_urban.png"
 overall_trend_all <- ddply(res_gam_bird_FR_correct_trend[which(res_gam_bird_FR_correct_trend$sci_name_out %in% generalist_species),],
                            .(pressure_removed),.fun=overall_mean_sd_trend_FR,
                            .progress = "text"); addon <- "_gene.png"
 
-pressure_removed <- c("none","year","d_impervious","d_treedensity","d_agri",
-                      "d_tempsrping","tempsrping","d_tempsrpingvar","d_precspring","precspring",
-                      "d_shannon","shannon","drymatter","protectedarea_perc",
-                      "eulandsystem_farmland_high",
-                      "CPE_mean","CPE_trend",
-                      "eulandsystem_forest_lowmedium","eulandsystem_forest_high","milieu_cat")[1]
+pressure_removed <- c("none","year","agi_high","agi_low","d_agri","d_CPE",
+                      "d_impervious","d_tempsrping","d_treedensity","eulandsystem_forest_high",  
+                      "eulandsystem_forest_lowmedium","haie")[1]
 
 
 FR_all <- data.frame(value = c(overall_trend_all$mu_past[which(overall_trend_all$pressure_removed == pressure_removed)],
@@ -1242,11 +1444,11 @@ ggplot(FR_all, aes(x=value,y = variable)) +
   geom_errorbarh(aes(xmax = value-1.96*se, xmin = value+1.96*se), linewidth = .5, height = .2, color = "gray50") +
   geom_point(size = 3.5, aes(color = variable)) + 
   scale_color_manual(values = c("Past"="black","BAU"="grey","S1"="#6293c9ff","S2"="#a8338fff","S3"="#85ba4cff","S4"="#ef7132ff")) + 
-  theme_minimal() + theme(legend.position = "none") +
-  xlab("Slope") + ylab("Scenarios")
+  theme_minimal() + theme(legend.position = "none",axis.title.y = element_blank()) + xlim(c(0.96,1.04803)) +
+  xlab("Slope")
 
 ggsave(paste0("output/trend_bird_FR_error",addon),
-       width = 5,
+       width = 3,
        height = 3,
        dpi = 300
 )
@@ -1258,11 +1460,24 @@ ggplot(data.frame(x = 2000:2050), aes(x)) +
   geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="S2")]^x/FR_all$value[which(FR_all$variable=="S2")]^2019*100}, colour = "#a8338fff", xlim=c(2019,2050)) + 
   geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="S3")]^x/FR_all$value[which(FR_all$variable=="S3")]^2019*100}, colour = "#85ba4cff", xlim=c(2019,2050)) + 
   geom_function(fun = function(x){FR_all$value[which(FR_all$variable=="S4")]^x/FR_all$value[which(FR_all$variable=="S4")]^2019*100}, colour = "#ef7132ff", xlim=c(2019,2050)) + 
-  coord_trans(y='log') +
-  theme_minimal() + xlab("Year") + ylab("Abundance")
+  coord_trans(y='log') + ylim(c(70,250)) + xlab("Year") +
+  #theme_minimal()  + ylab("Abundance")
+  theme(
+    # Set background color to white
+    panel.background = element_rect(fill = "white"),
+    # Remove all grid lines
+    panel.grid = element_blank(),
+    # But add grid lines for the vertical axis, customizing color and size 
+    panel.grid.major.y = element_line(color = "#A8BAC4", size = 0.2),
+    panel.grid.minor.y = element_line(color = "#A8BAC4", size = 0.1),
+    # Remove the title for both axes
+    axis.title.y = element_blank(),
+    # Only the bottom line of the vertical axis is painted in black
+    axis.line.x.bottom = element_line(color = "grey")
+  )
 
 ggsave(paste0("output/trend_bird_FR",addon),
-       width = 5,
+       width = 3,
        height = 3,
        dpi = 300
 )
@@ -1281,6 +1496,9 @@ boxLabels <- c("agi_high","agi_low","d_agri",
                "d_shannon","d_tempsrping",
                "d_treedensity","eulandsystem_forest_high","eulandsystem_forest_lowmedium",
                "none","year")
+boxLabels <- c("agi_high","agi_low","d_agri","d_CPE",
+               "d_impervious","d_tempsrping","d_treedensity","eulandsystem_forest_high",
+               "eulandsystem_forest_lowmedium","haie","none","year" )
 
 df <- data.frame(yAxis = length(boxLabels):1,
                  Attribute = c(rep("Past",length(boxLabels)),rep("BAU",length(boxLabels)),rep("S1",length(boxLabels)),rep("S2",length(boxLabels)),rep("S3",length(boxLabels)),rep("S4",length(boxLabels))),
@@ -1297,7 +1515,7 @@ df <- data.frame(yAxis = length(boxLabels):1,
 
 df$Attribute <- factor(df$Attribute, levels = c("Past","BAU","S1","S2","S3","S4"))
 df$Variable <- factor(df$Variable, levels = c("none","year","d_impervious","d_tempsrping",
-                                              "d_shannon","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "haie","d_treedensity","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
                                               "d_agri","agi_low","agi_high","d_CPE"))
 
 df_signif <- ddply(df, .(Attribute), .fun = function(x){
@@ -1305,13 +1523,13 @@ df_signif <- ddply(df, .(Attribute), .fun = function(x){
   se_y <- (x$boxCIHigh[which(x$Variable == "none")] - mean_y)/1.96
   return(data.frame(x %>% group_by(Variable) %>% 
                       mutate(pvalue = tsum.test(mean.x=box_estimate_main,
-                                                s.x=((boxCIHigh - mean_y)/1.96),
+                                                s.x=((boxCIHigh - box_estimate_main)/1.96),
                                                 n.x= overall_trend_all$n[which(overall_trend_all$pressure_removed == "none")],
                                                 mean.y=mean_y,
                                                 s.y=se_y,
                                                 n.y= overall_trend_all$n[which(overall_trend_all$pressure_removed == "none")],)$p.value,
                              relative_estimate = mean_y - box_estimate_main,
-                             relative_se = se_y + ((boxCIHigh - mean_y)/1.96))))})
+                             relative_se = se_y + ((boxCIHigh - box_estimate_main)/1.96))))})
 
 df_signif$signif <- ifelse(df_signif$pvalue < 0.05,"yes","no")  
 df_signif$relativehighCI <- df_signif$relative_estimate + 1.96*df_signif$relative_se
@@ -1324,7 +1542,7 @@ ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) +
                    .2, color = "gray50") +
   geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
   geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, alpha=signif)) + 
-  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "d_shannon" = "\u2205 Landscape diversity",              
+  scale_y_discrete(labels=c("none" = "All covariates", "year" = "\u2205 Trend", "d_impervious" = "\u2205 Urbanisation","d_tempsrping" = "\u2205 Temperature", "d_tempsrpingvar" = "\u2205 Temperature variation", "d_precspring" = "\u2205 Rainfall", "haie" = "\u2205 Hedge length",  #"d_shannon" = "\u2205 Landscape diversity",              
                             "protectedarea_perc" = "\u2205 Protected area", "d_treedensity" = "\u2205 Tree density","eulandsystem_forest_lowmedium" = "\u2205 Low/medium intensive forests", "eulandsystem_forest_high" = "\u2205 High intensive forests",
                             "d_agri" = "\u2205 Agricultural surface","agi_low" = "\u2205 Low intensive farmland",
                             "d_CPE" = "\u2205 Pesticide exposure", "agi_high" = "\u2205 High intensive farmland")) + 
@@ -1339,7 +1557,7 @@ ggplot(df_signif[which(df_signif$Variable!="none"),], aes(x=relative_estimate,y 
   geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
   geom_errorbarh(aes(xmax = relativehighCI, xmin = relativelowCI), linewidth = .5, height =.2, color = "gray50") +
   geom_point(size = 3.5, aes(color = Attribute, alpha=signif)) + 
-  scale_y_discrete(labels=c("year" = "Trend", "d_impervious" = "Urbanisation","d_tempsrping" = "Temperature", "d_tempsrpingvar" = "Temperature variation", "d_precspring" = "Rainfall", "d_shannon" = "Landscape diversity",              
+  scale_y_discrete(labels=c("year" = "Trend", "d_impervious" = "Urbanisation","d_tempsrping" = "Temperature", "d_tempsrpingvar" = "Temperature variation", "d_precspring" = "Rainfall", "haie" = "Hedge length",              
                             "protectedarea_perc" = "Protected area", "d_treedensity" = "Tree density","eulandsystem_forest_lowmedium" = "Low/medium intensive forests", "eulandsystem_forest_high" = "High intensive forests",
                             "d_agri" = "Agricultural surface","agi_low" = "Low intensive farmland",
                             "d_CPE" = "Pesticide exposure", "agi_high" = "High intensive farmland")) + 
@@ -1350,15 +1568,73 @@ ggplot(df_signif[which(df_signif$Variable!="none"),], aes(x=relative_estimate,y 
   xlab("Slope") + facet_grid(. ~ Attribute, scales='free')
 
 
-
 ggsave(paste0("output/trend_bird_FR_all_effect",addon),
        width = 9,
        height = 4,
        dpi = 300
 )
 
+df_signif$Variable <- factor(df_signif$Variable, levels = c("d_agri","year","eulandsystem_forest_lowmedium","eulandsystem_forest_high",
+                                              "d_CPE","d_treedensity","d_impervious","none","agi_high","haie","d_tempsrping","agi_low"))
 
+ggplot(df_signif[which(!(df_signif$Variable %in% c("none","year")) & df_signif$Attribute !="Past"),], aes(x=relative_estimate,y = Variable, group=Attribute)) +
+  geom_vline(xintercept = 0, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(aes(xmax = relativehighCI, xmin = relativelowCI), linewidth = .5, height =.2, color = "gray50") +
+  geom_point(size = 3.5, aes(color = Attribute, alpha=signif)) + 
+  scale_y_discrete(labels=c("year" = "Trend", "d_impervious" = "Urbanisation","d_tempsrping" = "Temperature", "d_tempsrpingvar" = "Temperature variation", "d_precspring" = "Rainfall", "haie" = "Hedge length",              
+                            "protectedarea_perc" = "Protected area", "d_treedensity" = "Tree density","eulandsystem_forest_lowmedium" = "Low/medium intensive forests", "eulandsystem_forest_high" = "High intensive forests",
+                            "d_agri" = "Agricultural surface","agi_low" = "Low intensive farmland",
+                            "d_CPE" = "Pesticide exposure", "agi_high" = "High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","Tend"="grey","S1"="#6293c9ff","S2"="#a8338fff","S3"="#85ba4cff","S4"="#ef7132ff")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1)) + 
+  ylab("") + xlim(c(-0.027,0.045)) +
+  xlab("") + facet_grid(. ~ Attribute, scales='free')
 
+df_signif <- droplevels(df_signif[which(df_signif$Variable!="year" & df_signif$Attribute != "Past"),])
+
+df_signif$box_estimate_main[which(df_signif$Variable!="none")] <- 2*c(rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][1],10),
+                                                                    rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][2],10),
+                                                                    rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][3],10),
+                                                                    rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][4],10),
+                                                                    rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][5],10)) - df_signif$box_estimate_main[which(df_signif$Variable!="none")]
+
+df_signif$increase_decrease <- c("decrease","increase","decrease","decrease","increase","increase","increase","increase","increase","increase","increase",
+                                 "decrease","increase","decrease","decrease","decrease","increase","increase","increase","increase","increase","increase",
+                                 "decrease","increase","decrease","decrease","increase","increase","increase","increase","increase","increase","increase",
+                                 "decrease","increase","decrease","decrease","increase","increase","increase","increase","decrease","increase","increase",
+                                 "decrease","increase","decrease","decrease","increase","increase","increase","increase","decrease","increase","increase")
+
+ggplot(df_signif, aes(x=box_estimate_main,y = Variable, group=Attribute)) + 
+  geom_vline(data=df_signif[which(df_signif$Variable=="none"),], aes(xintercept = box_estimate_main), linewidth = .25, linetype = "dotted") + 
+  geom_vline(xintercept = 1, linewidth = .5, linetype="dashed") + 
+  geom_errorbarh(data=df_signif[which(df_signif$Variable=="none"),],aes(xmax = boxCIHigh, xmin = boxCILow), linewidth = .5, height = 
+                   .2, color = "gray50") +
+  geom_point(data=df_signif[which(df_signif$Variable=="none"),],size = 3.5, aes(color = Attribute)) + 
+  geom_point(data=df_signif[which(df_signif$Variable!="none"),],size = 3.5, aes(color = Attribute, fill = Attribute, alpha=signif, shape=increase_decrease)) + 
+  scale_shape_manual(values = c("increase" = 17, "decrease" = 25)) +
+  geom_segment(data=df_signif[which(df_signif$Variable!="none"),], aes(x=df_signif$box_estimate_main[which(df_signif$Variable!="none")], xend=c(rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][1],10),
+                                                                                   rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][2],10),
+                                                                                   rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][3],10),
+                                                                                   rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][4],10),
+                                                                                   rep(df_signif$box_estimate_main[which(df_signif$Variable=="none")][5],10)),
+                                                                       y=Variable, yend=Variable,color = Attribute)) +
+  scale_y_discrete(labels=c("none" = "Trend", "year" = "Trend", "d_impervious" = "Urbanisation","d_tempsrping" = "Temperature", "d_tempsrpingvar" = "Temperature variation", "d_precspring" = "Rainfall", "haie" = "Hedge length",  #"d_shannon" = "Landscape diversity",              
+                            "protectedarea_perc" = "Protected area", "d_treedensity" = "Tree density","eulandsystem_forest_lowmedium" = "Low/medium intensive forests", "eulandsystem_forest_high" = "High intensive forests",
+                            "d_agri" = "Agricultural surface","agi_low" = "Low intensive farmland",
+                            "d_CPE" = "Pesticide exposure", "agi_high" = "High intensive farmland")) + 
+  scale_color_manual(values = c("Past"="black","Tend"="grey","S1"="#6293c9ff","S2"="#a8338fff","S3"="#85ba4cff","S4"="#ef7132ff")) + 
+  scale_fill_manual(values = c("Past"="black","Tend"="grey","S1"="#6293c9ff","S2"="#a8338fff","S3"="#85ba4cff","S4"="#ef7132ff")) + 
+  scale_alpha_discrete(range = c(0.4, 1)) +
+  theme_modern() + facet_grid(. ~ Attribute, scales='free_y') + xlab("Slope coefficient") +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust=1),
+        axis.title.y = element_blank()) 
+
+ggsave(paste0("output/variable_effect_trend_fr",addon),
+       width = 10,
+       height = 6,
+       dpi = 300
+)
 
 
 

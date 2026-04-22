@@ -423,6 +423,8 @@ for(i in 1:length(PLS_with_point)){
   grid_eu_mainland_biogeo_cast$point[i] <- length(PLS_with_point[[i]])
 }
 
+st_write(grid_eu_mainland_biogeo_cast,"output/grid_eu_mainland_biogeo_cast.gpkg")
+
 ###### Analysis
 
 ### Load previously produced datasets
@@ -455,9 +457,9 @@ pressure_publi_butterfly$newtransect_id <- NULL
 pressure_publi_butterfly_unscale$transect_id <- pressure_publi_butterfly_unscale$newtransect_id
 pressure_publi_butterfly_unscale$newtransect_id <- NULL
 
-write.csv(butterfly_data_publi,"output/butterfly_data_publi.csv")
-write.csv(pressure_publi_butterfly,"output/pressure_publi_butterfly.csv")
-write.csv(pressure_publi_butterfly_unscale,"output/pressure_publi_butterfly_unscale.csv")
+write.csv(butterfly_data_publi,"for_publi/raw_data/butterfly_data_publi.csv", row.names = FALSE)
+write.csv(pressure_publi_butterfly,"for_publi/raw_data/pressure_publi_butterfly.csv", row.names = FALSE)
+write.csv(pressure_publi_butterfly_unscale,"for_publi/raw_data/pressure_publi_butterfly_unscale.csv", row.names = FALSE)
 
 ### correlation between covariables
 
@@ -799,19 +801,17 @@ ggsave("output/deviance_butterfly_before.png",
        dpi = 300)
 
 
-table_species_butterfly <- data.frame(Species = unique(res_gamm_butterfly$species_name), Indicator = NA)
+table_species_butterfly <- data.frame(Species = unique(predict_trend_all_butterfly$species_name), Indicator =NA, Butterfly_index= NA, Indicator_used = NA)
 table_species_butterfly$Indicator[which(table_species_butterfly$Species %in% grassland_species)] <- "Grassland"
 table_species_butterfly$Indicator[which(table_species_butterfly$Species %in% woodland_ind_species)] <- "Woodland"
-table_species_butterfly$Indicator[which(table_species_butterfly$Species %in% wetland_species)] <- "Wetland"
+table_species_butterfly$Butterfly_index[which(table_species_butterfly$Species %in% unique(predict_trend_all_butterfly[which(predict_trend_all_butterfly$dev_exp > 0.2 & predict_trend_all_butterfly$PLS=="europe"),]$species_name))] <- "ABI"
+table_species_butterfly$Indicator_used <- ifelse(!(is.na(table_species_butterfly$Indicator)) & !(is.na(table_species_butterfly$Butterfly_index)), table_species_butterfly$Indicator, NA)
+#table_species_butterfly$Indicator[which(table_species_butterfly$Species %in% wetland_species)] <- "Wetland"
+names(table_species_butterfly) <- c("Species", "Habitat indicator", "All butterfly index", "Habitat indicator used")
 
 write.csv(table_species_butterfly,"output/table_species_butterfly.csv", row.names = FALSE)
 
 table_species_butterfly2 <- read.csv("output/table_species_butterfly2.csv", header=TRUE)
-table_species_butterfly2$Habitat.indicator <- table_species_butterfly2$Indicator
-table_species_butterfly2$Habitat.indicator[which(table_species_butterfly2$Habitat.indicator == "Wetland")] <- NA
-table_species_butterfly2$All.butterfly.indicator <- table_species_butterfly2$Indicator
-table_species_butterfly2$All.butterfly.indicator[which(table_species_butterfly2$All.butterfly.indicator %in% c("Wetland","Grassland","Woodland"))] <- "ABI"
-table_species_butterfly2$Indicator <- NULL
 
 pressure_EU_butterfly <- pressure_EU_butterfly[,c("species_name","milieu_catopenland","milieu_caturban","tempsrping","precspring","shannon","drymatter",
                                         "year:d_impervious","year:d_treedensity",
@@ -826,7 +826,29 @@ names(pressure_EU_butterfly) <- c("Species","open_vs_forest","urban_vs_forest",
                              "low_intensively_managed_farmland_effect_on_trend","medium_intensively_managed_farmland_effect_on_trend","high_intensively_managed_farmland_effect_on_trend",
                              "temperature_increase_effect_on_trend","temperature_variation_increase_effect_on_trend","rainfall_increase_effect_on_trend",
                              "landscape_diversity_increase_effect_on_trend","protected_area_effect_on_trend","dev_exp")
-table_species_butterfly2 <- merge(table_species_butterfly2,pressure_EU_butterfly, by="Species", all.x=TRUE)
+pressure_EU_butterfly_nosignif <- predict_trend_all_butterfly[which(predict_trend_all_butterfly$dev_exp > 0.2 & predict_trend_all_butterfly$PLS== "europe" & predict_trend_all_butterfly$pressure_removed=="none"),
+                                                    c("species_name","trend_past","milieu_catopenland","milieu_caturban","tempsrping","precspring","shannon","drymatter",
+                                                      "year:d_impervious","year:d_treedensity","year:eulandsystem_forest_lowmedium","year:eulandsystem_forest_high",
+                                                      "year:d_agri","year:eulandsystem_farmland_low","year:eulandsystem_farmland_high",
+                                                      "year:d_tempsrping","year:d_tempsrpingvar","year:d_precspring",         
+                                                      "year:d_shannon","year:protectedarea_perc",
+                                                      "sd_past","milieu_catopenland_sd","milieu_caturban_sd","tempsrping_sd","precspring_sd","shannon_sd","drymatter_sd",
+                                                      "year:d_impervious_sd","year:d_treedensity_sd","year:eulandsystem_forest_lowmedium_sd","year:eulandsystem_forest_high_sd",
+                                                      "year:d_agri_sd","year:eulandsystem_farmland_low_sd","year:eulandsystem_farmland_high_sd",
+                                                      "year:d_tempsrping_sd","year:d_tempsrpingvar_sd","year:d_precspring_sd",         
+                                                      "year:d_shannon","year:protectedarea_perc","dev_exp")]
+names(pressure_EU_butterfly_nosignif) <- c("Species","trend_past","open_vs_forest","urban_vs_forest","spring_mean_temperature","spring_rainfall","landscape_diversity","primary_productivity",
+                                      "urbanisation_increase_effect_on_trend","treedensity_increase_effect_on_trend","non_intensively_managed_forest_effect_on_trend","intensively_managed_forest_effect_on_trend",
+                                      "farmland_increase_effect_on_trend","low_intensively_managed_farmland_effect_on_trend","high_intensively_managed_farmland_effect_on_trend",
+                                      "temperature_increase_effect_on_trend","temperature_variation_increase_effect_on_trend","rainfall_increase_effect_on_trend",
+                                      "landscape_diversity_increase_effect_on_trend","protected_area_effect_on_trend",
+                                      "trend_past_sd","open_vs_forest_sd","urban_vs_forest_sd","spring_mean_temperature_sd","spring_rainfall_sd","landscape_diversity_sd","primary_productivity_sd",
+                                      "urbanisation_increase_effect_on_trend_sd","treedensity_increase_effect_on_trend_sd","non_intensively_managed_forest_effect_on_trend_sd","intensively_managed_forest_effect_on_trend_sd",
+                                      "farmland_increase_effect_on_trend_sd","low_intensively_managed_farmland_effect_on_trend_sd","high_intensively_managed_farmland_effect_on_trend_sd",
+                                      "temperature_increase_effect_on_trend_sd","temperature_variation_increase_effect_on_trend_sd","rainfall_increase_effect_on_trend_sd",
+                                      "landscape_diversity_increase_effect_on_trend_sd","protected_area_effect_on_trend_sd",
+                                      "dev_exp")
+table_species_butterfly2 <- merge(table_species_butterfly2,pressure_EU_butterfly_nosignif, by="Species", all.x=TRUE)
 write.csv(table_species_butterfly2,"output/table_species_butterfly3.csv", row.names = FALSE)
 
 
@@ -1107,13 +1129,12 @@ matrix_pressure_PLS <- data.frame(predict_trend_all_butterfly[which(predict_tren
                                                                                              #max_effect_percent = ifelse(nb_sp_neg_lulc > nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp),
                                                                                              #min_effect_percent = ifelse(nb_sp_neg_lulc < nb_sp_neg_climate, nb_sp_neg_lulc/nb_sp, nb_sp_neg_climate/nb_sp)))
 
-matrix_pressure_PLS <- data.frame(res_gamm_butterfly_correct %>% group_by(PLS) %>% summarise(mean_impervious = mean(`year:d_impervious`,na.rm=TRUE),
+matrix_pressure_PLS <- data.frame(predict_trend_all_butterfly[which(predict_trend_all_butterfly$dev_exp > 0.2 & predict_trend_all_butterfly$pressure_removed=="none"),] %>% group_by(PLS) %>% summarise(mean_impervious = mean(`year:d_impervious`,na.rm=TRUE),
                                                                                         mean_treedensity = mean(`year:d_treedensity`,na.rm=TRUE),
                                                                                         mean_forest_lm = mean(`year:eulandsystem_forest_lowmedium`,na.rm=TRUE),
                                                                                         mean_forest_h = mean(`year:eulandsystem_forest_high`,na.rm=TRUE),
                                                                                         mean_agri = mean(`year:d_agri`,na.rm=TRUE),
                                                                                         mean_agri_l = mean(`year:eulandsystem_farmland_low`,na.rm=TRUE),
-                                                                                        mean_agri_m = mean(`year:eulandsystem_farmland_medium`,na.rm=TRUE),
                                                                                         mean_agri_h = mean(`year:eulandsystem_farmland_high`,na.rm=TRUE),
                                                                                         mean_temp = mean(`year:d_tempsrping`,na.rm=TRUE),
                                                                                         mean_tempvar = mean(`year:d_tempsrpingvar`,na.rm=TRUE),
